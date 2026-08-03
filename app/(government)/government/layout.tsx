@@ -1,0 +1,1 @@
+import {GovernmentShell} from "@/components/layout/government-shell";export default function GovernmentLayout({children}:{children:React.ReactNode}){return <GovernmentShell>{children}</GovernmentShell>}

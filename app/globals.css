@@ -1,26 +1,72 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f8f3;
+  --surface: #ffffff;
+  --surface-soft: #f0f6ed;
+  --foreground: #17251d;
+  --muted: #637168;
+  --border: #dfe8dc;
+  --brand: #075f3d;
+  --brand-dark: #03452c;
+  --brand-soft: #d9f5c7;
+  --success: #2f7d32;
+  --warning: #a25c00;
+  --danger: #c5352e;
+  --info: #2670a8;
+}
+
+/* The desktop expert case-review rail follows the compact Stitch decision card. */
+#expert-main section.flex.min-h-0.flex-col > form > label:nth-of-type(3),
+#expert-main section.flex.min-h-0.flex-col > form > label:nth-of-type(4) {
+  display: none;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --font-sans: var(--font-manrope), var(--font-noto-arabic), "Segoe UI", Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* { box-sizing: border-box; }
+html { background: var(--background); }
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-manrope), var(--font-noto-arabic), "Segoe UI", Arial, sans-serif; font-size: 1rem; line-height: 1.5; font-weight: 400; font-synthesis: none; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+h1, h2, h3, h4 { font-family: inherit; letter-spacing: -0.02em; text-wrap: balance; }
+button, a, input, select, textarea { font: inherit; outline-offset: 3px; }
+[lang="ur"], [dir="rtl"] { font-family: var(--font-noto-arabic), var(--font-manrope), sans-serif; }
+:focus-visible { outline: 3px solid #67a348; }
+::selection { background: var(--brand-soft); color: var(--brand-dark); }
+.sidebar-scroll { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 24%) transparent; }
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+.sidebar-scroll::-webkit-scrollbar-thumb { border-radius: 999px; background: rgb(255 255 255 / 24%); }
+.onboarding-input input:-webkit-autofill,
+.onboarding-input input:-webkit-autofill:hover,
+.onboarding-input input:-webkit-autofill:focus {
+  border-radius: inherit;
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px #f7f8fc inset;
+  box-shadow: 0 0 0 1000px #f7f8fc inset;
+  caret-color: var(--foreground);
+  transition: background-color 9999s ease-out 0s;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+.card { border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); box-shadow: 0 1px 2px rgb(17 43 27 / 5%); }
+.page-container { width: 100%; max-width: 1440px; margin-inline: auto; padding: 1rem; }
+.onboarding-centered { min-height: 100svh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; overflow-x: hidden; padding: clamp(1rem, 4vh, 2.5rem) 1rem; }
+@media (max-width: 639px), (max-height: 800px) { .onboarding-centered { align-items: flex-start; } }
+@media (max-width: 359px) { .onboarding-centered { padding-inline: .75rem; } }
+@media (min-width: 768px) { .page-container { padding: 1.5rem; } }
+@media (min-width: 1280px) { .page-container { padding: 2rem; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
