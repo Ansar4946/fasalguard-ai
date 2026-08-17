@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -32,6 +33,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+!**/.env.example
 
 # vercel
 .vercel
@@ -39,3 +42,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# backend outputs
+services/api/dist/
+services/api/coverage/
+
+# Python caches and local environments
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+**/*.pyc

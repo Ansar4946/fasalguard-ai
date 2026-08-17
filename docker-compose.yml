@@ -1,0 +1,86 @@
+name: fasalguard
+services:
+  postgres:
+    image: postgis/postgis:17-3.5-alpine
+    environment: {POSTGRES_DB: fasalguard, POSTGRES_USER: fasalguard, POSTGRES_PASSWORD: local-fasalguard-password}
+    ports: ["5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data", "./services/api/docker/postgres/init:/docker-entrypoint-initdb.d:ro"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fasalguard -d fasalguard && psql -U fasalguard -d fasalguard -tAc \"SELECT 1 FROM pg_extension WHERE extname='postgis'\" | grep -q 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server","--appendonly","yes"]
+    ports: ["6379:6379"]
+    volumes: ["redis_data:/data"]
+    healthcheck: {test: ["CMD","redis-cli","ping"], interval: 5s, timeout: 3s, retries: 20}
+    restart: unless-stopped
+  api:
+    build: {context: ./services/api, target: production}
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://fasalguard:local-fasalguard-password@postgres:5432/fasalguard
+      DATABASE_SSL: "false"
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: info
+      ENABLE_SWAGGER: "true"
+      CORS_ORIGINS: http://localhost:3000
+      ENFORCE_FIELD_WITHIN_FARM: "true"
+      JWT_ACCESS_SECRET: local-development-secret-change-before-production
+      JWT_ISSUER: fasalguard-api
+      JWT_AUDIENCE: fasalguard-clients
+      ACCESS_TOKEN_TTL_SECONDS: "900"
+      REFRESH_TOKEN_TTL_DAYS: "30"
+      OTP_PROVIDER: development
+      OBJECT_STORAGE_PROVIDER: mock
+      SENTINEL_HUB_CLIENT_ID: ""
+      SENTINEL_HUB_CLIENT_SECRET: ""
+      SENTINEL_HUB_BASE_URL: https://services.sentinel-hub.com
+      OPEN_METEO_BASE_URL: https://api.open-meteo.com
+      WEATHER_CACHE_TTL_SECONDS: 900
+      VISION_PROVIDER: self-hosted
+      SELF_HOSTED_VISION_URL: http://geospatial-ai:8000
+      VISION_MINIMUM_CONFIDENCE: 0.65
+      VISION_EXPERT_REVIEW_BELOW: 0.85
+      QWEN_BASE_URL: https://dashscope-intl.aliyuncs.com
+      QWEN_API_KEY: ${QWEN_API_KEY:-}
+      QWEN_MODEL: qwen-plus
+      SATELLITE_MAX_CLOUD_COVERAGE: "30"
+      GEOSPATIAL_AI_URL: http://geospatial-ai:8000
+      SATELLITE_MONITORING_INTERVAL_HOURS: "8"
+      SATELLITE_PROVIDER_REQUESTS_PER_MINUTE: "30"
+    ports: ["4000:4000"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD","node","-e","fetch('http://localhost:4000/api/v1/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    init: true
+    restart: unless-stopped
+  geospatial-ai:
+    build: {context: ./services/geospatial-ai}
+    ports: ["8000:8000"]
+    healthcheck: {test: ["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"], interval: 10s, timeout: 5s, retries: 10}
+    restart: unless-stopped
+  migrate:
+    build: {context: ./services/api, target: production}
+    command: ["npm", "run", "migration:run:prod"]
+    environment:
+      DATABASE_URL: postgresql://fasalguard:local-fasalguard-password@postgres:5432/fasalguard
+      DATABASE_SSL: "false"
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,128 @@
+import * as Joi from 'joi';
+export const environmentSchema = Joi.object({
+  NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
+  PORT: Joi.number().port().default(4000),
+  PROCESS_ROLE: Joi.string().valid('api', 'worker', 'all').default('all'),
+  DATABASE_URL: Joi.string()
+    .uri({ scheme: ['postgres', 'postgresql'] })
+    .required(),
+  DATABASE_SSL: Joi.boolean().truthy('true').falsy('false').default(false),
+  REDIS_URL: Joi.string()
+    .uri({ scheme: ['redis', 'rediss'] })
+    .required(),
+  LOG_LEVEL: Joi.string()
+    .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent')
+    .default('info'),
+  METRICS_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
+  METRICS_TOKEN: Joi.string().allow('').default(''),
+  SENTRY_DSN: Joi.string().allow('').default(''),
+  SENTRY_ENVIRONMENT: Joi.string().max(64).default('development'),
+  ENABLE_SWAGGER: Joi.boolean().truthy('true').falsy('false').default(false),
+  CORS_ORIGINS: Joi.string().allow('').default('http://localhost:3000'),
+  MAX_REQUEST_BODY_BYTES: Joi.number().integer().min(16_384).max(1_048_576).default(262_144),
+  SIGNED_URL_TTL_SECONDS: Joi.number().integer().min(60).max(900).default(300),
+  ENFORCE_FIELD_WITHIN_FARM: Joi.boolean().truthy('true').falsy('false').default(true),
+  JWT_ACCESS_SECRET: Joi.string().min(32).required(),
+  JWT_ISSUER: Joi.string().min(3).default('fasalguard-api'),
+  JWT_AUDIENCE: Joi.string().min(3).default('fasalguard-clients'),
+  ACCESS_TOKEN_TTL_SECONDS: Joi.number().integer().min(60).max(3600).default(900),
+  REFRESH_TOKEN_TTL_DAYS: Joi.number().integer().min(1).max(90).default(30),
+  OTP_PROVIDER: Joi.string().valid('development', 'production').default('development'),
+  OBJECT_STORAGE_PROVIDER: Joi.string().valid('mock', 'alibaba').default('mock'),
+  OSS_REGION: Joi.string().allow('').default(''),
+  OSS_BUCKET: Joi.string().allow('').default(''),
+  OSS_ACCESS_KEY_ID: Joi.string().allow('').default(''),
+  OSS_ACCESS_KEY_SECRET: Joi.string().allow('').default(''),
+  SENTINEL_HUB_CLIENT_ID: Joi.string().allow('').default(''),
+  SENTINEL_HUB_CLIENT_SECRET: Joi.string().allow('').default(''),
+  SENTINEL_HUB_BASE_URL: Joi.string().uri().default('https://services.sentinel-hub.com'),
+  SATELLITE_MAX_CLOUD_COVERAGE: Joi.number().min(0).max(100).default(30),
+  GEOSPATIAL_AI_URL: Joi.string().uri().default('http://localhost:8000'),
+  SATELLITE_MONITORING_INTERVAL_HOURS: Joi.number().integer().min(6).max(12).default(8),
+  SATELLITE_PROVIDER_REQUESTS_PER_MINUTE: Joi.number().integer().min(1).max(300).default(30),
+  OPEN_METEO_BASE_URL: Joi.string().uri().default('https://api.open-meteo.com'),
+  WEATHER_CACHE_TTL_SECONDS: Joi.number().integer().min(300).max(3600).default(900),
+  VISION_PROVIDER: Joi.string().valid('roboflow', 'self-hosted').default('self-hosted'),
+  ROBOFLOW_BASE_URL: Joi.string().uri().default('https://detect.roboflow.com'),
+  ROBOFLOW_API_KEY: Joi.string().allow('').default(''),
+  ROBOFLOW_MODEL_ID: Joi.string().allow('').default(''),
+  ROBOFLOW_MODEL_VERSION: Joi.string().allow('').default(''),
+  SELF_HOSTED_VISION_URL: Joi.string().uri().default('http://localhost:8000'),
+  VISION_MINIMUM_CONFIDENCE: Joi.number().min(0).max(1).default(0.65),
+  VISION_EXPERT_REVIEW_BELOW: Joi.number().min(0).max(1).default(0.85),
+  QWEN_BASE_URL: Joi.string().uri().default('https://dashscope-intl.aliyuncs.com'),
+  QWEN_API_KEY: Joi.string().allow('').default(''),
+  QWEN_MODEL: Joi.string().min(1).default('qwen-plus'),
+  PUSH_PROVIDER: Joi.string().valid('development', 'firebase').default('development'),
+  FIREBASE_SERVICE_ACCOUNT_BASE64: Joi.string().allow('').default(''),
+  PUSH_TOKEN_STALE_DAYS: Joi.number().integer().min(7).max(365).default(90),
+  ASSISTANT_PROVIDER: Joi.string().valid('fake', 'qwen').default('fake'),
+  SPEECH_PROVIDER: Joi.string().valid('fake', 'qwen').default('fake'),
+  QWEN_STT_MODEL: Joi.string().min(1).default('qwen-audio-asr'),
+  QWEN_TTS_MODEL: Joi.string().min(1).default('qwen-tts'),
+}).custom((value: Record<string, unknown>, helpers) => {
+  if (value.NODE_ENV !== 'production') return value;
+  const required = (key: string): boolean =>
+    typeof value[key] === 'string' && String(value[key]).trim().length > 0;
+  if (value.ENABLE_SWAGGER === true)
+    return helpers.error('any.invalid', { message: 'Swagger must be disabled in production.' });
+  if (value.METRICS_ENABLED === true && !required('METRICS_TOKEN'))
+    return helpers.error('any.invalid', { message: 'Production metrics require an access token.' });
+  if (required('SENTRY_DSN')) {
+    const dsn = new URL(String(value.SENTRY_DSN));
+    if (dsn.protocol !== 'https:' || !dsn.username)
+      return helpers.error('any.invalid', { message: 'Sentry DSN must use authenticated HTTPS.' });
+  }
+  if (!required('CORS_ORIGINS') || String(value.CORS_ORIGINS).includes('*'))
+    return helpers.error('any.invalid', { message: 'Production CORS requires explicit origins.' });
+  if (
+    String(value.JWT_ACCESS_SECRET).length < 48 ||
+    String(value.JWT_ACCESS_SECRET).includes('replace-with')
+  )
+    return helpers.error('any.invalid', { message: 'Production JWT secret is unsafe.' });
+  for (const key of [
+    'SENTINEL_HUB_BASE_URL',
+    'OPEN_METEO_BASE_URL',
+    'ROBOFLOW_BASE_URL',
+    'QWEN_BASE_URL',
+  ]) {
+    const target = new URL(String(value[key]));
+    if (target.protocol !== 'https:' || target.username || target.password || target.hash)
+      return helpers.error('any.invalid', {
+        message: `${key} must be a credential-free HTTPS origin in production.`,
+      });
+  }
+  for (const key of ['GEOSPATIAL_AI_URL', 'SELF_HOSTED_VISION_URL']) {
+    const target = new URL(String(value[key]));
+    if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password)
+      return helpers.error('any.invalid', { message: `${key} is not a safe service URL.` });
+  }
+  if (
+    value.OBJECT_STORAGE_PROVIDER !== 'alibaba' ||
+    !required('OSS_REGION') ||
+    !required('OSS_BUCKET') ||
+    !required('OSS_ACCESS_KEY_ID') ||
+    !required('OSS_ACCESS_KEY_SECRET')
+  )
+    return helpers.error('any.invalid', {
+      message: 'Production requires configured private Alibaba OSS.',
+    });
+  if (value.OTP_PROVIDER !== 'production')
+    return helpers.error('any.invalid', { message: 'Development OTP is forbidden in production.' });
+  if (value.VISION_PROVIDER === 'roboflow' && !required('ROBOFLOW_API_KEY'))
+    return helpers.error('any.invalid', {
+      message: 'Selected vision provider credentials are missing.',
+    });
+  if (
+    (value.ASSISTANT_PROVIDER === 'qwen' || value.SPEECH_PROVIDER === 'qwen') &&
+    !required('QWEN_API_KEY')
+  )
+    return helpers.error('any.invalid', {
+      message: 'Selected Qwen provider credentials are missing.',
+    });
+  if (value.PUSH_PROVIDER === 'firebase' && !required('FIREBASE_SERVICE_ACCOUNT_BASE64'))
+    return helpers.error('any.invalid', {
+      message: 'Selected push provider credentials are missing.',
+    });
+  return value;
+});

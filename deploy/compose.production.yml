@@ -1,0 +1,65 @@
+name: fasalguard-runtime
+
+# RDS PostgreSQL/PostGIS, Tair Redis, and OSS are managed external services.
+# Copy the appropriate environment example outside source control and inject its path.
+x-api-common: &api-common
+  image: ${REGISTRY}/${NAMESPACE}/fasalguard-api:${RELEASE_VERSION}
+  env_file: ${DEPLOY_ENV_FILE}
+  restart: unless-stopped
+  init: true
+  networks: [private]
+
+services:
+  api:
+    <<: *api-common
+    environment:
+      PROCESS_ROLE: api
+    ports: ["4000:4000"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:4000/api/v1/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    image: ${REGISTRY}/${NAMESPACE}/fasalguard-worker:${RELEASE_VERSION}
+    env_file: ${DEPLOY_ENV_FILE}
+    environment:
+      PROCESS_ROLE: worker
+    restart: unless-stopped
+    init: true
+    networks: [private]
+
+  ai-service:
+    image: ${REGISTRY}/${NAMESPACE}/fasalguard-ai-service:${RELEASE_VERSION}
+    restart: unless-stopped
+    init: true
+    networks: [private]
+    expose: ["8000"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    <<: *api-common
+    profiles: ["migration"]
+    command: ["npm", "run", "migration:run:prod"]
+    restart: "no"
+
+networks:
+  private: {}

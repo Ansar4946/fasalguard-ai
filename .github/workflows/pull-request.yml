@@ -1,0 +1,122 @@
+name: Pull request validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5-alpine
+        env:
+          POSTGRES_DB: fasalguard_test
+          POSTGRES_USER: fasalguard
+          POSTGRES_PASSWORD: test-only-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fasalguard -d fasalguard_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s
+          --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: services/api
+    env:
+      NODE_ENV: test
+      # HTTP integration tests exercise producers/controllers without starting queue consumers.
+      PROCESS_ROLE: api
+      DATABASE_URL: postgresql://fasalguard:test-only-password@localhost:5432/fasalguard_test
+      DATABASE_SSL: "false"
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-only-secret-ci-only-secret-ci-only-secret-ci-only-secret
+      CORS_ORIGINS: http://localhost:3000
+      OBJECT_STORAGE_PROVIDER: mock
+      OTP_PROVIDER: development
+      METRICS_ENABLED: "false"
+      VISION_PROVIDER: self-hosted
+      SELF_HOSTED_VISION_URL: http://localhost:8000
+      GEOSPATIAL_AI_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/api/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Apply and validate migrations on fresh PostGIS
+        run: |
+          npm run migration:run
+          npm run migration:show
+      - run: npm run test:integration
+      - name: Build API and worker entry points
+        run: |
+          npm run build
+          test -f dist/main.js
+          test -f dist/worker.js
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  ai-service:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: services/geospatial-ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/geospatial-ai/requirements.txt
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements.txt pytest pip-audit
+      - run: python -m compileall -q app
+      - run: pytest -q
+      - run: pip-audit -r requirements.txt
+
+  images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: [api, ai-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/api
+          target: production
+          push: false
+          tags: fasalguard-api:pr
+      - name: Build worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/api
+          target: worker
+          push: false
+          tags: fasalguard-worker:pr
+      - name: Build AI service image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/geospatial-ai
+          push: false
+          tags: fasalguard-ai-service:pr
