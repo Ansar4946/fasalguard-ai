@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { Feature, Point, Polygon } from 'geojson';
 import { DataSource, type EntityManager } from 'typeorm';
+import { EntitlementMetric } from '../billing/billing.enums';
+import { EntitlementService } from '../billing/entitlement.service';
 import { GeospatialService } from '../geospatial/geospatial.service';
 import type {
   CreateFarmDto,
@@ -44,10 +46,24 @@ export class FarmManagementService {
   constructor(
     @InjectDataSource() private readonly db: DataSource,
     private readonly geo: GeospatialService,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   async listFarms(userId: string): Promise<FarmRow[]> {
     return this.db.query(this.farmSelect(`fp.user_id=$1`), [userId]);
+  }
+
+  async listFields(userId: string, farmId: string): Promise<FieldRow[]> {
+    await this.requireFarm(userId, farmId, this.db.manager);
+    return this.db.query(
+      `SELECT fi.id,fi.farm_id AS "farmId",fi.name,ST_AsGeoJSON(fi.boundary)::json AS boundary,ST_AsGeoJSON(fi.centroid)::json AS centroid,
+       fi.area_hectares AS "areaHectares",fi.created_at AS "createdAt",fi.updated_at AS "updatedAt",
+       CASE WHEN cc.id IS NULL THEN NULL ELSE json_build_object('id',cc.id,'cropId',cc.crop_id,'varietyId',cc.crop_variety_id,'sowingDate',cc.sowing_date,'expectedHarvestDate',cc.expected_harvest_date,'growthStage',cc.growth_stage,'status',cc.status) END AS "currentCropCycle"
+       FROM fields fi
+       LEFT JOIN LATERAL (SELECT * FROM crop_cycles x WHERE x.field_id=fi.id AND x.deleted_at IS NULL AND x.status IN ('planned','active') ORDER BY x.created_at DESC LIMIT 1) cc ON true
+       WHERE fi.farm_id=$1 AND fi.deleted_at IS NULL ORDER BY fi.created_at DESC`,
+      [farmId],
+    );
   }
 
   async createFarm(userId: string, dto: CreateFarmDto): Promise<FarmRow> {
@@ -58,6 +74,16 @@ export class FarmManagementService {
         [userId],
       );
       if (!farmers[0]) throw this.notFound('Farmer profile');
+      const existingFarms: Array<{ count: string }> = await manager.query(
+        `SELECT count(*)::text count FROM farms f JOIN farmer_profiles fp ON fp.id=f.farmer_id WHERE fp.user_id=$1 AND f.deleted_at IS NULL`,
+        [userId],
+      );
+      await this.entitlements.assertWithinLimit(
+        userId,
+        EntitlementMetric.Farms,
+        Number(existingFarms[0]?.count ?? 0),
+        manager,
+      );
       const rows: Array<{ id: string }> = await manager.query(
         `INSERT INTO farms(farmer_id,name,province,district,tehsil,soil_type,irrigation_type,water_source,boundary,centroid,area_hectares)
          VALUES($1,$2,$3,$4,$5,$6,$7,$8,ST_SetSRID(ST_GeomFromGeoJSON($9),4326),ST_SetSRID(ST_GeomFromGeoJSON($10),4326),$11) RETURNING id`,
@@ -154,8 +180,19 @@ export class FarmManagementService {
           metrics.areaHectares,
         ],
       );
-      if (dto.currentCropCycle)
+      if (dto.currentCropCycle) {
+        const existingSeasons: Array<{ count: string }> = await manager.query(
+          `SELECT count(*)::text count FROM crop_cycles cc JOIN fields fi ON fi.id=cc.field_id JOIN farms f ON f.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=f.farmer_id WHERE fp.user_id=$1 AND cc.deleted_at IS NULL AND cc.status IN ('planned','active')`,
+          [userId],
+        );
+        await this.entitlements.assertWithinLimit(
+          userId,
+          EntitlementMetric.ActiveCropSeasons,
+          Number(existingSeasons[0]?.count ?? 0),
+          manager,
+        );
         await this.replaceCurrentCycle(manager, rows[0]!.id, dto.currentCropCycle);
+      }
       return this.requireField(userId, rows[0]!.id, manager);
     });
   }

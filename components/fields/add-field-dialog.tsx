@@ -1,11 +1,166 @@
-﻿"use client";
-import {useEffect,useId,useState} from "react";import type {CreateFieldInput,Farm,IrrigationStatus} from "@/features/farms/types";
-type Props={farm:Farm;open:boolean;onClose:()=>void;onSave?:(field:CreateFieldInput)=>void;onAdd?:(field:CreateFieldInput)=>void};
-type FormState={name:string;sizeAcres:string;crop:string;variety:string;growthStage:string;previousCrop:string;sowingDate:string;expectedHarvest:string;irrigation:IrrigationStatus};type Errors=Partial<Record<keyof FormState,string>>;
-const initial:FormState={name:"",sizeAcres:"",crop:"Wheat",variety:"",growthStage:"Germination",previousCrop:"",sowingDate:"",expectedHarvest:"",irrigation:"available"};
-export function AddFieldDialog({farm,open,onClose,onSave,onAdd}:Props){const titleId=useId();const [form,setForm]=useState(initial);const [errors,setErrors]=useState<Errors>({});const [draftSaved,setDraftSaved]=useState(false);useEffect(()=>{if(!open)return;const key=(e:KeyboardEvent)=>e.key==="Escape"&&onClose();document.addEventListener("keydown",key);document.body.style.overflow="hidden";return()=>{document.removeEventListener("keydown",key);document.body.style.overflow=""}},[open,onClose]);if(!open)return null;function update<K extends keyof FormState>(key:K,value:FormState[K]){setForm(current=>({...current,[key]:value}));setErrors(current=>({...current,[key]:undefined}));setDraftSaved(false)}function submit(e:React.FormEvent){e.preventDefault();const next:Errors={};const area=Number(form.sizeAcres);if(form.name.trim().length<2)next.name="Enter a field name.";if(!Number.isFinite(area)||area<=0)next.sizeAcres="Enter an area greater than zero.";if(!form.variety.trim())next.variety="Enter the crop variety.";if(!form.sowingDate)next.sowingDate="Select the sowing date.";if(form.expectedHarvest&&form.sowingDate&&form.expectedHarvest<form.sowingDate)next.expectedHarvest="Harvest must be after sowing.";if(Object.keys(next).length){setErrors(next);return}(onSave??onAdd)?.({farmId:farm.id,name:form.name.trim(),sizeAcres:area,crop:form.crop,variety:form.variety.trim(),sowingDate:form.sowingDate,irrigation:form.irrigation});setForm(initial);setErrors({});onClose()}return <div className="fixed inset-0 z-[100] flex items-stretch justify-end bg-[#17324d]/35 backdrop-blur-[3px]" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section role="dialog" aria-modal="true" aria-labelledby={titleId} className="flex h-full w-full flex-col bg-[#f8f9ff] shadow-2xl sm:my-auto sm:mr-[6vw] sm:h-auto sm:max-h-[92dvh] sm:max-w-[620px] sm:rounded-2xl"><header className="flex items-start justify-between border-b border-brand/5 bg-white px-5 py-4 sm:px-7"><div><h2 id={titleId} className="text-xl font-extrabold text-brand-dark">Add New Field</h2><p className="mt-1 text-[11px] text-muted">Define field boundaries and crop details for AI monitoring.</p></div><button type="button" onClick={onClose} aria-label="Close add field dialog" className="grid size-9 place-items-center rounded-full text-lg text-muted hover:bg-surface-soft">Ã—</button></header><form onSubmit={submit} className="flex min-h-0 flex-1 flex-col"><div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-7"><fieldset><legend className="mb-4 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-wider text-brand"><span className="size-2 rounded-full bg-brand"/>General Information</legend><Field label="Field Name" error={errors.name}><input autoFocus value={form.name} onChange={e=>update("name",e.target.value)} placeholder="e.g. North Ridge 01" className={inputClass}/><small className="mt-1 block text-[9px] font-normal text-muted">Choose a unique name that is easy to identify on the map.</small></Field><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Select Farm"><select value={farm.id} aria-readonly="true" className={inputClass}><option value={farm.id}>{farm.name}</option></select></Field><Field label="Field Size (Acres)" error={errors.sizeAcres}><div className="relative"><input type="number" min="0.1" step="0.1" value={form.sizeAcres} onChange={e=>update("sizeAcres",e.target.value)} placeholder="0.00" className={`${inputClass} pr-12`}/><span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted">AC</span></div></Field></div></fieldset>
- <fieldset className="rounded-2xl border border-brand/5 bg-[#f1f4f2] p-4"><legend className="flex items-center gap-2 px-1 text-[10px] font-extrabold uppercase tracking-wider text-brand">âŒ˜ Crop Details</legend><div className="mt-3 grid gap-4 sm:grid-cols-2"><Field label="Main Crop"><select value={form.crop} onChange={e=>update("crop",e.target.value)} className={inputClass}><option>Wheat</option><option>Cotton</option><option>Rice</option><option>Maize</option><option>Sugarcane</option></select></Field><Field label="Crop Variety" error={errors.variety}><input value={form.variety} onChange={e=>update("variety",e.target.value)} placeholder="e.g. Inqlab 91" className={inputClass}/></Field><Field label="Current Growth Stage"><select value={form.growthStage} onChange={e=>update("growthStage",e.target.value)} className={inputClass}><option>Germination</option><option>Seedling</option><option>Vegetative</option><option>Flowering</option><option>Harvesting</option></select></Field><Field label="Previous Crop"><input value={form.previousCrop} onChange={e=>update("previousCrop",e.target.value)} placeholder="What was planted here before?" className={inputClass}/></Field></div></fieldset>
- <fieldset><legend className="mb-4 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-wider text-brand">â–£ Schedule & Irrigation</legend><div className="grid gap-4 sm:grid-cols-2"><Field label="Sowing Date" error={errors.sowingDate}><input type="date" value={form.sowingDate} onChange={e=>update("sowingDate",e.target.value)} className={inputClass}/></Field><Field label="Expected Harvest" error={errors.expectedHarvest}><input type="date" value={form.expectedHarvest} onChange={e=>update("expectedHarvest",e.target.value)} className={inputClass}/></Field></div><div className="mt-4"><Field label="Irrigation Type"><select value={form.irrigation} onChange={e=>update("irrigation",e.target.value as IrrigationStatus)} className={inputClass}><option value="available">Drip / Irrigated</option><option value="limited">Limited irrigation</option><option value="unavailable">Rain-fed / unavailable</option></select></Field></div></fieldset>{draftSaved&&<p role="status" className="rounded-xl bg-green-50 p-3 text-xs font-bold text-green-950">Draft saved on this device.</p>}</div><footer className="flex flex-col-reverse gap-3 border-t border-border bg-white px-5 py-4 sm:flex-row sm:items-center sm:px-7"><button type="button" onClick={onClose} className="min-h-10 rounded-xl border border-border px-5 text-xs font-bold">Cancel</button><button type="button" onClick={()=>setDraftSaved(true)} className="min-h-10 rounded-xl px-5 text-xs font-bold text-brand sm:ml-auto">â–± Save Draft</button><button type="submit" className="min-h-10 rounded-full bg-brand px-6 text-xs font-extrabold text-white">â— Save Field</button></footer></form></section></div>}
-const inputClass="mt-2 h-11 w-full rounded-xl border border-border bg-white px-3 text-xs text-foreground outline-none focus:border-brand focus:ring-1 focus:ring-brand";
-function Field({label,error,children}:{label:string;error?:string;children:React.ReactNode}){return <label className="block text-[11px] font-bold text-foreground">{label}{children}{error&&<span role="alert" className="mt-1 block text-[10px] font-semibold text-danger">{error}</span>}</label>}
+"use client";
 
+import { useEffect, useId, useState } from "react";
+import { useRouter } from "next/navigation";
+import { BoundaryPicker } from "@/components/farms/boundary-picker";
+import { toGeoJsonPolygon } from "@/lib/geo/polygon";
+import type { FieldSummary } from "./types";
+
+interface Props {
+  farmId: string;
+  farmName: string;
+  open: boolean;
+  onClose: () => void;
+  onCreated: (field: FieldSummary) => void;
+}
+
+const inputClass =
+  "mt-2 h-11 w-full rounded-xl border border-border bg-white px-3 text-xs text-foreground outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+
+export function AddFieldDialog({ farmId, farmName, open, onClose, onCreated }: Props) {
+  const router = useRouter();
+  const titleId = useId();
+  const [name, setName] = useState("");
+  const [points, setPoints] = useState<[number, number][]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    const key = (event: KeyboardEvent) => event.key === "Escape" && handleClose();
+    document.addEventListener("keydown", key);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", key);
+      document.body.style.overflow = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  if (!open) return null;
+
+  function handleClose() {
+    setName("");
+    setPoints([]);
+    setError("");
+    setSubmitting(false);
+    onClose();
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (name.trim().length < 2) {
+      setError("Enter a field name.");
+      return;
+    }
+    if (points.length < 3) {
+      setError("Place at least 3 points on the map to draw the field boundary.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/farms/${farmId}/fields`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), boundary: toGeoJsonPolygon(points) }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(body.error?.message ?? "Could not create the field. Try again.");
+        return;
+      }
+      onCreated(body as FieldSummary);
+      router.refresh();
+      handleClose();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-stretch justify-end bg-[#17324d]/35 backdrop-blur-[3px]"
+      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="flex h-full w-full flex-col bg-[#f8f9ff] shadow-2xl sm:my-auto sm:mr-[6vw] sm:h-auto sm:max-h-[92dvh] sm:max-w-[640px] sm:rounded-2xl"
+      >
+        <header className="flex items-start justify-between border-b border-brand/5 bg-white px-5 py-4 sm:px-7">
+          <div>
+            <h2 id={titleId} className="text-xl font-extrabold text-brand-dark">
+              Add New Field
+            </h2>
+            <p className="mt-1 text-[11px] text-muted">Draw the field boundary on the map and give it a name.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close add field dialog"
+            className="grid size-9 place-items-center rounded-full text-lg text-muted hover:bg-surface-soft"
+          >
+            ×
+          </button>
+        </header>
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
+            <fieldset>
+              <legend className="mb-4 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-wider text-brand">
+                <span className="size-2 rounded-full bg-brand" />
+                General Information
+              </legend>
+              <label className="block text-[11px] font-bold text-foreground" htmlFor="field-name">
+                Field Name
+                <input
+                  id="field-name"
+                  autoFocus
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="e.g. North Ridge 01"
+                  className={inputClass}
+                />
+                <small className="mt-1 block text-[9px] font-normal text-muted">
+                  Choose a unique name that is easy to identify on the map.
+                </small>
+              </label>
+              <div className="mt-4">
+                <label className="block text-[11px] font-bold text-foreground" htmlFor="field-farm">
+                  Farm
+                  <input id="field-farm" value={farmName} readOnly aria-readonly="true" className={`${inputClass} bg-surface-soft`} />
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend className="mb-4 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-wider text-brand">
+                Field Boundary
+              </legend>
+              <BoundaryPicker points={points} onChange={setPoints} />
+            </fieldset>
+
+            {error && (
+              <p role="alert" className="rounded-xl border border-danger/20 bg-danger/5 px-3 py-2 text-[10px] font-semibold text-danger">
+                {error}
+              </p>
+            )}
+          </div>
+          <footer className="flex flex-col-reverse gap-3 border-t border-border bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-7">
+            <button type="button" onClick={handleClose} className="min-h-10 rounded-xl border border-border px-5 text-xs font-bold">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="min-h-10 rounded-full bg-brand px-6 text-xs font-extrabold text-white disabled:opacity-60"
+            >
+              {submitting ? "Saving field…" : "Save Field"}
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  );
+}

@@ -1,13 +1,148 @@
-import Link from "next/link";import type {Farm} from "@/features/farms/types";import {Icon} from "@/components/ui/icon";
-const farmMap="https://lh3.googleusercontent.com/aida-public/AB6AXuDDxEDBr5GTTcxstYgfmN1hprMnPhJdHeq0HiGSKTsvDV4RTBXaUiPQP7hgs7lwAlHmuPC4iUa3yufxnKzXcEeQDB6-yNJpTVwrRo--BH7_gCLa-wbilBPcFV75nVslDd5e-SH65Nv8ZRs3m-nqx_kNo85Fjhvl5cDh3DnA6ATgY_qZUiROn5foY1uZAGbCoaSB6u-Dz7RjxOr1PxEzctuj7U_48uzIUyungpMmgzPBbyb-HshgUVIl";
-export function FarmDetail({farm}:{farm:Farm}){return <div className="mx-auto max-w-[1180px] p-4 md:p-6 xl:p-8"><header><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><nav className="text-xs text-muted"><Link href="/farms">My Farms</Link> <span>›</span> <strong className="text-brand">{farm.name}</strong></nav><h1 className="mt-2 text-[28px] font-extrabold leading-tight">{farm.name}</h1><p className="mt-1 text-sm text-muted">⌖ {farm.location} <span className="mx-2">•</span> Established 2018</p></div><div className="flex gap-2"><button className="min-h-10 rounded-xl border border-border bg-white px-4 text-xs font-bold">↗ Share</button><button className="min-h-10 rounded-xl border border-border bg-white px-4 text-xs font-bold">✎ Manage</button></div></div><section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4"><Quick icon="field" label="Total Area" value="124 Acres" tone="blue"/><Quick icon="expert" label="Avg Health" value="88% Good" tone="green"/><Quick icon="radar" label="Irrigation" value="Optimized" tone="amber"/><Quick icon="bell" label="Active Alerts" value="2 Issues" tone="red"/></section></header>
- <nav className="mt-6 flex gap-6 overflow-x-auto border-b border-brand/10 text-xs font-bold"><Link href={`/farms/${farm.id}`} className="min-h-11 whitespace-nowrap border-b-2 border-brand pt-3 text-brand">Overview</Link><Link href={`/farms/${farm.id}/fields`} className="min-h-11 whitespace-nowrap pt-3 text-muted">Fields</Link><Link href="/satellite" className="min-h-11 whitespace-nowrap pt-3 text-muted">Satellite</Link><Link href="/weather" className="min-h-11 whitespace-nowrap pt-3 text-muted">Weather</Link><span className="min-h-11 whitespace-nowrap pt-3 text-muted">Crop Health</span><span className="min-h-11 whitespace-nowrap pt-3 text-muted">Timeline</span><span className="min-h-11 whitespace-nowrap pt-3 text-muted">Reports</span></nav>
- <div className="mt-5 grid gap-5 lg:grid-cols-12"><section className="rounded-3xl border border-brand/10 bg-white p-5 shadow-sm lg:col-span-8"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-base font-extrabold">Farm Health Trend</h2><p className="mt-1 text-xs text-muted">Vegetation Index (NDVI) over last 30 days</p></div><span className="w-fit rounded-full bg-brand-soft px-3 py-1 text-[10px] font-bold text-brand">● Current Index: 0.72</span></div><div className="mt-7 flex h-56 items-end gap-2 border-b border-l border-brand/5 px-3 pt-5">{[60,65,58,72,80,78,85,82,90,95].map((v,i)=><div key={i} className={`flex-1 rounded-t-lg ${i===9?"bg-brand":"bg-brand/20"}`} style={{height:`${v}%`}}><span className="sr-only">NDVI sample {i+1}: {v}</span></div>)}</div><div className="mt-3 flex justify-between text-[10px] text-muted"><span>Oct 01</span><span>Oct 10</span><span>Oct 20</span><strong className="text-brand">Today (Oct 30)</strong></div></section>
- <section className="relative overflow-hidden rounded-3xl bg-brand p-6 text-white lg:col-span-4"><div className="flex justify-between"><div><p className="text-xs font-bold uppercase text-white/70">Multan Weather</p><h2 className="mt-1 text-4xl font-extrabold">24°C</h2></div><span className="text-5xl">☀</span></div><p className="mt-3 text-sm leading-6 text-white/80">Partly sunny with a light breeze. Check local guidance before fertilization.</p><dl className="mt-9 grid grid-cols-2 gap-3 rounded-2xl bg-white/10 p-4"><Weather label="Humidity" value="42%"/><Weather label="Wind Speed" value="12 km/h"/><Weather label="Rain Prob." value="5%"/><Weather label="UV Index" value="High (7)"/></dl></section>
- <section className="rounded-3xl border border-brand/10 bg-white p-5 shadow-sm lg:col-span-5"><div className="flex items-center gap-2"><Icon name="farm" className="size-5 text-brand"/><h2 className="text-base font-extrabold">Farm Infrastructure</h2></div><div className="mt-5 space-y-3"><Infrastructure label="Soil Type" value="Alluvial Soil"/><Infrastructure label="Irrigation" value="Drip System"/><Infrastructure label="Water Source" value="Tubewell / Canal"/></div><h3 className="mt-5 text-xs font-bold text-muted">Crop Distribution</h3><div className="mt-3 flex h-9 overflow-hidden rounded-full text-[10px] font-extrabold"><span className="flex w-[60%] items-center bg-brand px-3 text-white">COTTON 60%</span><span className="flex w-[40%] items-center bg-brand-soft px-3 text-brand-dark">WHEAT 40%</span></div><div className="mt-3 flex gap-4 text-[10px] text-muted"><span>■ 74.4 Acres</span><span>■ 49.6 Acres</span></div></section>
- <section className="overflow-hidden rounded-3xl border border-brand/10 bg-white shadow-sm lg:col-span-7"><div className="flex items-center justify-between border-b border-brand/5 p-5"><div className="flex items-center gap-2"><Icon name="bell" className="size-5 text-danger"/><h2 className="text-base font-extrabold">Intelligence & Alerts</h2></div><button className="text-xs font-bold text-brand">View All</button></div><div className="space-y-3 p-5"><Alert title="Pest Risk Detected" time="2h ago" text="Satellite evidence suggests possible whitefly activity in North Block (Field 04). Inspect before taking action." danger/><Alert title="Irrigation Advisory" time="5h ago" text="Soil moisture in Wheat Zone is below 40%. Review the irrigation schedule."/><Alert title="Scan Completed" time="Yesterday" text="Leaf scan of Field 02 shows strong nitrogen sufficiency. No action required." muted/></div></section>
- <section className="relative h-[390px] overflow-hidden rounded-3xl border border-brand/10 shadow-lg lg:col-span-12"><div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage:`url(${farmMap})`}} role="img" aria-label={`Satellite view of ${farm.name}`}/><div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/15"/><div className="absolute left-4 top-4 rounded-xl bg-white/90 p-3 text-[10px] shadow"><strong>AI SATELLITE MONITORING</strong><p className="mt-1 text-muted">Clear capture · 8% cloud · 30 Jul</p></div>{[{l:22,t:35,n:"Field 01"},{l:46,t:48,n:"Field 02"},{l:70,t:32,n:"Field 03"}].map(x=><span key={x.n} style={{left:`${x.l}%`,top:`${x.t}%`}} className="absolute rounded-lg border border-brand-soft bg-brand/85 px-3 py-1.5 text-[10px] font-bold text-white">{x.n}</span>)}<div className="absolute bottom-4 left-4 flex flex-wrap gap-2"><Link href="/satellite" className="rounded-xl bg-white px-4 py-2 text-xs font-bold">Open monitoring</Link><Link href="/satellite" className="rounded-xl bg-brand px-4 py-2 text-xs font-bold text-white">Satellite layers</Link><Link href="/weather" className="rounded-xl bg-[#d9ad45] px-4 py-2 text-xs font-bold text-brand-dark">Weather impact</Link></div></section></div></div>}
-function Quick({icon,label,value,tone}:{icon:"field"|"expert"|"radar"|"bell";label:string;value:string;tone:string}){const style=tone==="red"?"bg-red-50 text-danger":tone==="amber"?"bg-amber-50 text-warning":tone==="green"?"bg-green-50 text-success":"bg-blue-50 text-info";return <article className="flex min-h-20 items-center gap-3 rounded-2xl border border-brand/10 bg-white p-4"><span className={`grid size-10 shrink-0 place-items-center rounded-xl ${style}`}><Icon name={icon}/></span><div><p className="text-[10px] font-bold text-muted">{label}</p><p className="mt-1 text-sm font-extrabold">{value}</p></div></article>}
-function Weather({label,value}:{label:string;value:string}){return <div><dt className="text-[10px] text-white/60">{label}</dt><dd className="mt-1 text-xs font-extrabold">{value}</dd></div>}
-function Infrastructure({label,value}:{label:string;value:string}){return <div className="flex items-center justify-between rounded-xl bg-brand/5 p-3 text-xs"><span>{label}</span><strong className="text-brand">{value}</strong></div>}
-function Alert({title,time,text,danger,muted}:{title:string;time:string;text:string;danger?:boolean;muted?:boolean}){return <article className={`flex gap-3 rounded-2xl border p-4 ${danger?"border-red-100 bg-red-50":muted?"border-brand/5 bg-surface-soft opacity-70":"border-brand/5 bg-surface-soft"}`}><span className={`grid size-9 shrink-0 place-items-center rounded-full ${danger?"bg-red-100 text-danger":"bg-brand-soft text-brand"}`}>{danger?"!":"✓"}</span><div><div className="flex justify-between gap-4"><h3 className="text-xs font-extrabold">{title}</h3><time className="text-[9px] text-muted">{time}</time></div><p className="mt-1 text-[10px] leading-4 text-muted">{text}</p>{danger&&<div className="mt-2 flex gap-2"><button className="rounded-lg bg-danger px-3 py-1.5 text-[9px] font-bold text-white">Inspect affected field</button><button className="rounded-lg border border-red-200 px-3 py-1.5 text-[9px] font-bold text-danger">Details</button></div>}</div></article>}
+import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
+import { BoundaryPreview } from "@/components/farms/boundary-preview";
+import { DeleteFarmButton } from "@/components/farms/delete-farm-button";
+import type { GeoJsonPolygon } from "@/lib/geo/polygon";
+
+export interface FarmDetailData {
+  id: string;
+  name: string;
+  province: string | null;
+  district: string | null;
+  tehsil: string | null;
+  soilType: string | null;
+  irrigationType: string | null;
+  waterSource: string | null;
+  boundary: GeoJsonPolygon;
+  areaHectares: number;
+}
+
+const HECTARES_TO_ACRES = 2.47105;
+
+export function FarmDetail({ farm }: { farm: FarmDetailData }) {
+  const location = [farm.tehsil, farm.district, farm.province].filter(Boolean).join(", ") || "Location not set";
+  const acres = (farm.areaHectares * HECTARES_TO_ACRES).toFixed(1);
+
+  return (
+    <div className="mx-auto max-w-[1180px] p-4 md:p-6 xl:p-8">
+      <header>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <nav className="text-xs text-muted">
+              <Link href="/farms">My Farms</Link> <span>›</span> <strong className="text-brand">{farm.name}</strong>
+            </nav>
+            <h1 className="mt-2 text-[28px] font-extrabold leading-tight">{farm.name}</h1>
+            <p className="mt-1 text-sm text-muted">⌖ {location}</p>
+          </div>
+          <div className="flex shrink-0 items-start gap-2">
+            <Link
+              href={`/farms/${farm.id}/edit`}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-brand px-4 text-xs font-bold text-white transition hover:bg-brand-dark"
+            >
+              Edit
+            </Link>
+            <DeleteFarmButton farmId={farm.id} farmName={farm.name} />
+          </div>
+        </div>
+        <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Quick icon="field" label="Total Area" value={`${acres} Acres`} tone="blue" />
+          <Quick icon="expert" label="Avg Health" value="Not yet available" tone="muted" />
+          <Quick icon="radar" label="Irrigation" value={farm.irrigationType ?? "Not set"} tone="amber" />
+          <Quick icon="bell" label="Active Alerts" value="No alerts yet" tone="muted" />
+        </section>
+      </header>
+
+      <nav className="mt-6 flex gap-6 overflow-x-auto border-b border-brand/10 text-xs font-bold">
+        <Link href={`/farms/${farm.id}`} className="min-h-11 whitespace-nowrap border-b-2 border-brand pt-3 text-brand">
+          Overview
+        </Link>
+        <Link href={`/farms/${farm.id}/fields`} className="min-h-11 whitespace-nowrap pt-3 text-muted">
+          Fields
+        </Link>
+        <Link href="/satellite" className="min-h-11 whitespace-nowrap pt-3 text-muted">
+          Satellite
+        </Link>
+        <Link href="/weather" className="min-h-11 whitespace-nowrap pt-3 text-muted">
+          Weather
+        </Link>
+      </nav>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-12">
+        <section className="rounded-3xl border border-brand/10 bg-white p-5 shadow-sm lg:col-span-7">
+          <div className="flex items-center gap-2">
+            <Icon name="farm" className="size-5 text-brand" />
+            <h2 className="text-base font-extrabold">Farm Infrastructure</h2>
+          </div>
+          <div className="mt-5 space-y-3">
+            <Infrastructure label="Soil Type" value={farm.soilType ?? "Not set"} />
+            <Infrastructure label="Irrigation" value={farm.irrigationType ?? "Not set"} />
+            <Infrastructure label="Water Source" value={farm.waterSource ?? "Not set"} />
+          </div>
+          <div className="mt-5 rounded-2xl border border-dashed border-brand/15 bg-surface-soft p-4 text-center">
+            <p className="text-xs font-bold text-brand-dark">Crop distribution</p>
+            <p className="mt-1 text-[10px] text-muted">Add fields with crops to see crop distribution here.</p>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-3xl border border-brand/10 bg-white shadow-sm lg:col-span-5">
+          <div className="flex items-center gap-2 border-b border-brand/5 p-5">
+            <Icon name="satellite" className="size-5 text-brand" />
+            <h2 className="text-base font-extrabold">Farm Boundary</h2>
+          </div>
+          <div className="p-3">
+            <BoundaryPreview boundary={farm.boundary} />
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-3xl border border-brand/10 bg-white shadow-sm lg:col-span-12">
+          <div className="flex items-center justify-between border-b border-brand/5 p-5">
+            <div className="flex items-center gap-2">
+              <Icon name="bell" className="size-5 text-brand" />
+              <h2 className="text-base font-extrabold">Intelligence &amp; Alerts</h2>
+            </div>
+          </div>
+          <div className="flex min-h-32 flex-col items-center justify-center gap-2 p-8 text-center">
+            <p className="text-xs font-bold text-brand-dark">No alerts yet</p>
+            <p className="max-w-sm text-[10px] text-muted">
+              Weather, satellite, and crop-health alerts will appear here once monitoring is active for this farm.
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function Quick({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: "field" | "expert" | "radar" | "bell";
+  label: string;
+  value: string;
+  tone: "blue" | "amber" | "muted";
+}) {
+  const style = tone === "amber" ? "bg-amber-50 text-warning" : tone === "blue" ? "bg-blue-50 text-info" : "bg-surface-soft text-muted";
+  return (
+    <article className="flex min-h-20 items-center gap-3 rounded-2xl border border-brand/10 bg-white p-4">
+      <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${style}`}>
+        <Icon name={icon} />
+      </span>
+      <div>
+        <p className="text-[10px] font-bold text-muted">{label}</p>
+        <p className="mt-1 text-sm font-extrabold">{value}</p>
+      </div>
+    </article>
+  );
+}
+
+function Infrastructure({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-brand/5 p-3 text-xs">
+      <span>{label}</span>
+      <strong className="text-brand">{value}</strong>
+    </div>
+  );
+}

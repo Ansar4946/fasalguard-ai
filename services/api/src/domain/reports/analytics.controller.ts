@@ -13,4 +13,7 @@ export class AnalyticsController {
   @Get('impact') impact() {
     return this.analytics.impact();
   }
+  @Get('viability') viability() {
+    return this.analytics.viability();
+  }
 }

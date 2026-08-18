@@ -121,12 +121,13 @@ export class SyncService {
         ? MutationReceiptStatus.Conflict
         : MutationReceiptStatus.Applied;
       await this.db.query(
-        `UPDATE mutation_receipts SET status=$2,result=$3,conflict=$4,applied_at=CASE WHEN $2='APPLIED'THEN now()ELSE NULL END,updated_at=now() WHERE id=$1`,
+        `UPDATE mutation_receipts SET status=$2,result=$3,conflict=$4,applied_at=$5,updated_at=now() WHERE id=$1`,
         [
           receiptId,
           status,
           JSON.stringify(outcome.result ?? null),
           JSON.stringify(outcome.conflict ?? null),
+          status === MutationReceiptStatus.Applied ? new Date() : null,
         ],
       );
       return {

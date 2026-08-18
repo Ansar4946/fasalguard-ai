@@ -1,0 +1,1641 @@
+datasource db {
+  provider = "postgresql"
+}
+
+model action_plan_steps {
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action_plan_id       String               @db.Uuid
+  type                 String               @db.VarChar(32)
+  instruction          String
+  display_order        Int
+  source_guideline_id  String               @db.Uuid
+  source_field         String               @db.VarChar(48)
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime             @default(now()) @db.Timestamptz(6)
+  version              Int                  @default(1)
+  action_plans         action_plans         @relation(fields: [action_plan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  treatment_guidelines treatment_guidelines @relation(fields: [source_guideline_id], references: [id], onUpdate: NoAction)
+
+  @@index([action_plan_id, display_order], map: "idx_action_plan_steps_order")
+}
+
+model action_plans {
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id              String               @db.Uuid
+  guideline_id         String               @db.Uuid
+  guideline_version    Int
+  created_for_user_id  String               @db.Uuid
+  severity             String               @db.VarChar(16)
+  status               String               @default("ACTIVE") @db.VarChar(24)
+  generated_at         DateTime             @db.Timestamptz(6)
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime             @default(now()) @db.Timestamptz(6)
+  version              Int                  @default(1)
+  action_plan_steps    action_plan_steps[]
+  users                users                @relation(fields: [created_for_user_id], references: [id], onUpdate: NoAction)
+  treatment_guidelines treatment_guidelines @relation(fields: [guideline_id], references: [id], onUpdate: NoAction)
+  crop_scans           crop_scans           @relation(fields: [scan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  farm_interventions   farm_interventions[]
+
+  @@index([scan_id, created_at(sort: Desc)], map: "idx_action_plan_scan_created")
+}
+
+model ai_interactions {
+  id                    String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id               String?     @db.Uuid
+  user_id               String      @db.Uuid
+  purpose               String      @db.VarChar(40)
+  provider              String      @db.VarChar(40)
+  model_id              String      @db.VarChar(160)
+  model_version         String      @db.VarChar(80)
+  prompt_version        String      @db.VarChar(40)
+  input_data            Json
+  output_data           Json
+  raw_provider_response Json
+  status                String      @db.VarChar(24)
+  failure_code          String?     @db.VarChar(80)
+  created_at            DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime    @default(now()) @db.Timestamptz(6)
+  version               Int         @default(1)
+  crop_scans            crop_scans? @relation(fields: [scan_id], references: [id], onUpdate: NoAction)
+  users                 users       @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([scan_id, created_at(sort: Desc)], map: "idx_ai_interactions_scan_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model analytics_events {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_type   String   @db.VarChar(40)
+  actor_id     String?  @db.Uuid
+  subject_type String   @db.VarChar(40)
+  subject_id   String?  @db.Uuid
+  dimensions   Json     @default("{}")
+  source_key   String   @unique @db.VarChar(180)
+  occurred_at  DateTime @db.Timestamptz(6)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+  version      Int      @default(1)
+  users        users?   @relation(fields: [actor_id], references: [id], onUpdate: NoAction)
+
+  @@index([event_type, occurred_at(sort: Desc)], map: "idx_analytics_events_type_time")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model assistant_conversations {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String               @db.Uuid
+  farm_id            String?              @db.Uuid
+  field_id           String?              @db.Uuid
+  title              String               @db.VarChar(160)
+  status             String               @default("ACTIVE") @db.VarChar(16)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  version            Int                  @default(1)
+  farms              farms?               @relation(fields: [farm_id], references: [id], onUpdate: NoAction)
+  fields             fields?              @relation(fields: [field_id], references: [id], onUpdate: NoAction)
+  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  assistant_messages assistant_messages[]
+
+  @@index([user_id, updated_at(sort: Desc)], map: "idx_assistant_conversations_user_updated")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model assistant_messages {
+  id                      String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id         String                  @db.Uuid
+  role                    String                  @db.VarChar(16)
+  content                 String
+  media_asset_id          String?                 @db.Uuid
+  proposals               Json                    @default("[]")
+  provider                String?                 @db.VarChar(80)
+  model_id                String?                 @db.VarChar(100)
+  model_version           String?                 @db.VarChar(100)
+  prompt_version          String?                 @db.VarChar(40)
+  input_tokens            Int?
+  output_tokens           Int?
+  latency_ms              Int?
+  created_at              DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                @default(now()) @db.Timestamptz(6)
+  version                 Int                     @default(1)
+  assistant_conversations assistant_conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  media_assets            media_assets?           @relation(fields: [media_asset_id], references: [id], onUpdate: NoAction)
+
+  @@index([conversation_id, created_at], map: "idx_assistant_messages_conversation_created")
+}
+
+model auth_sessions {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                String    @db.Uuid
+  device_id              String?   @db.Uuid
+  refresh_token_hash     String    @unique @db.Char(64)
+  token_family           String    @db.Uuid
+  user_agent             String?   @db.VarChar(512)
+  ip_address             String?   @db.Inet
+  last_used_at           DateTime  @db.Timestamptz(6)
+  expires_at             DateTime  @db.Timestamptz(6)
+  revoked_at             DateTime? @db.Timestamptz(6)
+  revoke_reason          String?   @db.VarChar(64)
+  replaced_by_session_id String?   @db.Uuid
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @default(now()) @db.Timestamptz(6)
+  version                Int       @default(1)
+  devices                devices?  @relation(fields: [device_id], references: [id], onUpdate: NoAction)
+  users                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expires_at], map: "idx_auth_sessions_expiry")
+  @@index([token_family], map: "idx_auth_sessions_family")
+  @@index([user_id, expires_at], map: "idx_auth_sessions_user_active", where: raw("(revoked_at IS NULL)"))
+}
+
+model case_status_history {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id      String         @db.Uuid
+  actor_id       String?        @db.Uuid
+  from_status    String?        @db.VarChar(32)
+  to_status      String         @db.VarChar(32)
+  reason         String?
+  metadata       Json           @default("{}")
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime       @default(now()) @db.Timestamptz(6)
+  version        Int            @default(1)
+  users          users?         @relation(fields: [actor_id], references: [id], onUpdate: NoAction)
+  expert_reviews expert_reviews @relation(fields: [review_id], references: [id], onUpdate: NoAction)
+
+  @@index([review_id, created_at], map: "idx_case_status_history_review_time")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model community_reports {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporter_id             String                    @db.Uuid
+  field_id                String?                   @db.Uuid
+  scan_id                 String?                   @unique(map: "uq_community_scan_report", where: raw("(scan_id IS NOT NULL)")) @db.Uuid
+  source                  String                    @db.VarChar(32)
+  crop_id                 String                    @db.Uuid
+  condition_family        String                    @db.VarChar(160)
+  private_location        Unsupported("geometry")
+  public_area             Unsupported("geometry")
+  expert_confirmed        Boolean                   @default(false)
+  reported_at             DateTime                  @default(now()) @db.Timestamptz(6)
+  abuse_status            String                    @default("ACCEPTED") @db.VarChar(24)
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  version                 Int                       @default(1)
+  crops                   crops                     @relation(fields: [crop_id], references: [id], onUpdate: NoAction)
+  fields                  fields?                   @relation(fields: [field_id], references: [id], onUpdate: NoAction)
+  users                   users                     @relation(fields: [reporter_id], references: [id], onUpdate: NoAction)
+  crop_scans              crop_scans?               @relation(fields: [scan_id], references: [id], onUpdate: NoAction)
+  community_verifications community_verifications[]
+  outbreak_members        outbreak_members[]
+
+  @@index([crop_id, condition_family, reported_at(sort: Desc)], map: "idx_community_report_match")
+  @@index([private_location], map: "idx_community_report_private_gist", type: Gist)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model community_verifications {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  report_id         String            @db.Uuid
+  verifier_id       String            @db.Uuid
+  answer            String            @db.VarChar(24)
+  media_asset_id    String?           @db.Uuid
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime          @default(now()) @db.Timestamptz(6)
+  version           Int               @default(1)
+  media_assets      media_assets?     @relation(fields: [media_asset_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  community_reports community_reports @relation(fields: [report_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users             users             @relation(fields: [verifier_id], references: [id], onUpdate: NoAction)
+
+  @@unique([report_id, verifier_id], map: "uq_community_verification_vote")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model consents {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String    @db.Uuid
+  type           String    @db.VarChar(64)
+  policy_version String    @db.VarChar(32)
+  granted        Boolean
+  recorded_at    DateTime  @db.Timestamptz(6)
+  revoked_at     DateTime? @db.Timestamptz(6)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @default(now()) @db.Timestamptz(6)
+  version        Int       @default(1)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, type], map: "idx_consents_user_type")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model consultation_messages {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  consultation_id String        @db.Uuid
+  sender_id       String        @db.Uuid
+  type            String        @db.VarChar(16)
+  text            String?
+  media_asset_id  String?       @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  version         Int           @default(1)
+  consultations   consultations @relation(fields: [consultation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  media_assets    media_assets? @relation(fields: [media_asset_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  users           users         @relation(fields: [sender_id], references: [id], onUpdate: NoAction)
+
+  @@index([consultation_id, created_at], map: "idx_consultation_messages_time")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model consultations {
+  id                                   String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmer_id                            String                  @db.Uuid
+  expert_id                            String?                 @db.Uuid
+  scan_id                              String?                 @db.Uuid
+  subject                              String                  @db.VarChar(220)
+  status                               String                  @default("OPEN") @db.VarChar(24)
+  created_at                           DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                           DateTime                @default(now()) @db.Timestamptz(6)
+  version                              Int                     @default(1)
+  consultation_messages                consultation_messages[]
+  users_consultations_expert_idTousers users?                  @relation("consultations_expert_idTousers", fields: [expert_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  users_consultations_farmer_idTousers users                   @relation("consultations_farmer_idTousers", fields: [farmer_id], references: [id], onUpdate: NoAction)
+  crop_scans                           crop_scans?             @relation(fields: [scan_id], references: [id], onUpdate: NoAction)
+
+  @@index([expert_id, created_at(sort: Desc)], map: "idx_consultations_expert_created")
+  @@index([farmer_id, created_at(sort: Desc)], map: "idx_consultations_farmer_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model crop_cycles {
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  field_id                 String                     @unique(map: "uq_crop_cycles_field_current", where: raw("((deleted_at IS NULL) AND ((status)::text = ANY ((ARRAY['planned'::character varying, 'active'::character varying])::text[])))")) @db.Uuid
+  crop_id                  String                     @db.Uuid
+  crop_variety_id          String?                    @db.Uuid
+  status                   String                     @default("planned") @db.VarChar(24)
+  sowing_date              DateTime?                  @db.Date
+  expected_harvest_date    DateTime?                  @db.Date
+  actual_harvest_date      DateTime?                  @db.Date
+  created_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  deleted_at               DateTime?                  @db.Timestamptz(6)
+  version                  Int                        @default(1)
+  growth_stage             String?                    @db.VarChar(80)
+  crops                    crops                      @relation(fields: [crop_id], references: [id], onUpdate: NoAction)
+  crop_varieties           crop_varieties?            @relation(fields: [crop_variety_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fields                   fields                     @relation(fields: [field_id], references: [id], onUpdate: NoAction)
+  farm_incidents           farm_incidents[]
+  field_risk_assessments   field_risk_assessments[]
+  weather_risk_assessments weather_risk_assessments[]
+
+  @@index([field_id, status], map: "idx_crop_cycles_field_status")
+}
+
+model crop_scans {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id             String                 @db.Uuid
+  field_id             String?                @db.Uuid
+  status               String                 @default("CREATED") @db.VarChar(32)
+  confidence_policy    Json
+  failure_code         String?                @db.VarChar(80)
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  version              Int                    @default(1)
+  action_plans         action_plans[]
+  ai_interactions      ai_interactions[]
+  community_reports    community_reports?
+  consultations        consultations[]
+  fields               fields?                @relation(fields: [field_id], references: [id], onUpdate: NoAction)
+  users                users                  @relation(fields: [owner_id], references: [id], onUpdate: NoAction)
+  diagnoses            diagnoses?
+  expert_reviews       expert_reviews?
+  farm_verifications   farm_verifications[]
+  follow_up_questions  follow_up_questions[]
+  model_predictions    model_predictions[]
+  scan_images          scan_images[]
+  severity_assessments severity_assessments[]
+
+  @@index([field_id, created_at(sort: Desc)], map: "idx_crop_scans_field_created", where: raw("(field_id IS NOT NULL)"))
+  @@index([owner_id, created_at(sort: Desc)], map: "idx_crop_scans_owner_created")
+}
+
+model crop_varieties {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  crop_id              String                 @db.Uuid
+  name                 String                 @db.VarChar(160)
+  code                 String?                @db.VarChar(80)
+  is_active            Boolean                @default(true)
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  version              Int                    @default(1)
+  crop_cycles          crop_cycles[]
+  crops                crops                  @relation(fields: [crop_id], references: [id], onUpdate: NoAction)
+  treatment_guidelines treatment_guidelines[]
+
+  @@unique([crop_id, name], map: "uq_crop_varieties_crop_name")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model crop_weather_rules {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  crop_id               String           @db.Uuid
+  category              String           @db.VarChar(48)
+  suitability           String           @db.VarChar(24)
+  priority              Int              @default(0)
+  conditions            Json
+  message               String
+  source                String
+  source_url            String?
+  validation_status     String           @db.VarChar(32)
+  approved_by_expert_id String?          @db.Uuid
+  approved_at           DateTime?        @db.Timestamptz(6)
+  active                Boolean          @default(true)
+  created_at            DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime         @default(now()) @db.Timestamptz(6)
+  version               Int              @default(1)
+  expert_profiles       expert_profiles? @relation(fields: [approved_by_expert_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  crops                 crops            @relation(fields: [crop_id], references: [id], onUpdate: NoAction)
+
+  @@index([crop_id, active], map: "idx_crop_weather_rules_crop_active")
+}
+
+model crops {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                 String                 @unique @db.VarChar(80)
+  name                 String                 @db.VarChar(120)
+  scientific_name      String?                @db.VarChar(160)
+  is_active            Boolean                @default(true)
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  version              Int                    @default(1)
+  community_reports    community_reports[]
+  crop_cycles          crop_cycles[]
+  crop_varieties       crop_varieties[]
+  crop_weather_rules   crop_weather_rules[]
+  outbreak_clusters    outbreak_clusters[]
+  treatment_guidelines treatment_guidelines[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model device_tokens {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                 String                    @db.Uuid
+  device_id               String?                   @db.Uuid
+  token_value             String
+  token_hash              String                    @unique @db.Char(64)
+  platform                String                    @db.VarChar(16)
+  active                  Boolean                   @default(true)
+  last_seen_at            DateTime                  @db.Timestamptz(6)
+  invalidated_at          DateTime?                 @db.Timestamptz(6)
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  deleted_at              DateTime?                 @db.Timestamptz(6)
+  version                 Int                       @default(1)
+  devices                 devices?                  @relation(fields: [device_id], references: [id], onUpdate: NoAction)
+  users                   users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notification_deliveries notification_deliveries[]
+
+  @@index([user_id, active], map: "idx_device_tokens_user_active")
+}
+
+model devices {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String              @db.Uuid
+  device_identifier String              @db.VarChar(180)
+  platform          String              @db.VarChar(16)
+  push_token        String?             @unique(map: "uq_devices_push_token_active", where: raw("((deleted_at IS NULL) AND (push_token IS NOT NULL))")) @db.VarChar(512)
+  last_seen_at      DateTime?           @db.Timestamptz(6)
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime            @default(now()) @db.Timestamptz(6)
+  deleted_at        DateTime?           @db.Timestamptz(6)
+  version           Int                 @default(1)
+  auth_sessions     auth_sessions[]
+  device_tokens     device_tokens[]
+  users             users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  mutation_receipts mutation_receipts[]
+
+  @@unique([user_id, device_identifier], map: "uq_devices_user_identifier_active", where: raw("(deleted_at IS NULL)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model diagnoses {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id                String                   @unique @db.Uuid
+  screened_condition     String?                  @db.VarChar(200)
+  confidence             Float?
+  disposition            String                   @db.VarChar(40)
+  is_firm_diagnosis      Boolean                  @default(false)
+  disclaimer             String
+  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  version                Int                      @default(1)
+  crop_scans             crop_scans               @relation(fields: [scan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  diagnosis_alternatives diagnosis_alternatives[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model diagnosis_alternatives {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  diagnosis_id String    @db.Uuid
+  rank         Int
+  condition    String    @db.VarChar(200)
+  confidence   Float
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+  version      Int       @default(1)
+  diagnoses    diagnoses @relation(fields: [diagnosis_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([diagnosis_id, rank], map: "uq_diagnosis_alternative_rank")
+}
+
+model expert_assignments {
+  id                                          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id                                   String         @unique(map: "uq_expert_assignment_active", where: raw("(unassigned_at IS NULL)")) @db.Uuid
+  expert_id                                   String         @db.Uuid
+  assigned_by                                 String         @db.Uuid
+  assigned_at                                 DateTime       @default(now()) @db.Timestamptz(6)
+  unassigned_at                               DateTime?      @db.Timestamptz(6)
+  created_at                                  DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at                                  DateTime       @default(now()) @db.Timestamptz(6)
+  version                                     Int            @default(1)
+  users_expert_assignments_assigned_byTousers users          @relation("expert_assignments_assigned_byTousers", fields: [assigned_by], references: [id], onUpdate: NoAction)
+  users_expert_assignments_expert_idTousers   users          @relation("expert_assignments_expert_idTousers", fields: [expert_id], references: [id], onUpdate: NoAction)
+  expert_reviews                              expert_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expert_id, assigned_at(sort: Desc)], map: "idx_expert_assignment_expert")
+}
+
+model expert_profiles {
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String               @unique @db.Uuid
+  full_name           String               @db.VarChar(160)
+  specialization      String               @db.VarChar(160)
+  license_number      String?              @db.VarChar(120)
+  verification_status String               @default("pending") @db.VarChar(24)
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime             @default(now()) @db.Timestamptz(6)
+  version             Int                  @default(1)
+  crop_weather_rules  crop_weather_rules[]
+  users               users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model expert_reviews {
+  id                          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id                     String                @unique @db.Uuid
+  status                      String                @default("PENDING") @db.VarChar(32)
+  decision                    String?               @db.VarChar(24)
+  confirmed_condition         String?               @db.VarChar(200)
+  decision_notes              String?
+  recommendation              String?
+  recommendation_guideline_id String?               @db.Uuid
+  resolved_at                 DateTime?             @db.Timestamptz(6)
+  created_at                  DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime              @default(now()) @db.Timestamptz(6)
+  version                     Int                   @default(1)
+  case_status_history         case_status_history[]
+  expert_assignments          expert_assignments?
+  treatment_guidelines        treatment_guidelines? @relation(fields: [recommendation_guideline_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  crop_scans                  crop_scans            @relation(fields: [scan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model farm_brain_run_evidence {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  run_id          String          @db.Uuid
+  evidence_id     String          @db.VarChar(255)
+  evidence_type   String          @db.VarChar(64)
+  source          String          @db.VarChar(80)
+  observed_at     DateTime?       @db.Timestamptz(6)
+  snapshot_hash   String          @db.Char(64)
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime        @default(now()) @db.Timestamptz(6)
+  version         Int             @default(1)
+  farm_brain_runs farm_brain_runs @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([run_id, evidence_id], map: "uq_farm_brain_evidence")
+  @@index([run_id], map: "idx_farm_brain_evidence_run")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model farm_brain_runs {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                 String                    @db.Uuid
+  farm_id                 String                    @db.Uuid
+  field_id                String?                   @db.Uuid
+  status                  String                    @db.VarChar(24)
+  operation               String                    @default("INVESTIGATE") @db.VarChar(32)
+  schema_version          String                    @db.VarChar(40)
+  input_hash              String                    @db.Char(64)
+  input_manifest          Json
+  result                  Json?
+  provider                String?                   @db.VarChar(80)
+  model_id                String?                   @db.VarChar(120)
+  model_version           String?                   @db.VarChar(120)
+  input_tokens            Int?
+  output_tokens           Int?
+  latency_ms              Int?
+  error_code              String?                   @db.VarChar(80)
+  started_at              DateTime?                 @db.Timestamptz(6)
+  completed_at            DateTime?                 @db.Timestamptz(6)
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  version                 Int                       @default(1)
+  farm_brain_run_evidence farm_brain_run_evidence[]
+  farms                   farms                     @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  fields                  fields?                   @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                   users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  farm_brain_tool_calls   farm_brain_tool_calls[]
+
+  @@unique([user_id, farm_id, input_hash], map: "uq_farm_brain_active_input", where: raw("((status)::text = ANY ((ARRAY['QUEUED'::character varying, 'RUNNING'::character varying, 'COMPLETED'::character varying])::text[]))"))
+  @@index([farm_id, created_at(sort: Desc)], map: "idx_farm_brain_runs_farm_created")
+  @@index([status, created_at(sort: Desc)], map: "idx_farm_brain_runs_status_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model farm_brain_tool_calls {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  run_id           String          @db.Uuid
+  name             String          @db.VarChar(64)
+  arguments        Json            @default("{}")
+  status           String          @db.VarChar(32)
+  reason           String
+  result_reference String?         @db.VarChar(255)
+  confirmed_by     String?         @db.Uuid
+  confirmed_at     DateTime?       @db.Timestamptz(6)
+  executed_at      DateTime?       @db.Timestamptz(6)
+  created_at       DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime        @default(now()) @db.Timestamptz(6)
+  version          Int             @default(1)
+  users            users?          @relation(fields: [confirmed_by], references: [id], onUpdate: NoAction)
+  farm_brain_runs  farm_brain_runs @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([run_id, status], map: "idx_farm_brain_tool_calls_run_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model farm_incidents {
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farm_id             String               @db.Uuid
+  field_id            String?              @db.Uuid
+  crop_cycle_id       String?              @db.Uuid
+  type                String               @db.VarChar(100)
+  state               String               @db.VarChar(24)
+  severity            String?              @db.VarChar(16)
+  confidence          Float?
+  title               String               @db.VarChar(200)
+  source              String               @db.VarChar(64)
+  source_identifier   String               @db.VarChar(255)
+  evidence_references Json                 @default("[]")
+  detected_at         DateTime             @db.Timestamptz(6)
+  resolved_at         DateTime?            @db.Timestamptz(6)
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime             @default(now()) @db.Timestamptz(6)
+  version             Int                  @default(1)
+  crop_cycles         crop_cycles?         @relation(fields: [crop_cycle_id], references: [id], onUpdate: NoAction)
+  farms               farms                @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  fields              fields?              @relation(fields: [field_id], references: [id], onUpdate: NoAction)
+  farm_interventions  farm_interventions[]
+  farm_verifications  farm_verifications[]
+
+  @@unique([source, source_identifier], map: "uq_farm_incident_source")
+  @@index([farm_id, state, detected_at(sort: Desc)], map: "idx_farm_incidents_farm_state_detected")
+  @@index([field_id, detected_at(sort: Desc)], map: "idx_farm_incidents_field_detected", where: raw("(field_id IS NOT NULL)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model farm_interventions {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farm_id             String          @db.Uuid
+  field_id            String?         @db.Uuid
+  incident_id         String?         @db.Uuid
+  action_plan_id      String?         @db.Uuid
+  task_id             String?         @db.Uuid
+  type                String          @db.VarChar(100)
+  status              String          @db.VarChar(24)
+  performed_at        DateTime        @db.Timestamptz(6)
+  recorded_by         String?         @db.Uuid
+  notes               String?
+  evidence_references Json            @default("[]")
+  created_at          DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime        @default(now()) @db.Timestamptz(6)
+  version             Int             @default(1)
+  action_plans        action_plans?   @relation(fields: [action_plan_id], references: [id], onUpdate: NoAction)
+  farms               farms           @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  fields              fields?         @relation(fields: [field_id], references: [id], onUpdate: NoAction)
+  farm_incidents      farm_incidents? @relation(fields: [incident_id], references: [id], onUpdate: NoAction)
+  users               users?          @relation(fields: [recorded_by], references: [id], onUpdate: NoAction)
+  farmer_tasks        farmer_tasks?   @relation(fields: [task_id], references: [id], onUpdate: NoAction)
+
+  @@index([farm_id, performed_at(sort: Desc)], map: "idx_farm_interventions_farm_performed")
+  @@index([incident_id, status], map: "idx_farm_interventions_incident_status", where: raw("(incident_id IS NOT NULL)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model farm_verifications {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farm_id              String              @db.Uuid
+  field_id             String?             @db.Uuid
+  incident_id          String              @db.Uuid
+  crop_scan_id         String?             @db.Uuid
+  satellite_capture_id String?             @db.Uuid
+  field_inspection_id  String?             @db.Uuid
+  status               String              @db.VarChar(24)
+  outcome              String?
+  observed_at          DateTime            @db.Timestamptz(6)
+  evidence_references  Json                @default("[]")
+  created_at           DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime            @default(now()) @db.Timestamptz(6)
+  version              Int                 @default(1)
+  crop_scans           crop_scans?         @relation(fields: [crop_scan_id], references: [id], onUpdate: NoAction)
+  farms                farms               @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  fields               fields?             @relation(fields: [field_id], references: [id], onUpdate: NoAction)
+  field_inspections    field_inspections?  @relation(fields: [field_inspection_id], references: [id], onUpdate: NoAction)
+  farm_incidents       farm_incidents      @relation(fields: [incident_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  satellite_captures   satellite_captures? @relation(fields: [satellite_capture_id], references: [id], onUpdate: NoAction)
+
+  @@index([farm_id, observed_at(sort: Desc)], map: "idx_farm_verifications_farm_observed")
+  @@index([incident_id, status], map: "idx_farm_verifications_incident_status")
+}
+
+model farmer_profiles {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String   @unique @db.Uuid
+  full_name          String   @db.VarChar(160)
+  preferred_language String   @default("en") @db.VarChar(16)
+  province           String?  @db.VarChar(120)
+  district           String?  @db.VarChar(120)
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+  version            Int      @default(1)
+  users              users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  farms              farms[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model farmer_tasks {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String               @db.Uuid
+  field_id           String?              @db.Uuid
+  title              String               @db.VarChar(160)
+  description        String?
+  source             String               @db.VarChar(24)
+  status             String               @default("PENDING") @db.VarChar(16)
+  due_at             DateTime?            @db.Timestamptz(6)
+  completed_at       DateTime?            @db.Timestamptz(6)
+  source_reference   String?              @db.VarChar(100)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  deleted_at         DateTime?            @db.Timestamptz(6)
+  version            Int                  @default(1)
+  farm_interventions farm_interventions[]
+  fields             fields?              @relation(fields: [field_id], references: [id], onUpdate: NoAction)
+  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, source, source_reference], map: "uq_farmer_tasks_generated_source", where: raw("((source_reference IS NOT NULL) AND (deleted_at IS NULL))"))
+  @@index([user_id, status, due_at], map: "idx_farmer_tasks_user_status_due")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model farms {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmer_id               String                    @db.Uuid
+  name                    String                    @db.VarChar(160)
+  province                String?                   @db.VarChar(120)
+  district                String?                   @db.VarChar(120)
+  status                  String                    @default("active") @db.VarChar(24)
+  boundary                Unsupported("geometry")
+  centroid                Unsupported("geometry")
+  area_hectares           Float
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  deleted_at              DateTime?                 @db.Timestamptz(6)
+  version                 Int                       @default(1)
+  tehsil                  String?                   @db.VarChar(120)
+  soil_type               String?                   @db.VarChar(120)
+  irrigation_type         String?                   @db.VarChar(120)
+  water_source            String?                   @db.VarChar(120)
+  assistant_conversations assistant_conversations[]
+  farm_brain_runs         farm_brain_runs[]
+  farm_incidents          farm_incidents[]
+  farm_interventions      farm_interventions[]
+  farm_verifications      farm_verifications[]
+  farmer_profiles         farmer_profiles           @relation(fields: [farmer_id], references: [id], onUpdate: NoAction)
+  fields                  fields[]
+
+  @@index([boundary], map: "idx_farms_boundary_gist", type: Gist)
+  @@index([centroid], map: "idx_farms_centroid_gist", type: Gist)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model field_health_scores {
+  id                 String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  field_id           String              @db.Uuid
+  capture_id         String?             @unique(map: "uq_field_health_scores_capture", where: raw("(capture_id IS NOT NULL)")) @db.Uuid
+  score              Float
+  components         Json                @default("{}")
+  created_at         DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime            @default(now()) @db.Timestamptz(6)
+  version            Int                 @default(1)
+  satellite_captures satellite_captures? @relation(fields: [capture_id], references: [id], onUpdate: NoAction)
+  fields             fields              @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([field_id, created_at(sort: Desc)], map: "idx_field_health_scores_field_created")
+}
+
+model field_inspections {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String               @db.Uuid
+  field_id           String               @db.Uuid
+  notes              String
+  observed_at        DateTime             @db.Timestamptz(6)
+  media_asset_ids    String[]             @default([]) @db.Uuid
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  version            Int                  @default(1)
+  farm_verifications farm_verifications[]
+  fields             fields               @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([field_id, observed_at(sort: Desc)], map: "idx_field_inspections_field_observed")
+  @@index([user_id, observed_at(sort: Desc)], map: "idx_field_inspections_user_observed")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model field_risk_assessments {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  field_id        String       @db.Uuid
+  crop_cycle_id   String?      @db.Uuid
+  score           Float
+  level           String       @db.VarChar(16)
+  evidence        Json
+  factors         Json
+  ruleset_version String       @db.VarChar(40)
+  trigger_source  String       @db.VarChar(32)
+  valid_until     DateTime     @db.Timestamptz(6)
+  created_at      DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime     @default(now()) @db.Timestamptz(6)
+  version         Int          @default(1)
+  crop_cycles     crop_cycles? @relation(fields: [crop_cycle_id], references: [id], onUpdate: NoAction)
+  fields          fields       @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([field_id, created_at(sort: Desc)], map: "idx_field_risk_field_created")
+  @@index([field_id, valid_until(sort: Desc)], map: "idx_field_risk_valid")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model field_risk_rulesets {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ruleset_version   String   @unique @db.VarChar(40)
+  weights           Json
+  thresholds        Json
+  validity_hours    Int
+  validation_status String   @db.VarChar(32)
+  description       String
+  active            Boolean  @unique(map: "uq_field_risk_active", where: raw("(active = true)")) @default(true)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+  version           Int      @default(1)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model fields {
+  id                            String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farm_id                       String                          @db.Uuid
+  name                          String                          @db.VarChar(160)
+  status                        String                          @default("active") @db.VarChar(24)
+  boundary                      Unsupported("geometry")
+  centroid                      Unsupported("geometry")
+  area_hectares                 Float
+  created_at                    DateTime                        @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime                        @default(now()) @db.Timestamptz(6)
+  deleted_at                    DateTime?                       @db.Timestamptz(6)
+  version                       Int                             @default(1)
+  last_satellite_check_at       DateTime?                       @db.Timestamptz(6)
+  last_successful_capture_at    DateTime?                       @db.Timestamptz(6)
+  next_satellite_check_at       DateTime                        @default(now()) @db.Timestamptz(6)
+  satellite_check_failure_count Int                             @default(0)
+  assistant_conversations       assistant_conversations[]
+  community_reports             community_reports[]
+  crop_cycles                   crop_cycles?
+  crop_scans                    crop_scans[]
+  farm_brain_runs               farm_brain_runs[]
+  farm_incidents                farm_incidents[]
+  farm_interventions            farm_interventions[]
+  farm_verifications            farm_verifications[]
+  farmer_tasks                  farmer_tasks[]
+  field_health_scores           field_health_scores[]
+  field_inspections             field_inspections[]
+  field_risk_assessments        field_risk_assessments[]
+  farms                         farms                           @relation(fields: [farm_id], references: [id], onUpdate: NoAction)
+  satellite_anomaly_assessments satellite_anomaly_assessments[]
+  satellite_captures            satellite_captures[]
+  weather_forecasts             weather_forecasts[]
+  weather_risk_assessments      weather_risk_assessments[]
+  weather_snapshots             weather_snapshots[]
+
+  @@unique([farm_id, name], map: "uq_fields_farm_name_active", where: raw("(deleted_at IS NULL)"))
+  @@index([boundary], map: "idx_fields_boundary_gist", type: Gist)
+  @@index([centroid], map: "idx_fields_centroid_gist", type: Gist)
+  @@index([next_satellite_check_at], map: "idx_fields_next_satellite_check", where: raw("((deleted_at IS NULL) AND ((status)::text = 'active'::text))"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model follow_up_answers {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question_id         String              @unique @db.Uuid
+  farmer_id           String              @db.Uuid
+  answer_text         String
+  answered_at         DateTime            @db.Timestamptz(6)
+  created_at          DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime            @default(now()) @db.Timestamptz(6)
+  version             Int                 @default(1)
+  users               users               @relation(fields: [farmer_id], references: [id], onUpdate: NoAction)
+  follow_up_questions follow_up_questions @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model follow_up_questions {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id           String             @db.Uuid
+  library_key       String             @db.VarChar(80)
+  question_text     String
+  display_order     Int
+  context           Json               @default("{}")
+  prompt_version    String             @db.VarChar(40)
+  created_at        DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime           @default(now()) @db.Timestamptz(6)
+  version           Int                @default(1)
+  follow_up_answers follow_up_answers?
+  crop_scans        crop_scans         @relation(fields: [scan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([scan_id, library_key], map: "uq_follow_up_scan_library")
+  @@index([scan_id, display_order], map: "idx_follow_up_questions_scan_order")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model generated_reports {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id          String    @db.Uuid
+  type              String    @db.VarChar(32)
+  status            String    @default("QUEUED") @db.VarChar(16)
+  resource_id       String?   @db.Uuid
+  parameters        Json      @default("{}")
+  object_key        String?   @db.VarChar(512)
+  content_type      String?   @db.VarChar(80)
+  size_bytes        BigInt?
+  failure_code      String?   @db.VarChar(80)
+  deduplication_key String    @db.VarChar(180)
+  request_hash      String    @db.Char(64)
+  completed_at      DateTime? @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+  version           Int       @default(1)
+  users             users     @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([owner_id, deduplication_key], map: "uq_generated_reports_dedup")
+  @@index([owner_id, created_at(sort: Desc)], map: "idx_generated_reports_owner_created")
+}
+
+model guideline_approvals {
+  id                         String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  guideline_id               String               @db.Uuid
+  actor_id                   String?              @db.Uuid
+  actor_type                 String               @db.VarChar(32)
+  from_status                String               @db.VarChar(24)
+  to_status                  String               @db.VarChar(24)
+  notes                      String?
+  chemical_guidance_approved Boolean              @default(false)
+  guideline_snapshot         Json
+  created_at                 DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime             @default(now()) @db.Timestamptz(6)
+  version                    Int                  @default(1)
+  users                      users?               @relation(fields: [actor_id], references: [id], onUpdate: NoAction)
+  treatment_guidelines       treatment_guidelines @relation(fields: [guideline_id], references: [id], onUpdate: NoAction)
+
+  @@index([guideline_id, created_at], map: "idx_guideline_approval_history")
+}
+
+model guideline_sources {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                String                 @db.VarChar(220)
+  citation             String
+  url                  String?
+  published_at         DateTime?              @db.Date
+  created_by           String?                @db.Uuid
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  version              Int                    @default(1)
+  users                users?                 @relation(fields: [created_by], references: [id], onUpdate: NoAction)
+  treatment_guidelines treatment_guidelines[]
+}
+
+model image_quality_results {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_image_id     String      @unique @db.Uuid
+  acceptable        Boolean
+  issues            Json
+  provider_metadata Json        @default("{}")
+  created_at        DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime    @default(now()) @db.Timestamptz(6)
+  version           Int         @default(1)
+  scan_images       scan_images @relation(fields: [scan_image_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model integration_usage {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  provider      String   @db.VarChar(40)
+  operation     String   @db.VarChar(32)
+  request_id    String?  @db.VarChar(128)
+  status_code   Int?
+  duration_ms   Int
+  quota_units   Float?
+  success       Boolean
+  error_code    String?  @db.VarChar(80)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+  version       Int      @default(1)
+  request_count Int      @default(1)
+
+  @@index([provider, created_at(sort: Desc)], map: "idx_integration_usage_provider_created")
+}
+
+model knowledge_articles {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String   @db.VarChar(220)
+  content       String
+  language_code String   @default("en") @db.VarChar(16)
+  status        String   @default("DRAFT") @db.VarChar(24)
+  author_id     String   @db.Uuid
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+  version       Int      @default(1)
+  users         users    @relation(fields: [author_id], references: [id], onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model media_assets {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id                String                    @db.Uuid
+  object_key              String                    @unique @db.VarChar(512)
+  original_filename       String                    @db.VarChar(180)
+  content_type            String                    @db.VarChar(120)
+  size_bytes              BigInt
+  checksum                String?                   @db.VarChar(128)
+  purpose                 String                    @db.VarChar(40)
+  status                  String                    @default("pending") @db.VarChar(24)
+  metadata                Json                      @default("{}")
+  completed_at            DateTime?                 @db.Timestamptz(6)
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  version                 Int                       @default(1)
+  assistant_messages      assistant_messages[]
+  community_verifications community_verifications[]
+  consultation_messages   consultation_messages[]
+  users                   users                     @relation(fields: [owner_id], references: [id], onUpdate: NoAction)
+  satellite_layers        satellite_layers[]
+  scan_images             scan_images[]
+  voice_note_metadata     voice_note_metadata?
+
+  @@index([owner_id, status], map: "idx_media_assets_owner_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model model_predictions {
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id               String         @db.Uuid
+  model_version_id      String         @db.Uuid
+  predicted_condition   String         @db.VarChar(200)
+  confidence            Float
+  inference_timestamp   DateTime       @db.Timestamptz(6)
+  raw_provider_response Json
+  created_at            DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime       @default(now()) @db.Timestamptz(6)
+  version               Int            @default(1)
+  model_versions        model_versions @relation(fields: [model_version_id], references: [id], onUpdate: NoAction)
+  crop_scans            crop_scans     @relation(fields: [scan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([scan_id, inference_timestamp(sort: Desc)], map: "idx_predictions_scan")
+}
+
+model model_versions {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider          String              @db.VarChar(40)
+  model_id          String              @db.VarChar(160)
+  model_version     String              @db.VarChar(80)
+  deployed_at       DateTime?           @db.Timestamptz(6)
+  metadata          Json                @default("{}")
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime            @default(now()) @db.Timestamptz(6)
+  version           Int                 @default(1)
+  model_predictions model_predictions[]
+
+  @@unique([provider, model_id, model_version], map: "uq_model_provider_version")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model mutation_receipts {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String    @db.Uuid
+  device_id          String    @db.Uuid
+  client_mutation_id String    @db.Uuid
+  type               String    @db.VarChar(32)
+  status             String    @db.VarChar(16)
+  request_hash       String    @db.Char(64)
+  result             Json?
+  conflict           Json?
+  error_code         String?   @db.VarChar(80)
+  attempt_count      Int       @default(1)
+  applied_at         DateTime? @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+  version            Int       @default(1)
+  devices            devices   @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, device_id, client_mutation_id])
+  @@index([user_id, created_at(sort: Desc)], map: "idx_mutation_receipts_user_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model notification_deliveries {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notification_id     String        @db.Uuid
+  device_token_id     String        @db.Uuid
+  status              String        @default("SCHEDULED") @db.VarChar(20)
+  provider_message_id String?       @db.VarChar(255)
+  attempt_count       Int           @default(0)
+  scheduled_at        DateTime      @db.Timestamptz(6)
+  sent_at             DateTime?     @db.Timestamptz(6)
+  delivered_at        DateTime?     @db.Timestamptz(6)
+  last_error_code     String?       @db.VarChar(100)
+  created_at          DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime      @default(now()) @db.Timestamptz(6)
+  version             Int           @default(1)
+  device_tokens       device_tokens @relation(fields: [device_token_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notifications       notifications @relation(fields: [notification_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([notification_id, device_token_id])
+  @@index([status, scheduled_at], map: "idx_notification_deliveries_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model notification_preferences {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String    @db.Uuid
+  category          String    @db.VarChar(20)
+  push_enabled      Boolean   @default(true)
+  quiet_hours_start DateTime? @db.Time(6)
+  quiet_hours_end   DateTime? @db.Time(6)
+  timezone          String    @default("Asia/Karachi") @db.VarChar(64)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+  version           Int       @default(1)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, category])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model notifications {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                 String                    @db.Uuid
+  category                String                    @db.VarChar(20)
+  title                   String                    @db.VarChar(160)
+  body                    String
+  data                    Json                      @default("{}")
+  read_at                 DateTime?                 @db.Timestamptz(6)
+  deduplication_key       String?                   @db.VarChar(180)
+  confirmed_evidence      Boolean                   @default(false)
+  ai_confidence           Float?
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  version                 Int                       @default(1)
+  notification_deliveries notification_deliveries[]
+  users                   users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, deduplication_key], map: "uq_notifications_user_dedup", where: raw("(deduplication_key IS NOT NULL)"))
+  @@index([user_id, created_at(sort: Desc)], map: "idx_notifications_user_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model organizations {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String          @db.VarChar(160)
+  slug               String          @unique(map: "uq_organizations_slug") @db.VarChar(120)
+  type               String          @db.VarChar(32)
+  evidence_class     String          @db.VarChar(16)
+  external_reference String?         @db.VarChar(255)
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime        @default(now()) @db.Timestamptz(6)
+  version            Int             @default(1)
+  pilot_users        pilot_users[]
+  subscriptions      subscriptions[]
+  user_feedback      user_feedback[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model outbreak_clusters {
+  id                  String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  crop_id             String                  @db.Uuid
+  condition_family    String                  @db.VarChar(160)
+  status              String                  @db.VarChar(24)
+  private_centroid    Unsupported("geometry")
+  public_area         Unsupported("geometry")
+  first_reported_at   DateTime                @db.Timestamptz(6)
+  last_reported_at    DateTime                @db.Timestamptz(6)
+  settings_id         String                  @db.Uuid
+  created_at          DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime                @default(now()) @db.Timestamptz(6)
+  version             Int                     @default(1)
+  crops               crops                   @relation(fields: [crop_id], references: [id], onUpdate: NoAction)
+  outbreak_settings   outbreak_settings       @relation(fields: [settings_id], references: [id], onUpdate: NoAction)
+  outbreak_members    outbreak_members[]
+  regional_advisories regional_advisories[]
+
+  @@index([crop_id, condition_family, status], map: "idx_outbreak_cluster_match")
+  @@index([private_centroid], map: "idx_outbreak_cluster_private_gist", type: Gist)
+}
+
+model outbreak_members {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cluster_id        String            @db.Uuid
+  report_id         String            @db.Uuid
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime          @default(now()) @db.Timestamptz(6)
+  version           Int               @default(1)
+  outbreak_clusters outbreak_clusters @relation(fields: [cluster_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  community_reports community_reports @relation(fields: [report_id], references: [id], onUpdate: NoAction)
+
+  @@unique([cluster_id, report_id], map: "uq_outbreak_member")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model outbreak_settings {
+  id                           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  distance_radius_meters       Int
+  time_window_hours            Int
+  minimum_report_count         Int
+  expert_confirmation_required Boolean
+  public_grid_degrees          Float
+  validation_status            String              @db.VarChar(32)
+  active                       Boolean             @unique(map: "uq_outbreak_settings_active", where: raw("(active = true)")) @default(true)
+  created_at                   DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime            @default(now()) @db.Timestamptz(6)
+  version                      Int                 @default(1)
+  outbreak_clusters            outbreak_clusters[]
+}
+
+model password_setup_tokens {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique @db.VarChar(64)
+  expires_at DateTime  @db.Timestamptz(6)
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, expires_at(sort: Desc)], map: "idx_password_setup_tokens_user_active", where: raw("(used_at IS NULL)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pilot_users {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id    String        @db.Uuid
+  user_id            String        @db.Uuid
+  status             String        @db.VarChar(24)
+  consented_at       DateTime      @db.Timestamptz(6)
+  onboarded_at       DateTime?     @db.Timestamptz(6)
+  evidence_reference String        @db.VarChar(255)
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime      @default(now()) @db.Timestamptz(6)
+  version            Int           @default(1)
+  organizations      organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users              users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organization_id, user_id], map: "uq_pilot_users_org_user")
+  @@index([status, onboarded_at(sort: Desc)], map: "idx_pilot_users_status_onboarded")
+}
+
+model regional_advisories {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cluster_id        String            @db.Uuid
+  title             String            @db.VarChar(220)
+  message           String
+  language          String            @default("en") @db.VarChar(16)
+  published_at      DateTime?         @db.Timestamptz(6)
+  published_by      String?           @db.Uuid
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime          @default(now()) @db.Timestamptz(6)
+  version           Int               @default(1)
+  outbreak_clusters outbreak_clusters @relation(fields: [cluster_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users             users?            @relation(fields: [published_by], references: [id], onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model satellite_anomaly_assessments {
+  id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  capture_id           String             @unique @db.Uuid
+  field_id             String             @db.Uuid
+  baseline_method      String             @db.VarChar(40)
+  baseline_capture_ids String[]           @default([]) @db.Uuid
+  status               String             @db.VarChar(32)
+  engine_version       String             @db.VarChar(40)
+  observed_at          DateTime           @db.Timestamptz(6)
+  source_identifier    String             @db.VarChar(255)
+  evidence             Json               @default("{}")
+  created_at           DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime           @default(now()) @db.Timestamptz(6)
+  version              Int                @default(1)
+  satellite_captures   satellite_captures @relation(fields: [capture_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  fields               fields             @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([field_id, observed_at(sort: Desc)], map: "idx_satellite_anomaly_field_observed")
+  @@index([status, observed_at(sort: Desc)], map: "idx_satellite_anomaly_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model satellite_captures {
+  id                            String                         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  field_id                      String                         @db.Uuid
+  provider                      String                         @db.VarChar(32)
+  provider_scene_id             String?                        @db.VarChar(255)
+  satellite                     String?                        @db.VarChar(64)
+  acquisition_date              DateTime?                      @db.Timestamptz(6)
+  processed_date                DateTime?                      @db.Timestamptz(6)
+  cloud_coverage                Float?
+  usable_pixel_percentage       Float?
+  data_quality                  String                         @default("UNKNOWN") @db.VarChar(16)
+  processing_status             String                         @default("QUEUED") @db.VarChar(32)
+  raw_metadata                  Json                           @default("{}")
+  requested_from                DateTime                       @db.Timestamptz(6)
+  requested_to                  DateTime                       @db.Timestamptz(6)
+  created_at                    DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime                       @default(now()) @db.Timestamptz(6)
+  version                       Int                            @default(1)
+  farm_verifications            farm_verifications[]
+  field_health_scores           field_health_scores?
+  satellite_anomaly_assessments satellite_anomaly_assessments?
+  fields                        fields                         @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  satellite_layers              satellite_layers[]
+  satellite_statistics          satellite_statistics[]
+  satellite_stress_zones        satellite_stress_zones[]
+
+  @@unique([field_id, provider, provider_scene_id], map: "uq_satellite_scene_field", where: raw("(provider_scene_id IS NOT NULL)"))
+  @@index([field_id, acquisition_date(sort: Desc)], map: "idx_satellite_captures_field_acquisition")
+}
+
+model satellite_layers {
+  id                 String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  capture_id         String             @db.Uuid
+  type               String             @db.VarChar(40)
+  media_asset_id     String?            @db.Uuid
+  metadata           Json               @default("{}")
+  created_at         DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime           @default(now()) @db.Timestamptz(6)
+  version            Int                @default(1)
+  satellite_captures satellite_captures @relation(fields: [capture_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  media_assets       media_assets?      @relation(fields: [media_asset_id], references: [id], onUpdate: NoAction)
+
+  @@unique([capture_id, type], map: "uq_satellite_layers_capture_type")
+}
+
+model satellite_statistics {
+  id                 String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  capture_id         String             @db.Uuid
+  index              String             @db.VarChar(40)
+  statistics         Json
+  created_at         DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime           @default(now()) @db.Timestamptz(6)
+  version            Int                @default(1)
+  satellite_captures satellite_captures @relation(fields: [capture_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([capture_id, index], map: "uq_satellite_statistics_capture_index")
+  @@index([capture_id, index], map: "idx_satellite_statistics_capture_index")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model satellite_stress_zones {
+  id                 String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  capture_id         String                  @db.Uuid
+  geometry           Unsupported("geometry")
+  severity           String                  @db.VarChar(16)
+  score              Float
+  created_at         DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                @default(now()) @db.Timestamptz(6)
+  version            Int                     @default(1)
+  label              String                  @default("UNKNOWN_STRESS") @db.VarChar(40)
+  area_hectares      Float                   @default(0)
+  evidence           Json                    @default("{}")
+  satellite_captures satellite_captures      @relation(fields: [capture_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([geometry], map: "idx_satellite_stress_zones_geometry_gist", type: Gist)
+}
+
+model scan_images {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id               String                 @db.Uuid
+  media_asset_id        String                 @db.Uuid
+  category              String                 @db.VarChar(32)
+  width_pixels          Int?
+  height_pixels         Int?
+  created_at            DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime               @default(now()) @db.Timestamptz(6)
+  version               Int                    @default(1)
+  image_quality_results image_quality_results?
+  media_assets          media_assets           @relation(fields: [media_asset_id], references: [id], onUpdate: NoAction)
+  crop_scans            crop_scans             @relation(fields: [scan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([scan_id, media_asset_id], map: "uq_scan_image_media")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model severity_assessments {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id             String            @db.Uuid
+  ruleset_id          String            @db.Uuid
+  severity            String            @db.VarChar(16)
+  calculated_score    Float
+  factors             Json
+  weights_used        Json
+  evidence_references Json
+  engine_version      String            @db.VarChar(40)
+  explanation         Json
+  expert_escalation   Boolean
+  escalation_reasons  Json
+  generated_at        DateTime          @db.Timestamptz(6)
+  created_at          DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime          @default(now()) @db.Timestamptz(6)
+  version             Int               @default(1)
+  severity_rulesets   severity_rulesets @relation(fields: [ruleset_id], references: [id], onUpdate: NoAction)
+  crop_scans          crop_scans        @relation(fields: [scan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([scan_id, generated_at(sort: Desc)], map: "idx_severity_assessment_scan_generated")
+}
+
+model severity_rulesets {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key                  String                 @db.VarChar(80)
+  engine_version       String                 @db.VarChar(40)
+  status               String                 @db.VarChar(32)
+  weights              Json
+  thresholds           Json
+  source               String
+  active               Boolean                @default(true)
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  version              Int                    @default(1)
+  severity_assessments severity_assessments[]
+
+  @@unique([key, engine_version], map: "uq_severity_ruleset_version")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model subscription_payments {
+  id                         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscription_id            String        @db.Uuid
+  provider                   String        @db.VarChar(40)
+  provider_payment_reference String        @db.VarChar(255)
+  amount_minor               BigInt
+  currency                   String        @db.Char(3)
+  status                     String        @db.VarChar(16)
+  paid_at                    DateTime?     @db.Timestamptz(6)
+  verified_at                DateTime?     @db.Timestamptz(6)
+  verification_source        String?       @db.VarChar(255)
+  created_at                 DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime      @default(now()) @db.Timestamptz(6)
+  version                    Int           @default(1)
+  subscriptions              subscriptions @relation(fields: [subscription_id], references: [id], onUpdate: NoAction)
+
+  @@unique([provider, provider_payment_reference], map: "uq_subscription_payment_provider_ref")
+  @@index([status, paid_at(sort: Desc)], map: "idx_subscription_payments_status_paid")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model subscriptions {
+  id                          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id             String                  @db.Uuid
+  plan                        String                  @db.VarChar(80)
+  status                      String                  @db.VarChar(24)
+  started_at                  DateTime                @db.Timestamptz(6)
+  ended_at                    DateTime?               @db.Timestamptz(6)
+  provider_customer_reference String?                 @db.VarChar(255)
+  created_at                  DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime                @default(now()) @db.Timestamptz(6)
+  version                     Int                     @default(1)
+  subscription_payments       subscription_payments[]
+  organizations               organizations           @relation(fields: [organization_id], references: [id], onUpdate: NoAction)
+
+  @@index([organization_id, status], map: "idx_subscriptions_org_status")
+}
+
+model sync_changes {
+  sequence      BigInt   @id @default(autoincrement())
+  user_id       String   @db.Uuid
+  resource_type String   @db.VarChar(40)
+  resource_id   String   @db.Uuid
+  operation     String   @db.VarChar(16)
+  data          Json
+  changed_at    DateTime @default(now()) @db.Timestamptz(6)
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, sequence], map: "idx_sync_changes_user_cursor")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model treatment_guidelines {
+  id                                            String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  crop_id                                       String                @db.Uuid
+  crop_variety_id                               String?               @db.Uuid
+  condition                                     String                @db.VarChar(200)
+  region                                        String?               @db.VarChar(160)
+  growth_stage                                  String?               @db.VarChar(100)
+  severity                                      String?               @db.VarChar(16)
+  immediate_actions                             Json
+  preventive_actions                            Json
+  monitoring_actions                            Json
+  expert_escalation_criteria                    Json
+  chemical_guidance                             Json?
+  chemical_guidance_approved                    Boolean               @default(false)
+  source_id                                     String                @db.Uuid
+  author_id                                     String?               @db.Uuid
+  reviewer_id                                   String?               @db.Uuid
+  approved_at                                   DateTime?             @db.Timestamptz(6)
+  review_due_at                                 DateTime?             @db.Timestamptz(6)
+  guideline_version                             Int                   @default(1)
+  status                                        String                @default("DRAFT") @db.VarChar(24)
+  created_at                                    DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at                                    DateTime              @default(now()) @db.Timestamptz(6)
+  version                                       Int                   @default(1)
+  action_plan_steps                             action_plan_steps[]
+  action_plans                                  action_plans[]
+  expert_reviews                                expert_reviews[]
+  guideline_approvals                           guideline_approvals[]
+  users_treatment_guidelines_author_idTousers   users?                @relation("treatment_guidelines_author_idTousers", fields: [author_id], references: [id], onUpdate: NoAction)
+  crops                                         crops                 @relation(fields: [crop_id], references: [id], onUpdate: NoAction)
+  crop_varieties                                crop_varieties?       @relation(fields: [crop_variety_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  users_treatment_guidelines_reviewer_idTousers users?                @relation("treatment_guidelines_reviewer_idTousers", fields: [reviewer_id], references: [id], onUpdate: NoAction)
+  guideline_sources                             guideline_sources     @relation(fields: [source_id], references: [id], onUpdate: NoAction)
+
+  @@index([crop_id, condition, status], map: "idx_guidelines_lookup")
+}
+
+model typeorm_migrations {
+  id        Int    @id(map: "PK_bb2f075707dd300ba86d0208923") @default(autoincrement())
+  timestamp BigInt
+  name      String @db.VarChar
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_feedback {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id  String?        @db.Uuid
+  user_id          String         @db.Uuid
+  rating           Int?           @db.SmallInt
+  feedback         String
+  context_type     String         @db.VarChar(40)
+  context_id       String?        @db.Uuid
+  consent_to_quote Boolean        @default(false)
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime       @default(now()) @db.Timestamptz(6)
+  version          Int            @default(1)
+  organizations    organizations? @relation(fields: [organization_id], references: [id], onUpdate: NoAction)
+  users            users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([organization_id, created_at(sort: Desc)], map: "idx_user_feedback_org_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model users {
+  id                                                           String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                                        String?                    @db.VarChar(320)
+  phone                                                        String?                    @unique(map: "uq_users_phone_active", where: raw("((deleted_at IS NULL) AND (phone IS NOT NULL))")) @db.VarChar(32)
+  password_hash                                                String?                    @db.VarChar(255)
+  role                                                         String                     @db.VarChar(24)
+  status                                                       String                     @default("pending") @db.VarChar(24)
+  last_login_at                                                DateTime?                  @db.Timestamptz(6)
+  created_at                                                   DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at                                                   DateTime                   @default(now()) @db.Timestamptz(6)
+  deleted_at                                                   DateTime?                  @db.Timestamptz(6)
+  version                                                      Int                        @default(1)
+  action_plans                                                 action_plans[]
+  ai_interactions                                              ai_interactions[]
+  analytics_events                                             analytics_events[]
+  assistant_conversations                                      assistant_conversations[]
+  auth_sessions                                                auth_sessions[]
+  case_status_history                                          case_status_history[]
+  community_reports                                            community_reports[]
+  community_verifications                                      community_verifications[]
+  consents                                                     consents[]
+  consultation_messages                                        consultation_messages[]
+  consultations_consultations_expert_idTousers                 consultations[]            @relation("consultations_expert_idTousers")
+  consultations_consultations_farmer_idTousers                 consultations[]            @relation("consultations_farmer_idTousers")
+  crop_scans                                                   crop_scans[]
+  device_tokens                                                device_tokens[]
+  devices                                                      devices[]
+  expert_assignments_expert_assignments_assigned_byTousers     expert_assignments[]       @relation("expert_assignments_assigned_byTousers")
+  expert_assignments_expert_assignments_expert_idTousers       expert_assignments[]       @relation("expert_assignments_expert_idTousers")
+  expert_profiles                                              expert_profiles?
+  farm_brain_runs                                              farm_brain_runs[]
+  farm_brain_tool_calls                                        farm_brain_tool_calls[]
+  farm_interventions                                           farm_interventions[]
+  farmer_profiles                                              farmer_profiles?
+  farmer_tasks                                                 farmer_tasks[]
+  field_inspections                                            field_inspections[]
+  follow_up_answers                                            follow_up_answers[]
+  generated_reports                                            generated_reports[]
+  guideline_approvals                                          guideline_approvals[]
+  guideline_sources                                            guideline_sources[]
+  knowledge_articles                                           knowledge_articles[]
+  media_assets                                                 media_assets[]
+  mutation_receipts                                            mutation_receipts[]
+  notification_preferences                                     notification_preferences[]
+  notifications                                                notifications[]
+  password_setup_tokens                                        password_setup_tokens[]
+  pilot_users                                                  pilot_users[]
+  regional_advisories                                          regional_advisories[]
+  sync_changes                                                 sync_changes[]
+  treatment_guidelines_treatment_guidelines_author_idTousers   treatment_guidelines[]     @relation("treatment_guidelines_author_idTousers")
+  treatment_guidelines_treatment_guidelines_reviewer_idTousers treatment_guidelines[]     @relation("treatment_guidelines_reviewer_idTousers")
+  user_feedback                                                user_feedback[]
+  voice_note_metadata                                          voice_note_metadata[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model voice_note_metadata {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String       @db.Uuid
+  media_asset_id   String       @unique @db.Uuid
+  duration_seconds Int?
+  language         String?      @db.VarChar(16)
+  recorded_at      DateTime     @db.Timestamptz(6)
+  created_at       DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime     @default(now()) @db.Timestamptz(6)
+  version          Int          @default(1)
+  media_assets     media_assets @relation(fields: [media_asset_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model weather_forecasts {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  field_id           String   @db.Uuid
+  provider           String   @db.VarChar(32)
+  generated_at       DateTime @db.Timestamptz(6)
+  valid_from         DateTime @db.Timestamptz(6)
+  valid_to           DateTime @db.Timestamptz(6)
+  cache_bucket       DateTime @db.Timestamptz(6)
+  points             Json
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+  version            Int      @default(1)
+  source_identifier  String   @db.VarChar(255)
+  observation_status String   @default("RECORDED") @db.VarChar(24)
+  fields             fields   @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([field_id, provider, cache_bucket], map: "uq_weather_forecast_bucket")
+  @@index([field_id, generated_at(sort: Desc)], map: "idx_weather_forecasts_field_generated")
+}
+
+model weather_risk_assessments {
+  id                  String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  field_id            String       @db.Uuid
+  crop_cycle_id       String?      @db.Uuid
+  assessed_at         DateTime     @db.Timestamptz(6)
+  overall_suitability String?      @db.VarChar(24)
+  risks               Json
+  validation_summary  Json
+  created_at          DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime     @default(now()) @db.Timestamptz(6)
+  version             Int          @default(1)
+  crop_cycles         crop_cycles? @relation(fields: [crop_cycle_id], references: [id], onUpdate: NoAction)
+  fields              fields       @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([field_id, assessed_at(sort: Desc)], map: "idx_weather_assessment_field_time")
+}
+
+model weather_snapshots {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  field_id           String   @db.Uuid
+  provider           String   @db.VarChar(32)
+  observed_at        DateTime @db.Timestamptz(6)
+  cache_bucket       DateTime @db.Timestamptz(6)
+  values             Json
+  raw_metadata       Json     @default("{}")
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+  version            Int      @default(1)
+  source_identifier  String   @db.VarChar(255)
+  observation_status String   @default("RECORDED") @db.VarChar(24)
+  fields             fields   @relation(fields: [field_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([field_id, provider, cache_bucket], map: "uq_weather_snapshot_bucket")
+  @@index([field_id, observed_at(sort: Desc)], map: "idx_weather_snapshots_field_observed")
+}

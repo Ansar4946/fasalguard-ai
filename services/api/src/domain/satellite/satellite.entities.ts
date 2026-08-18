@@ -4,6 +4,8 @@ import { BaseEntity } from '../../infrastructure/database/entities/base.entity';
 import { Field } from '../farms/field.entity';
 import {
   IntegrationOperation,
+  SatelliteAnomalyAssessmentStatus,
+  SatelliteBaselineMethod,
   SatelliteDataQuality,
   SatelliteProcessingStatus,
 } from './satellite.enums';
@@ -57,6 +59,22 @@ export class SatelliteStatistics extends BaseEntity {
   @Column({ name: 'capture_id', type: 'uuid' }) captureId!: string;
   @Column({ type: 'varchar', length: 40 }) index!: string;
   @Column({ type: 'jsonb' }) statistics!: Record<string, unknown>;
+}
+@Entity({ name: 'satellite_anomaly_assessments' })
+@Index('idx_satellite_anomaly_field_observed', ['fieldId', 'observedAt'])
+export class SatelliteAnomalyAssessment extends BaseEntity {
+  @Column({ name: 'capture_id', type: 'uuid', unique: true }) captureId!: string;
+  @Column({ name: 'field_id', type: 'uuid' }) fieldId!: string;
+  @Column({ name: 'baseline_method', type: 'varchar', length: 40 })
+  baselineMethod!: SatelliteBaselineMethod;
+  @Column({ name: 'baseline_capture_ids', type: 'uuid', array: true, default: () => "'{}'" })
+  baselineCaptureIds!: string[];
+  @Column({ type: 'varchar', length: 32 }) status!: SatelliteAnomalyAssessmentStatus;
+  @Column({ name: 'engine_version', type: 'varchar', length: 40 }) engineVersion!: string;
+  @Column({ name: 'observed_at', type: 'timestamptz' }) observedAt!: Date;
+  @Column({ name: 'source_identifier', type: 'varchar', length: 255 })
+  sourceIdentifier!: string;
+  @Column({ type: 'jsonb', default: () => "'{}'::jsonb" }) evidence!: Record<string, unknown>;
 }
 @Entity({ name: 'satellite_stress_zones' })
 export class SatelliteStressZone extends BaseEntity {

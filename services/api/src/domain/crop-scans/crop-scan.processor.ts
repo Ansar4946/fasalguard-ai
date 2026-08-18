@@ -18,6 +18,7 @@ import {
 } from './providers/vision-diagnosis.provider';
 import { CROP_SCAN_QUEUE, type CropScanJob } from './crop-scan.service';
 import { MetricsService } from '../../observability/metrics.service';
+import { LifecycleEmailService } from '../growth/lifecycle-email.service';
 interface ImageRow {
   id: string;
   objectKey: string;
@@ -31,6 +32,7 @@ export class CropScanProcessor extends WorkerHost {
     @InjectDataSource() private readonly db: DataSource,
     @Inject(OBJECT_STORAGE_PROVIDER) private readonly storage: ObjectStorageProvider,
     @Inject(VISION_DIAGNOSIS_PROVIDER) private readonly vision: VisionDiagnosisProvider,
+    private readonly lifecycle: LifecycleEmailService,
     private readonly metrics: MetricsService = new MetricsService(),
   ) {
     super();
@@ -143,6 +145,12 @@ export class CropScanProcessor extends WorkerHost {
           [diagnoses[0]!.id, i + 1, x.condition, x.confidence],
         );
       await this.status(job.data.scanId, status);
+      if (status === CropScanStatus.Diagnosed)
+        await this.notifyIfFirstDiagnosis(
+          job.data.ownerId,
+          job.data.scanId,
+          prediction.predictedCondition,
+        );
     } catch (error) {
       this.metrics.increment('fasalguard_queue_failed_jobs_total', { queue: CROP_SCAN_QUEUE });
       this.metrics.increment('fasalguard_external_api_failures_total', { provider: 'vision' });
@@ -163,6 +171,37 @@ export class CropScanProcessor extends WorkerHost {
       );
     }
   }
+  /** "Insight ready" lifecycle email — first ever fully-screened diagnosis for this farmer.
+   * Best-effort: never allowed to affect the scan's own success. */
+  private async notifyIfFirstDiagnosis(
+    ownerId: string,
+    scanId: string,
+    predictedCondition: string,
+  ): Promise<void> {
+    try {
+      const diagnosedCount: Array<{ count: string }> = await this.db.query(
+        `SELECT count(*)::text count FROM crop_scans cs JOIN diagnoses d ON d.scan_id=cs.id WHERE cs.owner_id=$1 AND d.disposition='SCREENING_COMPLETE'`,
+        [ownerId],
+      );
+      if (Number(diagnosedCount[0]?.count ?? 0) !== 1) return;
+      const context: Array<{ email: string | null; fieldName: string | null }> =
+        await this.db.query(
+          `SELECT u.email,fi.name "fieldName" FROM users u LEFT JOIN crop_scans cs ON cs.id=$2 LEFT JOIN fields fi ON fi.id=cs.field_id WHERE u.id=$1`,
+          [ownerId, scanId],
+        );
+      const row = context[0];
+      if (row?.email)
+        await this.lifecycle.notifyInsightReady(
+          ownerId,
+          row.email,
+          row.fieldName ?? 'your crop scan',
+          predictedCondition,
+        );
+    } catch {
+      /* best-effort */
+    }
+  }
+
   private async status(id: string, status: CropScanStatus): Promise<void> {
     await this.db.query(
       `UPDATE crop_scans SET status=$2,updated_at=now(),version=version+1 WHERE id=$1`,

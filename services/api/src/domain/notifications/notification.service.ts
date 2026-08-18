@@ -115,15 +115,17 @@ export class NotificationService {
       )
     )[0];
     if (!current) throw new NotFoundException('Task was not found.');
+    const status = d.status ?? current.status;
     const r = await this.db.query(
-      `UPDATE farmer_tasks SET title=$3,description=$4,due_at=$5,status=$6,completed_at=CASE WHEN $6='COMPLETED' THEN COALESCE(completed_at,now()) ELSE NULL END WHERE id=$1 AND user_id=$2 RETURNING *`,
+      `UPDATE farmer_tasks SET title=$3,description=$4,due_at=$5,status=$6,completed_at=CASE WHEN $7 THEN COALESCE(completed_at,now()) ELSE NULL END WHERE id=$1 AND user_id=$2 RETURNING *`,
       [
         id,
         userId,
         d.title ?? current.title,
         d.description ?? current.description,
         d.dueAt ?? current.due_at,
-        d.status ?? current.status,
+        status,
+        status === 'COMPLETED',
       ],
     );
     return r[0];

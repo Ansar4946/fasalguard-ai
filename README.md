@@ -58,6 +58,20 @@ npm test
 npm run build
 ```
 
+### Inspect development records with Prisma Studio
+
+Prisma is installed only as a development database viewer. TypeORM remains the application ORM and the only migration authority. After starting PostgreSQL and applying TypeORM migrations:
+
+```bash
+docker compose up -d postgres
+cd services/api
+# Set DATABASE_URL in services/api/.env or in your shell first.
+npm run db:inspect
+npm run db:studio
+```
+
+Open the local URL printed by Prisma Studio. Run `npm run db:inspect` after schema migrations so the inspection schema reflects the database. Never run `prisma migrate`, and never use Prisma-generated models from production application code.
+
 The API uses strict TypeScript, ConfigModule environment validation, global DTO validation,
 TypeORM with schema synchronization disabled, URI versioning, standardized API errors,
 correlation IDs, structured JSON logs, Swagger, and graceful shutdown hooks.
@@ -486,6 +500,18 @@ Mutation receipts are uniquely keyed by user, device, and client mutation ID. Id
 Editable tasks and field inspections require `expectedVersion`. A stale mutation returns `VERSION_CONFLICT` with the expected version, current server version, and current server representation; it never silently overwrites the newer resource.
 
 Use `GET /api/v1/sync/changes?cursor=...` for opaque-cursor incremental changes. PostgreSQL triggers capture online and offline changes for syncable resources. Community change records contain regional/privacy labels only and exclude coordinates. Satellite raster binaries and media bodies are never accepted by the sync API; upload them through the private object-storage flow and synchronize only resulting media IDs.
+
+## Gemini Investigation Mode
+
+Gemini Investigation Mode is documented in [`docs/GEMINI_FARM_BRAIN.md`](docs/GEMINI_FARM_BRAIN.md). It consumes the owner-authorized Farm Digital Twin, persists an evidence ledger before inference, validates Gemini's structured result, and stores allowlisted function calls as proposals. A satellite anomaly without ground imagery must request farmer photos rather than claim a disease or create an incident. State-changing proposals require explicit authenticated confirmation and execute through application-owned policies rather than granting Gemini direct database or API access.
+
+## Business evidence
+
+Verified viability metrics are documented in [`docs/BUSINESS_EVIDENCE.md`](docs/BUSINESS_EVIDENCE.md). `GET /api/v1/analytics/viability` derives conservative operational and commercial totals from persisted records, excludes demo/test organizations, requires external verification for paid revenue, and returns zero rather than fabricated fallback values.
+
+Major capabilities are evaluated using the release gate in [`docs/FEATURE_SCORING_FRAMEWORK.md`](docs/FEATURE_SCORING_FRAMEWORK.md): real evidence, an explicit Gemini role where applicable, a measurable action, an audit record, clear farmer value, and a reproducible live-demo path.
+
+Satellite observations remain non-diagnostic: a disease hypothesis cannot be grounded only in Sentinel/NDVI evidence. Configure Google AI for server-side demos or Vertex AI workload identity for production; no Google credential is exposed to the frontend.
 
 ## Phase 18 voice and AI agriculture assistant
 

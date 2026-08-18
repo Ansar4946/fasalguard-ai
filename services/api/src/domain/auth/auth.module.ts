@@ -10,6 +10,8 @@ import { OTP_PROVIDER } from './otp/otp-provider';
 import { ProductionOtpProvider } from './otp/production-otp.provider';
 import { PasswordResetService } from './password-reset.service';
 import type { OtpProvider } from './otp/otp-provider';
+import { EMAIL_PROVIDER } from './email/email-provider';
+import { SmtpEmailProvider } from './email/smtp-email.provider';
 @Module({
   imports: [JwtModule.register({})],
   controllers: [AuthController],
@@ -20,6 +22,8 @@ import type { OtpProvider } from './otp/otp-provider';
     DevelopmentOtpProvider,
     ProductionOtpProvider,
     PasswordResetService,
+    SmtpEmailProvider,
+    { provide: EMAIL_PROVIDER, useExisting: SmtpEmailProvider },
     {
       provide: OTP_PROVIDER,
       inject: [ConfigService, DevelopmentOtpProvider, ProductionOtpProvider],
@@ -31,6 +35,6 @@ import type { OtpProvider } from './otp/otp-provider';
         config.get<string>('otpProvider') === 'production' ? production : development,
     },
   ],
-  exports: [JwtModule, AuthService, JwtAuthGuard, RolesGuard, PasswordResetService],
+  exports: [JwtModule, AuthService, JwtAuthGuard, RolesGuard, PasswordResetService, EMAIL_PROVIDER],
 })
 export class AuthModule {}

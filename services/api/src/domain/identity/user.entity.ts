@@ -18,6 +18,7 @@ export class User extends SoftDeletableEntity {
   @Column({ type: 'varchar', length: 24 }) role!: UserRole;
   @Column({ type: 'varchar', length: 24, default: UserStatus.Pending }) status!: UserStatus;
   @Column({ name: 'last_login_at', type: 'timestamptz', nullable: true }) lastLoginAt!: Date | null;
+  @Column({ name: 'is_test_account', type: 'boolean', default: false }) isTestAccount!: boolean;
   @OneToOne(() => FarmerProfile, (p) => p.user) farmerProfile?: FarmerProfile;
   @OneToOne(() => ExpertProfile, (p) => p.user) expertProfile?: ExpertProfile;
   @OneToMany(() => Consent, (c) => c.user) consents!: Consent[];

@@ -126,7 +126,7 @@ export class CropScanService {
   }
   private async ownedField(ownerId: string, fieldId: string): Promise<void> {
     const rows = await this.db.query<Array<{ id: string }>>(
-      `SELECT 1 FROM fields fi JOIN farms f ON f.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=f.farmer_profile_id WHERE fi.id=$1 AND fp.user_id=$2 AND fi.deleted_at IS NULL`,
+      `SELECT 1 FROM fields fi JOIN farms f ON f.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=f.farmer_id WHERE fi.id=$1 AND fp.user_id=$2 AND fi.deleted_at IS NULL`,
       [fieldId, ownerId],
     );
     if (!rows.length) throw new ForbiddenException('You do not have access to this field.');

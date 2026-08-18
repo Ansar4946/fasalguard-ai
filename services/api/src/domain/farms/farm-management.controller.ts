@@ -78,6 +78,14 @@ export class FarmManagementController {
     return this.farms.farmGeoJson(principal.userId, id);
   }
 
+  @Get('farms/:farmId/fields')
+  listFields(
+    @CurrentPrincipal() principal: AuthPrincipal,
+    @Param('farmId', new ParseUUIDPipe({ version: '4' })) farmId: string,
+  ): Promise<unknown[]> {
+    return this.farms.listFields(principal.userId, farmId);
+  }
+
   @Post('farms/:farmId/fields')
   createField(
     @CurrentPrincipal() principal: AuthPrincipal,

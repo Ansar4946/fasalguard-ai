@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { GrowthModule } from '../growth/growth.module';
 import { MediaModule } from '../media/media.module';
 import { CropScanController } from './crop-scan.controller';
 import { CropScanProcessor } from './crop-scan.processor';
@@ -14,7 +15,12 @@ import {
 import { RiskModule } from '../risk/risk.module';
 import { workersEnabled } from '../../infrastructure/execution-role';
 @Module({
-  imports: [MediaModule, RiskModule, BullModule.registerQueue({ name: CROP_SCAN_QUEUE })],
+  imports: [
+    MediaModule,
+    RiskModule,
+    GrowthModule,
+    BullModule.registerQueue({ name: CROP_SCAN_QUEUE }),
+  ],
   controllers: [CropScanController],
   providers: [
     CropScanService,

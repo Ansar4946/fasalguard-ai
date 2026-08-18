@@ -1,4 +1,5 @@
 import { Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -43,11 +44,11 @@ const layers = [
   },
   {
     type: 'NDVI',
-    evalscript: `//VERSION=3\nfunction setup(){return{input:["B04","B08","dataMask"],output:{bands:2,sampleType:"FLOAT32"}}}function evaluatePixel(s){return[(s.B08-s.B04)/(s.B08+s.B04),s.dataMask]}`,
+    evalscript: `//VERSION=3\nfunction setup(){return{input:["B04","B08","dataMask"],output:{bands:2,sampleType:"FLOAT32"}}}function evaluatePixel(s){let d=s.B08+s.B04;return[d===0?0:(s.B08-s.B04)/d,s.dataMask]}`,
   },
   {
     type: 'NDMI',
-    evalscript: `//VERSION=3\nfunction setup(){return{input:["B08","B11","dataMask"],output:{bands:2,sampleType:"FLOAT32"}}}function evaluatePixel(s){return[(s.B08-s.B11)/(s.B08+s.B11),s.dataMask]}`,
+    evalscript: `//VERSION=3\nfunction setup(){return{input:["B08","B11","dataMask"],output:{bands:2,sampleType:"FLOAT32"}}}function evaluatePixel(s){let d=s.B08+s.B11;return[d===0?0:(s.B08-s.B11)/d,s.dataMask]}`,
   },
   {
     type: 'DATA_QUALITY',
@@ -64,6 +65,7 @@ export class SatelliteProcessor extends WorkerHost {
     @Inject(OBJECT_STORAGE_PROVIDER) private readonly storage: ObjectStorageProvider,
     private readonly stress: StressAnalysisClient,
     private readonly fieldRisk: RiskAssessmentService,
+    private readonly config: ConfigService,
     private readonly metrics: MetricsService = new MetricsService(),
   ) {
     super();
@@ -232,18 +234,52 @@ export class SatelliteProcessor extends WorkerHost {
         [x.captureId, index, normalized],
       );
     }
-    await this.db.query(
-      `UPDATE satellite_captures SET processing_status='ANALYSING',updated_at=now() WHERE id=$1`,
+    const quality: Array<{ valid: number }> = await this.db.query(
+      `SELECT COALESCE((statistics->>'validPixelPercentage')::float,0) valid FROM satellite_statistics WHERE capture_id=$1 AND index='NDVI'`,
       [x.captureId],
+    );
+    const valid = quality[0]?.valid ?? 0;
+    const minimum = this.config.get<number>('satelliteMinValidPixelPercentage', 20);
+    if (valid < minimum) {
+      const capture = await this.capture(x.captureId);
+      await this.db.transaction(async (manager) => {
+        await manager.query(
+          `INSERT INTO satellite_anomaly_assessments(capture_id,field_id,baseline_method,status,engine_version,observed_at,source_identifier,evidence)
+           VALUES($1,$2,'INSUFFICIENT_HISTORY','QUALITY_BLOCKED','satellite-anomaly-v1',$3,$4,$5)
+           ON CONFLICT(capture_id) DO UPDATE SET status=EXCLUDED.status,evidence=EXCLUDED.evidence,updated_at=now()`,
+          [
+            x.captureId,
+            x.fieldId,
+            capture.acquisition_date,
+            capture.provider_scene_id,
+            {
+              conclusionScope: 'SATELLITE_STRESS_ANOMALY',
+              diagnosticCapability: 'NONE',
+              validPixelPercentage: valid,
+              minimumValidPixelPercentage: minimum,
+              reason: 'INSUFFICIENT_CLEAR_PIXELS',
+            },
+          ],
+        );
+        await manager.query(
+          `UPDATE satellite_captures SET processing_status='CLOUD_BLOCKED',processed_date=now(),usable_pixel_percentage=$2,data_quality='POOR',updated_at=now() WHERE id=$1`,
+          [x.captureId, valid],
+        );
+      });
+      return;
+    }
+    await this.db.query(
+      `UPDATE satellite_captures SET processing_status='ANALYSING',usable_pixel_percentage=$2,updated_at=now() WHERE id=$1`,
+      [x.captureId, valid],
     );
     await this.next('satellite:stress-analysis', x);
   }
   private async analyse(x: CaptureContext): Promise<void> {
-    const count: Array<{ count: string }> = await this.db.query(
-      `SELECT count(*)::text count FROM satellite_stress_zones WHERE capture_id=$1`,
+    const assessment: Array<{ id: string }> = await this.db.query(
+      `SELECT id FROM satellite_anomaly_assessments WHERE capture_id=$1`,
       [x.captureId],
     );
-    if (Number(count[0]?.count ?? 0) === 0) {
+    if (!assessment[0]) {
       const c = await this.capture(x.captureId);
       const stats: Array<{ index: string; statistics: Record<string, unknown> }> =
         await this.db.query(
@@ -251,11 +287,12 @@ export class SatelliteProcessor extends WorkerHost {
           [x.captureId],
         );
       const history: Array<{
+        captureId: string;
         index: string;
         statistics: Record<string, unknown>;
         acquisition_date: Date;
       }> = await this.db.query(
-        `SELECT ss.index,ss.statistics,sc.acquisition_date FROM satellite_statistics ss JOIN satellite_captures sc ON sc.id=ss.capture_id WHERE sc.field_id=$1 AND sc.processing_status='COMPLETED' AND sc.id<>$2 ORDER BY sc.acquisition_date DESC LIMIT 12`,
+        `SELECT sc.id AS "captureId",ss.index,ss.statistics,sc.acquisition_date FROM satellite_statistics ss JOIN satellite_captures sc ON sc.id=ss.capture_id WHERE sc.field_id=$1 AND sc.processing_status='COMPLETED' AND sc.data_quality IN ('GOOD','PARTIAL') AND sc.id<>$2 ORDER BY sc.acquisition_date DESC LIMIT 12`,
         [x.fieldId, x.captureId],
       );
       const ndvi: Array<{ object_key: string }> = await this.db.query(
@@ -263,7 +300,7 @@ export class SatelliteProcessor extends WorkerHost {
         [x.captureId],
       );
       const access = ndvi[0] ? await this.storage.createAccessUrl(ndvi[0].object_key, 300) : null;
-      const zones = await this.stress.analyse({
+      const result = await this.stress.analyse({
         captureId: x.captureId,
         fieldBoundary: c.boundary,
         ndviRasterUrl: access?.url,
@@ -271,19 +308,46 @@ export class SatelliteProcessor extends WorkerHost {
         previousObservations: history,
         minimumAreaHectares: 0.02,
       });
-      for (const zone of zones)
-        await this.db.query(
-          `INSERT INTO satellite_stress_zones(capture_id,geometry,severity,score,label,area_hectares,evidence) VALUES($1,ST_SetSRID(ST_GeomFromGeoJSON($2),4326),$3,$4,$5,$6,$7)`,
+      await this.db.transaction(async (manager) => {
+        await manager.query(
+          `INSERT INTO satellite_anomaly_assessments(capture_id,field_id,baseline_method,baseline_capture_ids,status,engine_version,observed_at,source_identifier,evidence)
+           VALUES($1,$2,$3,$4,$5,'satellite-anomaly-v1',$6,$7,$8)`,
           [
             x.captureId,
-            JSON.stringify(zone.geometry),
-            zone.severity,
-            zone.score,
-            zone.label,
-            zone.areaHectares,
-            zone.evidence,
+            x.fieldId,
+            result.baseline.method,
+            result.baseline.captureIds,
+            result.baseline.method === 'INSUFFICIENT_HISTORY'
+              ? 'INSUFFICIENT_HISTORY'
+              : 'COMPLETED',
+            c.acquisition_date,
+            c.provider_scene_id,
+            {
+              conclusionScope: 'SATELLITE_STRESS_ANOMALY',
+              diagnosticCapability: 'NONE',
+              methodology: result.methodology,
+              metricReferences: stats.map((item) => ({
+                index: item.index,
+                captureId: x.captureId,
+              })),
+              observationCount: result.baseline.observationCount,
+            },
           ],
         );
+        for (const zone of result.zones)
+          await manager.query(
+            `INSERT INTO satellite_stress_zones(capture_id,geometry,severity,score,label,area_hectares,evidence) VALUES($1,ST_SetSRID(ST_GeomFromGeoJSON($2),4326),$3,$4,$5,$6,$7)`,
+            [
+              x.captureId,
+              JSON.stringify(zone.geometry),
+              zone.severity,
+              zone.score,
+              zone.label,
+              zone.areaHectares,
+              zone.evidence,
+            ],
+          );
+      });
     }
     await this.next('satellite:finalize', x);
   }
@@ -391,7 +455,10 @@ export class SatelliteProcessor extends WorkerHost {
   ): Record<string, unknown> {
     const bands =
       index === 'NDVI' ? ['B04', 'B08', 'SCL', 'dataMask'] : ['B08', 'B11', 'SCL', 'dataMask'];
-    const expr = index === 'NDVI' ? '(s.B08-s.B04)/(s.B08+s.B04)' : '(s.B08-s.B11)/(s.B08+s.B11)';
+    const expr =
+      index === 'NDVI'
+        ? '((s.B08+s.B04)===0?0:(s.B08-s.B04)/(s.B08+s.B04))'
+        : '((s.B08+s.B11)===0?0:(s.B08-s.B11)/(s.B08+s.B11))';
     const range = this.sceneRange(x.acquisitionDate);
     return {
       input: {

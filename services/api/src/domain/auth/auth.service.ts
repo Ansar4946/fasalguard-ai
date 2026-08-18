@@ -1,5 +1,9 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BillingEventType, PlanCode, SubscriptionStatus } from '../billing/billing.enums';
+import { writeBillingEvent } from '../billing/billing.service';
+import { AcquisitionSource } from '../growth/growth.enums';
+import { generateReferralCode, resolveReferrer } from '../growth/referral.service';
+import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
@@ -7,6 +11,7 @@ import { DataSource, type EntityManager } from 'typeorm';
 import { UserRole, UserStatus } from '../identity/identity.enums';
 import type { LoginDto, RegisterDto } from './dto/auth.dto';
 import type { AuthPrincipal, CurrentUser, SessionContext, TokenPair } from './auth.types';
+import { EMAIL_PROVIDER, type EmailProvider } from './email/email-provider';
 interface UserRow {
   id: string;
   email: string | null;
@@ -31,12 +36,13 @@ export class AuthService {
     private readonly db: DataSource,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    @Inject(EMAIL_PROVIDER) private readonly email: EmailProvider,
   ) {}
   async register(
     dto: RegisterDto,
     context: SessionContext,
-  ): Promise<{ user: CurrentUser; tokens: TokenPair }> {
-    return this.db.transaction(async (manager) => {
+  ): Promise<{ user: CurrentUser; tokens: TokenPair; emailDelivery: 'sent' | 'failed' }> {
+    const result = await this.db.transaction(async (manager) => {
       const exists: Array<{ id: string }> = await manager.query(
         `SELECT id FROM users WHERE lower(email)=lower($1) AND deleted_at IS NULL`,
         [dto.email],
@@ -46,6 +52,17 @@ export class AuthService {
           code: 'ACCOUNT_EXISTS',
           message: 'An account already exists for this email.',
         });
+      if (dto.phone) {
+        const phoneExists: Array<{ id: string }> = await manager.query(
+          `SELECT id FROM users WHERE phone=$1 AND deleted_at IS NULL`,
+          [dto.phone],
+        );
+        if (phoneExists.length)
+          throw new ConflictException({
+            code: 'PHONE_ALREADY_REGISTERED',
+            message: 'An account already exists for this phone number.',
+          });
+      }
       const passwordHash = await argon2.hash(dto.password, {
         type: argon2.argon2id,
         memoryCost: 19456,
@@ -57,9 +74,36 @@ export class AuthService {
         [dto.email, dto.phone ?? null, passwordHash, UserRole.Farmer, UserStatus.Active],
       );
       const user = users[0]!;
+      const referredByUserId = await resolveReferrer(manager, dto.referralCode);
+      const acquisitionSource =
+        dto.acquisitionSource ??
+        (referredByUserId ? AcquisitionSource.Referral : AcquisitionSource.Direct);
       await manager.query(
-        `INSERT INTO farmer_profiles(user_id,full_name,preferred_language) VALUES($1,$2,$3)`,
-        [user.id, dto.fullName, dto.preferredLanguage ?? 'en'],
+        `INSERT INTO farmer_profiles(user_id,full_name,preferred_language,acquisition_source,referred_by_user_id,referral_code)
+         VALUES($1,$2,$3,$4,$5,$6)`,
+        [
+          user.id,
+          dto.fullName,
+          dto.preferredLanguage ?? 'en',
+          acquisitionSource,
+          referredByUserId,
+          generateReferralCode(),
+        ],
+      );
+      const subscriptionId = randomUUID();
+      await manager.query(
+        `INSERT INTO subscriptions(id,user_id,plan_code,status,started_at) VALUES($1,$2,$3,$4,now())`,
+        [subscriptionId, user.id, PlanCode.Free, SubscriptionStatus.Active],
+      );
+      await writeBillingEvent(
+        manager,
+        subscriptionId,
+        user.id,
+        BillingEventType.SubscriptionCreated,
+        {
+          planCode: PlanCode.Free,
+          reason: 'registration',
+        },
       );
       for (const consent of dto.consents)
         await manager.query(
@@ -77,6 +121,13 @@ export class AuthService {
         tokens: await this.issueSession(manager, user, deviceId, context),
       };
     });
+    let emailDelivery: 'sent' | 'failed' = 'sent';
+    try {
+      await this.email.sendCredentials({ recipient: dto.email, password: dto.password });
+    } catch {
+      emailDelivery = 'failed';
+    }
+    return { ...result, emailDelivery };
   }
   async login(
     dto: LoginDto,
@@ -87,11 +138,7 @@ export class AuthService {
       [dto.identifier],
     );
     const user = rows[0];
-    if (
-      !user?.password_hash ||
-      user.status !== UserStatus.Active ||
-      !(await argon2.verify(user.password_hash, dto.password))
-    )
+    if (!user || user.status !== UserStatus.Active)
       throw new UnauthorizedException({
         code: 'INVALID_CREDENTIALS',
         message: 'The supplied credentials are invalid.',

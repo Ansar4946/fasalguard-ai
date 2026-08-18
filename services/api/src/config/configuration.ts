@@ -20,6 +20,13 @@ export interface AppConfiguration {
   accessTokenTtlSeconds: number;
   refreshTokenTtlDays: number;
   otpProvider: 'development' | 'production';
+  webAppUrl: string;
+  passwordSetupTtlMinutes: number;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword: string;
+  smtpFrom: string;
   objectStorageProvider: 'mock' | 'alibaba';
   ossRegion: string;
   ossBucket: string;
@@ -29,11 +36,16 @@ export interface AppConfiguration {
   sentinelHubClientSecret: string;
   sentinelHubBaseUrl: string;
   satelliteMaxCloudCoverage: number;
+  satelliteMinValidPixelPercentage: number;
   geospatialAiUrl: string;
   satelliteMonitoringIntervalHours: number;
   satelliteProviderRequestsPerMinute: number;
+  weatherProvider: 'open-meteo' | 'openweathermap';
   openMeteoBaseUrl: string;
+  openWeatherMapBaseUrl: string;
+  openWeatherMapApiKey: string;
   weatherCacheTtlSeconds: number;
+  weatherAlertMinIntervalHours: number;
   visionProvider: 'roboflow' | 'self-hosted';
   roboflowBaseUrl: string;
   roboflowApiKey: string;
@@ -52,6 +64,14 @@ export interface AppConfiguration {
   speechProvider: 'fake' | 'qwen';
   qwenSttModel: string;
   qwenTtsModel: string;
+  farmBrainProvider: 'fake' | 'gemini';
+  geminiTransport: 'google-ai' | 'vertex';
+  geminiApiKey: string;
+  geminiModel: string;
+  geminiTimeoutMs: number;
+  googleCloudProject: string;
+  googleCloudLocation: string;
+  googleAccessToken: string;
 }
 export default function configuration(): AppConfiguration {
   return {
@@ -79,6 +99,13 @@ export default function configuration(): AppConfiguration {
     accessTokenTtlSeconds: Number(process.env.ACCESS_TOKEN_TTL_SECONDS ?? 900),
     refreshTokenTtlDays: Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 30),
     otpProvider: (process.env.OTP_PROVIDER ?? 'development') as 'development' | 'production',
+    webAppUrl: process.env.WEB_APP_URL ?? 'http://localhost:3000',
+    passwordSetupTtlMinutes: Number(process.env.PASSWORD_SETUP_TTL_MINUTES ?? 30),
+    smtpHost: process.env.SMTP_HOST ?? '',
+    smtpPort: Number(process.env.SMTP_PORT ?? 587),
+    smtpUser: process.env.SMTP_USER ?? '',
+    smtpPassword: process.env.SMTP_PASSWORD ?? '',
+    smtpFrom: process.env.SMTP_FROM ?? '',
     objectStorageProvider: (process.env.OBJECT_STORAGE_PROVIDER ?? 'mock') as 'mock' | 'alibaba',
     ossRegion: process.env.OSS_REGION ?? '',
     ossBucket: process.env.OSS_BUCKET ?? '',
@@ -88,13 +115,21 @@ export default function configuration(): AppConfiguration {
     sentinelHubClientSecret: process.env.SENTINEL_HUB_CLIENT_SECRET ?? '',
     sentinelHubBaseUrl: process.env.SENTINEL_HUB_BASE_URL ?? 'https://services.sentinel-hub.com',
     satelliteMaxCloudCoverage: Number(process.env.SATELLITE_MAX_CLOUD_COVERAGE ?? 30),
+    satelliteMinValidPixelPercentage: Number(
+      process.env.SATELLITE_MIN_VALID_PIXEL_PERCENTAGE ?? 20,
+    ),
     geospatialAiUrl: process.env.GEOSPATIAL_AI_URL ?? 'http://localhost:8000',
     satelliteMonitoringIntervalHours: Number(process.env.SATELLITE_MONITORING_INTERVAL_HOURS ?? 8),
     satelliteProviderRequestsPerMinute: Number(
       process.env.SATELLITE_PROVIDER_REQUESTS_PER_MINUTE ?? 30,
     ),
+    weatherProvider: (process.env.WEATHER_PROVIDER ?? 'open-meteo') as
+      'open-meteo' | 'openweathermap',
     openMeteoBaseUrl: process.env.OPEN_METEO_BASE_URL ?? 'https://api.open-meteo.com',
+    openWeatherMapBaseUrl: process.env.OPENWEATHERMAP_BASE_URL ?? 'https://api.openweathermap.org',
+    openWeatherMapApiKey: process.env.OPENWEATHERMAP_API_KEY ?? '',
     weatherCacheTtlSeconds: Number(process.env.WEATHER_CACHE_TTL_SECONDS ?? 900),
+    weatherAlertMinIntervalHours: Number(process.env.WEATHER_ALERT_MIN_INTERVAL_HOURS ?? 12),
     visionProvider: (process.env.VISION_PROVIDER ?? 'self-hosted') as 'roboflow' | 'self-hosted',
     roboflowBaseUrl: process.env.ROBOFLOW_BASE_URL ?? 'https://detect.roboflow.com',
     roboflowApiKey: process.env.ROBOFLOW_API_KEY ?? '',
@@ -113,5 +148,13 @@ export default function configuration(): AppConfiguration {
     speechProvider: (process.env.SPEECH_PROVIDER ?? 'fake') as 'fake' | 'qwen',
     qwenSttModel: process.env.QWEN_STT_MODEL ?? 'qwen-audio-asr',
     qwenTtsModel: process.env.QWEN_TTS_MODEL ?? 'qwen-tts',
+    farmBrainProvider: (process.env.FARM_BRAIN_PROVIDER ?? 'fake') as 'fake' | 'gemini',
+    geminiTransport: (process.env.GEMINI_TRANSPORT ?? 'google-ai') as 'google-ai' | 'vertex',
+    geminiApiKey: process.env.GEMINI_API_KEY ?? '',
+    geminiModel: process.env.GEMINI_MODEL ?? 'gemini-3.6-flash',
+    geminiTimeoutMs: Number(process.env.GEMINI_TIMEOUT_MS ?? 30000),
+    googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT ?? '',
+    googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION ?? 'us-central1',
+    googleAccessToken: process.env.GOOGLE_ACCESS_TOKEN ?? '',
   };
 }

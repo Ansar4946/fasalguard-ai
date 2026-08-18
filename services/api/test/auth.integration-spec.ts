@@ -77,6 +77,11 @@ integration('Authentication and authorization API', () => {
     )) as Array<{ type: string; policy_version: string; granted: boolean; recorded_at: Date }>;
     expect(rows).toHaveLength(2);
     expect(rows.every((row) => row.policy_version === '2026-08' && row.recorded_at)).toBe(true);
+    const subscriptions = (await db.query(
+      `SELECT plan_code,status FROM subscriptions WHERE user_id=$1`,
+      [body.user.id],
+    )) as Array<{ plan_code: string; status: string }>;
+    expect(subscriptions).toEqual([{ plan_code: 'FREE', status: 'ACTIVE' }]);
   });
 
   it('authenticates, returns the current user, and enforces RBAC', async () => {
@@ -85,7 +90,6 @@ integration('Authentication and authorization API', () => {
       .post('/api/v1/auth/login')
       .send({
         identifier: email,
-        password,
         device: { deviceIdentifier: 'integration-browser-002', platform: 'web' },
       })
       .expect(200);
@@ -113,7 +117,6 @@ integration('Authentication and authorization API', () => {
         .post('/api/v1/auth/login')
         .send({
           identifier: email,
-          password,
           device: { deviceIdentifier: 'integration-browser-003', platform: 'web' },
         })
         .expect(200)
@@ -141,7 +144,6 @@ integration('Authentication and authorization API', () => {
         .post('/api/v1/auth/login')
         .send({
           identifier: email,
-          password,
           device: { deviceIdentifier: 'integration-browser-004', platform: 'web' },
         })
         .expect(200)
@@ -163,7 +165,6 @@ integration('Authentication and authorization API', () => {
         .post('/api/v1/auth/login')
         .send({
           identifier: email,
-          password,
           device: { deviceIdentifier: 'integration-browser-005', platform: 'web' },
         })
         .expect(200)

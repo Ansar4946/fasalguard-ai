@@ -7,6 +7,10 @@ import { RuleValidationStatus, WeatherRiskCategory, WeatherSuitability } from '.
 export class WeatherSnapshot extends BaseEntity {
   @Column({ name: 'field_id', type: 'uuid' }) fieldId!: string;
   @Column({ type: 'varchar', length: 32 }) provider!: string;
+  @Column({ name: 'source_identifier', type: 'varchar', length: 255 })
+  sourceIdentifier!: string;
+  @Column({ name: 'observation_status', type: 'varchar', length: 24, default: 'RECORDED' })
+  observationStatus!: string;
   @Column({ name: 'observed_at', type: 'timestamptz' }) observedAt!: Date;
   @Column({ name: 'cache_bucket', type: 'timestamptz' }) cacheBucket!: Date;
   @Column({ type: 'jsonb' }) values!: Record<string, unknown>;
@@ -18,6 +22,10 @@ export class WeatherSnapshot extends BaseEntity {
 export class WeatherForecast extends BaseEntity {
   @Column({ name: 'field_id', type: 'uuid' }) fieldId!: string;
   @Column({ type: 'varchar', length: 32 }) provider!: string;
+  @Column({ name: 'source_identifier', type: 'varchar', length: 255 })
+  sourceIdentifier!: string;
+  @Column({ name: 'observation_status', type: 'varchar', length: 24, default: 'RECORDED' })
+  observationStatus!: string;
   @Column({ name: 'generated_at', type: 'timestamptz' }) generatedAt!: Date;
   @Column({ name: 'valid_from', type: 'timestamptz' }) validFrom!: Date;
   @Column({ name: 'valid_to', type: 'timestamptz' }) validTo!: Date;
@@ -55,4 +63,12 @@ export class WeatherRiskAssessment extends BaseEntity {
     string,
     unknown
   >;
+}
+@Entity({ name: 'weather_risk_alerts' })
+@Index('uq_weather_risk_alert_field_category', ['fieldId', 'category'], { unique: true })
+export class WeatherRiskAlert extends BaseEntity {
+  @Column({ name: 'field_id', type: 'uuid' }) fieldId!: string;
+  @Column({ type: 'varchar', length: 48 }) category!: WeatherRiskCategory;
+  @Column({ type: 'varchar', length: 24 }) suitability!: WeatherSuitability;
+  @Column({ name: 'notified_at', type: 'timestamptz' }) notifiedAt!: Date;
 }

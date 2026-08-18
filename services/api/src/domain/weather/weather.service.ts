@@ -22,6 +22,12 @@ interface FieldContext {
   cropId: string | null;
   cropName: string | null;
 }
+export type WeatherAssessment = WeatherRuleEvaluation & {
+  fieldId: string;
+  crop: string | null;
+  provider: string;
+  ruleProvenance: { hasExpertApprovedRules: boolean; demoRuleCount: number };
+};
 @Injectable()
 export class WeatherService {
   constructor(
@@ -70,18 +76,25 @@ export class WeatherService {
       ruleProvenance: result.ruleProvenance,
     };
   }
-  private async assess(
-    userId: string,
-    fieldId: string,
-  ): Promise<
-    WeatherRuleEvaluation & {
-      fieldId: string;
-      crop: string | null;
-      provider: string;
-      ruleProvenance: { hasExpertApprovedRules: boolean; demoRuleCount: number };
-    }
-  > {
+  /**
+   * Ownership-scoped assessment used by the farmer-facing HTTP endpoints. Ownership is
+   * enforced entirely by `context()`; this method never bypasses it.
+   */
+  private async assess(userId: string, fieldId: string): Promise<WeatherAssessment> {
     const context = await this.context(userId, fieldId);
+    return this.evaluate(fieldId, context);
+  }
+  /**
+   * Unscoped assessment for the internal scheduled weather-alert path only (see
+   * WeatherAlertService). It intentionally does not check field ownership — callers must
+   * already have selected `fieldId` from a trusted, system-level query (e.g. "all active
+   * fields"), not from user input. Never expose this through a controller.
+   */
+  async assessField(fieldId: string): Promise<WeatherAssessment> {
+    const context = await this.contextUnscoped(fieldId);
+    return this.evaluate(fieldId, context);
+  }
+  private async evaluate(fieldId: string, context: FieldContext): Promise<WeatherAssessment> {
     const bundle = await this.bundle(context);
     const rules = context.cropId
       ? await this.db.query<EvaluatedRule[]>(
@@ -115,9 +128,10 @@ export class WeatherService {
       ruleProvenance: provenance,
     };
   }
+  /** Ownership-enforcing lookup backing the farmer-facing HTTP endpoints. Do not weaken. */
   private async context(userId: string, fieldId: string): Promise<FieldContext> {
     const rows = await this.db.query<FieldContext[]>(
-      `SELECT fi.id,ST_Y(fi.centroid)::float AS latitude,ST_X(fi.centroid)::float AS longitude,cc.id AS "cropCycleId",cc.crop_id AS "cropId",c.name AS "cropName" FROM fields fi JOIN farms fa ON fa.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=fa.farmer_profile_id LEFT JOIN LATERAL (SELECT * FROM crop_cycles x WHERE x.field_id=fi.id AND x.status=$3 AND x.deleted_at IS NULL ORDER BY x.created_at DESC LIMIT 1) cc ON true LEFT JOIN crops c ON c.id=cc.crop_id WHERE fi.id=$1 AND fi.deleted_at IS NULL AND fp.user_id=$2`,
+      `SELECT fi.id,ST_Y(fi.centroid)::float AS latitude,ST_X(fi.centroid)::float AS longitude,cc.id AS "cropCycleId",cc.crop_id AS "cropId",c.name AS "cropName" FROM fields fi JOIN farms fa ON fa.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=fa.farmer_id LEFT JOIN LATERAL (SELECT * FROM crop_cycles x WHERE x.field_id=fi.id AND x.status=$3 AND x.deleted_at IS NULL ORDER BY x.created_at DESC LIMIT 1) cc ON true LEFT JOIN crops c ON c.id=cc.crop_id WHERE fi.id=$1 AND fi.deleted_at IS NULL AND fp.user_id=$2`,
       [fieldId, userId, CropCycleStatus.Active],
     );
     if (rows[0]) return rows[0];
@@ -127,6 +141,15 @@ export class WeatherService {
     );
     if (exists.length) throw new ForbiddenException('You do not have access to this field.');
     throw new NotFoundException('Field not found.');
+  }
+  /** Unscoped lookup for the internal scheduled path. See `assessField()`. */
+  private async contextUnscoped(fieldId: string): Promise<FieldContext> {
+    const rows = await this.db.query<FieldContext[]>(
+      `SELECT fi.id,ST_Y(fi.centroid)::float AS latitude,ST_X(fi.centroid)::float AS longitude,cc.id AS "cropCycleId",cc.crop_id AS "cropId",c.name AS "cropName" FROM fields fi LEFT JOIN LATERAL (SELECT * FROM crop_cycles x WHERE x.field_id=fi.id AND x.status=$2 AND x.deleted_at IS NULL ORDER BY x.created_at DESC LIMIT 1) cc ON true LEFT JOIN crops c ON c.id=cc.crop_id WHERE fi.id=$1 AND fi.deleted_at IS NULL`,
+      [fieldId, CropCycleStatus.Active],
+    );
+    if (!rows[0]) throw new NotFoundException('Field not found.');
+    return rows[0];
   }
   private async bundle(context: FieldContext): Promise<WeatherBundle> {
     const rounded = `${context.latitude.toFixed(3)}:${context.longitude.toFixed(3)}`;
@@ -142,10 +165,11 @@ export class WeatherService {
   private async persist(fieldId: string, b: WeatherBundle): Promise<void> {
     const bucket = new Date(Math.floor(new Date(b.fetchedAt).getTime() / 900000) * 900000);
     await this.db.query(
-      `INSERT INTO weather_snapshots(field_id,provider,observed_at,cache_bucket,values,raw_metadata) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING`,
+      `INSERT INTO weather_snapshots(field_id,provider,source_identifier,observation_status,observed_at,cache_bucket,values,raw_metadata) VALUES($1,$2,$3,'RECORDED',$4,$5,$6,$7) ON CONFLICT DO NOTHING`,
       [
         fieldId,
         b.provider,
+        `${b.provider}:${fieldId}:${b.current.time}`,
         b.current.time,
         bucket,
         JSON.stringify(b.current),
@@ -155,10 +179,11 @@ export class WeatherService {
     const first = b.hourly[0];
     if (first)
       await this.db.query(
-        `INSERT INTO weather_forecasts(field_id,provider,generated_at,valid_from,valid_to,cache_bucket,points) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING`,
+        `INSERT INTO weather_forecasts(field_id,provider,source_identifier,observation_status,generated_at,valid_from,valid_to,cache_bucket,points) VALUES($1,$2,$3,'RECORDED',$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING`,
         [
           fieldId,
           b.provider,
+          `${b.provider}:${fieldId}:${b.fetchedAt}`,
           b.fetchedAt,
           first.time,
           b.hourly.at(-1)?.time ?? first.time,

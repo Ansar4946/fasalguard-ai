@@ -28,6 +28,15 @@ export const environmentSchema = Joi.object({
   ACCESS_TOKEN_TTL_SECONDS: Joi.number().integer().min(60).max(3600).default(900),
   REFRESH_TOKEN_TTL_DAYS: Joi.number().integer().min(1).max(90).default(30),
   OTP_PROVIDER: Joi.string().valid('development', 'production').default('development'),
+  WEB_APP_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('http://localhost:3000'),
+  PASSWORD_SETUP_TTL_MINUTES: Joi.number().integer().min(10).max(120).default(30),
+  SMTP_HOST: Joi.string().allow('').default(''),
+  SMTP_PORT: Joi.number().port().default(587),
+  SMTP_USER: Joi.string().allow('').default(''),
+  SMTP_PASSWORD: Joi.string().allow('').default(''),
+  SMTP_FROM: Joi.string().allow('').default(''),
   OBJECT_STORAGE_PROVIDER: Joi.string().valid('mock', 'alibaba').default('mock'),
   OSS_REGION: Joi.string().allow('').default(''),
   OSS_BUCKET: Joi.string().allow('').default(''),
@@ -37,11 +46,16 @@ export const environmentSchema = Joi.object({
   SENTINEL_HUB_CLIENT_SECRET: Joi.string().allow('').default(''),
   SENTINEL_HUB_BASE_URL: Joi.string().uri().default('https://services.sentinel-hub.com'),
   SATELLITE_MAX_CLOUD_COVERAGE: Joi.number().min(0).max(100).default(30),
+  SATELLITE_MIN_VALID_PIXEL_PERCENTAGE: Joi.number().min(1).max(100).default(20),
   GEOSPATIAL_AI_URL: Joi.string().uri().default('http://localhost:8000'),
   SATELLITE_MONITORING_INTERVAL_HOURS: Joi.number().integer().min(6).max(12).default(8),
   SATELLITE_PROVIDER_REQUESTS_PER_MINUTE: Joi.number().integer().min(1).max(300).default(30),
+  WEATHER_PROVIDER: Joi.string().valid('open-meteo', 'openweathermap').default('open-meteo'),
   OPEN_METEO_BASE_URL: Joi.string().uri().default('https://api.open-meteo.com'),
+  OPENWEATHERMAP_BASE_URL: Joi.string().uri().default('https://api.openweathermap.org'),
+  OPENWEATHERMAP_API_KEY: Joi.string().allow('').default(''),
   WEATHER_CACHE_TTL_SECONDS: Joi.number().integer().min(300).max(3600).default(900),
+  WEATHER_ALERT_MIN_INTERVAL_HOURS: Joi.number().integer().min(1).max(72).default(12),
   VISION_PROVIDER: Joi.string().valid('roboflow', 'self-hosted').default('self-hosted'),
   ROBOFLOW_BASE_URL: Joi.string().uri().default('https://detect.roboflow.com'),
   ROBOFLOW_API_KEY: Joi.string().allow('').default(''),
@@ -60,6 +74,14 @@ export const environmentSchema = Joi.object({
   SPEECH_PROVIDER: Joi.string().valid('fake', 'qwen').default('fake'),
   QWEN_STT_MODEL: Joi.string().min(1).default('qwen-audio-asr'),
   QWEN_TTS_MODEL: Joi.string().min(1).default('qwen-tts'),
+  FARM_BRAIN_PROVIDER: Joi.string().valid('fake', 'gemini').default('fake'),
+  GEMINI_TRANSPORT: Joi.string().valid('google-ai', 'vertex').default('google-ai'),
+  GEMINI_API_KEY: Joi.string().allow('').default(''),
+  GEMINI_MODEL: Joi.string().min(1).max(120).default('gemini-2.5-flash'),
+  GEMINI_TIMEOUT_MS: Joi.number().integer().min(5_000).max(120_000).default(30_000),
+  GOOGLE_CLOUD_PROJECT: Joi.string().allow('').max(120).default(''),
+  GOOGLE_CLOUD_LOCATION: Joi.string().min(2).max(40).default('us-central1'),
+  GOOGLE_ACCESS_TOKEN: Joi.string().allow('').default(''),
 }).custom((value: Record<string, unknown>, helpers) => {
   if (value.NODE_ENV !== 'production') return value;
   const required = (key: string): boolean =>
@@ -83,6 +105,7 @@ export const environmentSchema = Joi.object({
   for (const key of [
     'SENTINEL_HUB_BASE_URL',
     'OPEN_METEO_BASE_URL',
+    'OPENWEATHERMAP_BASE_URL',
     'ROBOFLOW_BASE_URL',
     'QWEN_BASE_URL',
   ]) {
@@ -109,9 +132,18 @@ export const environmentSchema = Joi.object({
     });
   if (value.OTP_PROVIDER !== 'production')
     return helpers.error('any.invalid', { message: 'Development OTP is forbidden in production.' });
+  for (const key of ['SMTP_HOST', 'SMTP_FROM'])
+    if (!required(key))
+      return helpers.error('any.invalid', {
+        message: 'Production account email delivery requires SMTP configuration.',
+      });
   if (value.VISION_PROVIDER === 'roboflow' && !required('ROBOFLOW_API_KEY'))
     return helpers.error('any.invalid', {
       message: 'Selected vision provider credentials are missing.',
+    });
+  if (value.WEATHER_PROVIDER === 'openweathermap' && !required('OPENWEATHERMAP_API_KEY'))
+    return helpers.error('any.invalid', {
+      message: 'Selected weather provider credentials are missing.',
     });
   if (
     (value.ASSISTANT_PROVIDER === 'qwen' || value.SPEECH_PROVIDER === 'qwen') &&
@@ -124,5 +156,11 @@ export const environmentSchema = Joi.object({
     return helpers.error('any.invalid', {
       message: 'Selected push provider credentials are missing.',
     });
+  if (value.FARM_BRAIN_PROVIDER !== 'gemini')
+    return helpers.error('any.invalid', { message: 'Production Farm Brain must use Gemini.' });
+  if (value.GEMINI_TRANSPORT === 'google-ai' && !required('GEMINI_API_KEY'))
+    return helpers.error('any.invalid', { message: 'Gemini API credentials are missing.' });
+  if (value.GEMINI_TRANSPORT === 'vertex' && !required('GOOGLE_CLOUD_PROJECT'))
+    return helpers.error('any.invalid', { message: 'Vertex AI project configuration is missing.' });
   return value;
 });

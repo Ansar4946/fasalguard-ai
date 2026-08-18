@@ -14,6 +14,7 @@ import {
   FieldHealthScore,
   IntegrationUsage,
   SatelliteCapture,
+  SatelliteAnomalyAssessment,
   SatelliteLayer,
   SatelliteStatistics,
   SatelliteStressZone,
@@ -21,6 +22,7 @@ import {
 import {
   CropWeatherRule,
   WeatherForecast,
+  WeatherRiskAlert,
   WeatherRiskAssessment,
   WeatherSnapshot,
 } from '../../../domain/weather/weather.entities';
@@ -81,6 +83,34 @@ import {
   VoiceNoteMetadata,
 } from '../../../domain/sync/sync.entities';
 import { AnalyticsEvent, GeneratedReport } from '../../../domain/reports/report.entities';
+import {
+  FarmIncident,
+  FarmIntervention,
+  FarmVerification,
+} from '../../../domain/digital-twin/digital-twin.entities';
+import {
+  FarmBrainRun,
+  FarmBrainRunEvidence,
+  FarmBrainToolCall,
+} from '../../../domain/farm-brain/farm-brain.entities';
+import {
+  Organization,
+  PilotUser,
+  Subscription,
+  SubscriptionPayment,
+  UserFeedback,
+} from '../../../domain/reports/business-evidence.entities';
+import {
+  BillingEvent,
+  Invoice,
+  SubscriptionPlan,
+  UsageRecord,
+} from '../../../domain/billing/billing.entities';
+import {
+  LandingPageView,
+  LifecycleEmailLog,
+  PilotLead,
+} from '../../../domain/growth/growth.entities';
 export const databaseEntities = [
   User,
   FarmerProfile,
@@ -95,6 +125,7 @@ export const databaseEntities = [
   AuthSession,
   MediaAsset,
   SatelliteCapture,
+  SatelliteAnomalyAssessment,
   SatelliteLayer,
   SatelliteStatistics,
   SatelliteStressZone,
@@ -104,6 +135,7 @@ export const databaseEntities = [
   WeatherForecast,
   CropWeatherRule,
   WeatherRiskAssessment,
+  WeatherRiskAlert,
   CropScan,
   ScanImage,
   ImageQualityResult,
@@ -148,4 +180,22 @@ export const databaseEntities = [
   SyncChange,
   GeneratedReport,
   AnalyticsEvent,
+  FarmIncident,
+  FarmIntervention,
+  FarmVerification,
+  FarmBrainRun,
+  FarmBrainRunEvidence,
+  FarmBrainToolCall,
+  Organization,
+  PilotUser,
+  Subscription,
+  SubscriptionPayment,
+  UserFeedback,
+  SubscriptionPlan,
+  Invoice,
+  BillingEvent,
+  UsageRecord,
+  PilotLead,
+  LandingPageView,
+  LifecycleEmailLog,
 ];

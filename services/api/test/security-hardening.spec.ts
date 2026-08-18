@@ -21,6 +21,9 @@ const productionEnvironment = {
   OSS_ACCESS_KEY_ID: 'runtime-id',
   OSS_ACCESS_KEY_SECRET: 'runtime-secret',
   METRICS_TOKEN: 'metrics-observer-token',
+  FARM_BRAIN_PROVIDER: 'gemini',
+  GEMINI_TRANSPORT: 'vertex',
+  GOOGLE_CLOUD_PROJECT: 'fasalguard-production',
 };
 
 describe('production security hardening', () => {
@@ -92,11 +95,13 @@ describe('production security hardening', () => {
     const queue = { add: jest.fn() };
     const storage = {};
     const config = { get: jest.fn() };
+    const entitlements = { assertFeatureEnabled: jest.fn() };
     const service = new ReportService(
       db as never,
       queue as never,
       storage as never,
       config as never,
+      entitlements as never,
     );
     await expect(
       service.create(

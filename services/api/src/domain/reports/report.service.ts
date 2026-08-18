@@ -12,6 +12,8 @@ import type { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import type { AuthPrincipal } from '../auth/auth.types';
+import { EntitlementMetric } from '../billing/billing.enums';
+import { EntitlementService } from '../billing/entitlement.service';
 import { UserRole } from '../identity/identity.enums';
 import {
   OBJECT_STORAGE_PROVIDER,
@@ -57,6 +59,7 @@ export class ReportService {
     @InjectQueue(REPORT_QUEUE) private readonly queue: Queue<ReportJob>,
     @Inject(OBJECT_STORAGE_PROVIDER) private readonly storage: ObjectStorageProvider,
     private readonly config: ConfigService,
+    private readonly entitlements: EntitlementService,
   ) {}
   async create(p: AuthPrincipal, d: CreateReportDto) {
     await this.assertScope(p, d);
@@ -204,6 +207,8 @@ export class ReportService {
     }
     if (p.role !== UserRole.Farmer)
       throw new ForbiddenException('This role cannot generate resource reports.');
+    if (d.type === ReportType.WeeklyActionPlan)
+      await this.entitlements.assertFeatureEnabled(p.userId, EntitlementMetric.AdvancedReports);
     if (!d.resourceId && d.type !== ReportType.WeeklyActionPlan)
       throw new ConflictException('resourceId is required for this report type.');
     if (!d.resourceId) return;

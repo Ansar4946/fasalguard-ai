@@ -1,12 +1,109 @@
 "use client";
-import Link from "next/link";import {useState} from "react";import type {CreateFieldInput,Farm} from "@/features/farms/types";import {AddFieldDialog} from "./add-field-dialog";import {Icon} from "@/components/ui/icon";
-const overlay="https://lh3.googleusercontent.com/aida-public/AB6AXuAfitbnjmKypEWdiwSwqzz7Oi0NyiPqQdKwiLNyI00hajUKdGzHKpJpAvD4SvN2m3wSp-1bDAe2oFvlwUh1eKhl2lGhmCnRUJ-wqnPwUfaiyaCTk4EAMnCmYkQQLzSOCv7ytuQQ6uKt4KCCHJzl7pKs_B7gQDWLKcKLzmxPpHLVxbWytkfoFXHML4807lD0WKX5VP8IAd3kuw3tsQvHVnUOr-l01mzDKX4rqnBcV1f_gfxr_TGZ6kIY";
-type Row={id:string;name:string;crop:string;variety:string;size:number;sowing:string;stage:string;health:number;diagnosis:string};
-const initialRows:Row[]=[{id:"north",name:"North Field",crop:"Cotton",variety:"CIM-602",size:6,sowing:"Oct 12, 2023",stage:"Flowering",health:82,diagnosis:"None"},{id:"canal",name:"Canal Field",crop:"Wheat",variety:"Faisalabad-08",size:4,sowing:"Nov 05, 2023",stage:"Vegetative",health:91,diagnosis:"None"},{id:"south",name:"South Field",crop:"Cotton",variety:"CIM-602",size:8,sowing:"Oct 10, 2023",stage:"Boll Formation",health:63,diagnosis:"Leaf Rust (AI)"}];
-export function FieldsManagement({farm}:{farm:Farm}){const [rows,setRows]=useState(initialRows);const [dialogOpen,setDialogOpen]=useState(false);const [notice,setNotice]=useState("");function addField(input:CreateFieldInput){setRows(current=>[...current,{id:`field-${Date.now()}`,name:input.name,crop:input.crop,variety:input.variety,size:input.sizeAcres,sowing:new Date(input.sowingDate).toLocaleDateString(),stage:"Planned",health:0,diagnosis:"Awaiting scan"}]);setNotice(`${input.name} was added successfully.`)}return <div className="mx-auto max-w-[1180px] p-4 md:p-6 xl:p-8"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><nav className="text-[10px] text-muted"><Link href="/farms">My Farms</Link> <span>›</span> <strong className="text-brand">{farm.name}</strong></nav><h1 className="mt-2 text-[26px] font-extrabold">Green Valley Estates Detail</h1><p className="mt-1 text-xs text-muted">Managing 18 acres across 3 active field zones.</p></div><button onClick={()=>setDialogOpen(true)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-5 text-xs font-extrabold text-white"><Icon name="plus" className="size-4"/>Add New Field</button></div>{notice&&<div role="status" className="mt-4 rounded-xl bg-green-50 p-3 text-xs font-bold text-green-950">{notice}</div>}
- <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4"><Stat label="Total Area" value="18.5 Acres" note="+2.4% from last season" tone="green"/><Stat label="Average Health" value="78.6%" note="2 fields above average" tone="green"/><Stat label="Active Alerts" value="1 Warning" note="Leaf rust detected" tone="red"/><Stat label="Crop Variety" value="2 Types" note="Cotton & Wheat" tone="amber"/></section>
- <section className="mt-5 overflow-hidden rounded-3xl border border-brand/10 bg-white shadow-sm"><header className="flex items-center justify-between border-b border-brand/5 p-5"><div className="flex items-center gap-2"><Icon name="field" className="size-5 text-brand"/><h2 className="text-base font-extrabold">Field Inventory</h2></div><div className="flex gap-2"><button aria-label="Filter fields" className="grid size-9 place-items-center rounded-lg border border-border text-xs">▽</button><button aria-label="Export fields" className="grid size-9 place-items-center rounded-lg border border-border text-xs">↓</button></div></header><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[850px] text-left"><thead className="bg-surface-soft text-[9px] font-extrabold uppercase tracking-wide text-muted"><tr><th className="px-5 py-4">Field Name</th><th className="px-4 py-4">Crop</th><th className="px-4 py-4">Variety</th><th className="px-4 py-4">Size</th><th className="px-4 py-4">Sowing Date</th><th className="px-4 py-4">Growth Stage</th><th className="px-4 py-4">Health Score</th><th className="px-4 py-4">Active Diagnosis</th></tr></thead><tbody>{rows.map(row=><TableRow key={row.id} row={row}/>)}</tbody></table></div><div className="space-y-3 p-4 md:hidden">{rows.map(row=><MobileRow key={row.id} row={row}/>)}</div><footer className="flex items-center justify-between border-t border-border px-5 py-3 text-[10px] text-muted"><span>Showing 1 to {rows.length} of {rows.length} fields</span><div className="flex items-center gap-3"><button>‹</button><span className="grid size-7 place-items-center rounded-lg bg-brand font-bold text-white">1</span><button>›</button></div></footer></section>
- <section className="mt-5 grid gap-4 lg:grid-cols-[2fr_1fr]"><div className="relative min-h-72 overflow-hidden rounded-3xl border border-brand/10 bg-cover bg-center shadow-sm" style={{backgroundImage:`url(${overlay})`}} role="img" aria-label="Satellite vegetation overlay"><span className="absolute left-4 top-4 rounded-xl bg-white/90 px-3 py-2 text-[10px] font-bold shadow">Satellite Vegetation Overlay (NDVI)</span><span className="absolute bottom-8 left-[64%] rounded-lg bg-danger px-2 py-1 text-[9px] font-bold text-white">Stress zone</span><div className="absolute right-4 top-1/2 flex -translate-y-1/2 flex-col gap-2"><button className="grid size-9 place-items-center rounded-lg bg-white shadow">⌕</button><button className="grid size-9 place-items-center rounded-lg bg-white shadow">+</button><button className="grid size-9 place-items-center rounded-lg bg-white shadow">−</button></div></div><aside className="flex flex-col justify-between rounded-3xl bg-brand-dark p-6 text-white"><div><div className="grid size-11 place-items-center rounded-xl bg-white/10 text-xl">▣</div><h2 className="mt-5 text-lg font-extrabold">AI Agronomist Insight</h2><p className="mt-3 text-xs leading-5 text-white/75">Based on current NDVI trends and weather forecasts, South Field requires immediate scouting for leaf-rust symptoms.</p><p className="mt-3 text-[10px] leading-4 text-brand-soft">Potential yield loss may be reduced through early verification and a locally approved action plan.</p></div><button className="mt-6 min-h-12 rounded-xl bg-brand-soft px-4 text-xs font-extrabold text-brand-dark">Generate Action Plan →</button></aside></section><AddFieldDialog farm={farm} open={dialogOpen} onClose={()=>setDialogOpen(false)} onAdd={addField}/></div>}
-function Stat({label,value,note,tone}:{label:string;value:string;note:string;tone:string}){return <article className="rounded-2xl border border-brand/10 bg-white p-4 shadow-sm"><div className="flex items-center justify-between"><p className="text-[10px] font-bold text-muted">{label}</p><span className={`size-3 rounded-full ${tone==="red"?"bg-danger":tone==="amber"?"bg-warning":"bg-success"}`}/></div><p className={`mt-3 text-lg font-extrabold ${tone==="red"?"text-danger":""}`}>{value}</p><p className="mt-1 text-[9px] text-muted">{note}</p></article>}
-function TableRow({row}:{row:Row}){const danger=row.health<70;return <tr className={`${danger?"bg-red-50/60":""} border-t border-border text-[11px]`}><td className="px-5 py-4"><div className="flex items-center gap-2"><span className={`grid size-7 place-items-center rounded-lg ${danger?"bg-red-100 text-danger":"bg-brand-soft text-brand"}`}>▦</span><strong>{row.name}</strong></div></td><td className="px-4 py-4">{row.crop}</td><td className="px-4 py-4">{row.variety}</td><td className="px-4 py-4"><strong>{row.size}</strong><span className="block text-[9px] text-muted">Acres</span></td><td className="px-4 py-4">{row.sowing}</td><td className="px-4 py-4"><span className={`rounded-full px-2 py-1 text-[8px] font-extrabold uppercase ${danger?"bg-amber-100 text-amber-900":"bg-brand-soft text-brand"}`}>{row.stage}</span></td><td className="px-4 py-4"><div className="flex items-center gap-2"><span className="h-1.5 w-14 rounded-full bg-border"><span className={`block h-1.5 rounded-full ${danger?"bg-danger":"bg-success"}`} style={{width:`${row.health}%`}}/></span><strong>{row.health?`${row.health}%`:"—"}</strong></div></td><td className="px-4 py-4">{danger?<span className="rounded bg-danger px-2 py-1 text-[8px] font-bold text-white">{row.diagnosis}</span>:<span className="text-muted">{row.diagnosis}</span>}</td></tr>}
-function MobileRow({row}:{row:Row}){return <article className={`rounded-2xl border p-4 ${row.health<70?"border-red-200 bg-red-50":"border-border"}`}><div className="flex justify-between"><strong>{row.name}</strong><span className="text-sm font-extrabold">{row.health?`${row.health}%`:"—"}</span></div><p className="mt-2 text-xs text-muted">{row.crop} · {row.variety} · {row.size} acres</p><div className="mt-3 flex justify-between text-[10px]"><span>{row.stage}</span><span>{row.diagnosis}</span></div></article>}
+
+import Link from "next/link";
+import { useState } from "react";
+import { Icon } from "@/components/ui/icon";
+import { AddFieldDialog } from "./add-field-dialog";
+import type { FarmSummary, FieldSummary } from "./types";
+
+const HECTARES_TO_ACRES = 2.47105;
+
+export function FieldsManagement({ farm }: { farm: FarmSummary }) {
+  const [fields, setFields] = useState<FieldSummary[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  function handleCreated(field: FieldSummary) {
+    setFields((current) => [...current, field]);
+    setNotice(`${field.name} was added successfully.`);
+  }
+
+  return (
+    <div className="mx-auto max-w-[1180px] p-4 md:p-6 xl:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <nav className="text-[10px] text-muted">
+            <Link href="/farms">My Farms</Link> <span>›</span>{" "}
+            <Link href={`/farms/${farm.id}`}>{farm.name}</Link> <span>›</span>{" "}
+            <strong className="text-brand">Fields</strong>
+          </nav>
+          <h1 className="mt-2 text-[26px] font-extrabold">{farm.name} — Fields</h1>
+          <p className="mt-1 text-xs text-muted">
+            {fields.length === 0
+              ? "No fields added in this session yet."
+              : `${fields.length} field${fields.length === 1 ? "" : "s"} added this session.`}
+          </p>
+        </div>
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-5 text-xs font-extrabold text-white"
+        >
+          <Icon name="plus" className="size-4" />
+          Add New Field
+        </button>
+      </div>
+
+      {notice && (
+        <div role="status" className="mt-4 rounded-xl bg-green-50 p-3 text-xs font-bold text-green-950">
+          {notice}
+        </div>
+      )}
+
+      <div
+        role="alert"
+        className="mt-4 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-[11px] font-semibold text-amber-900"
+      >
+        Fields management for this farm requires a backend endpoint that doesn&apos;t exist yet — there is no{" "}
+        <code>GET /farms/:id/fields</code> route to list a farm&apos;s fields. New fields you add below are saved to
+        the backend for real, but this page can only show the fields you&apos;ve created during this browser session
+        until that endpoint ships.
+      </div>
+
+      <section className="mt-5 overflow-hidden rounded-3xl border border-brand/10 bg-white shadow-sm">
+        <header className="flex items-center justify-between border-b border-brand/5 p-5">
+          <div className="flex items-center gap-2">
+            <Icon name="field" className="size-5 text-brand" />
+            <h2 className="text-base font-extrabold">Field Inventory</h2>
+          </div>
+        </header>
+
+        {fields.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 p-10 text-center">
+            <p className="text-xs font-bold text-brand-dark">No fields yet — add your first field</p>
+            <p className="max-w-sm text-[10px] text-muted">
+              Draw a boundary on the map to register a field for AI monitoring.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {fields.map((field) => (
+              <li key={field.id} className="flex items-center justify-between gap-4 px-5 py-4 text-[11px]">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-9 place-items-center rounded-lg bg-brand-soft text-brand">▦</span>
+                  <div>
+                    <strong className="block text-brand-dark">{field.name}</strong>
+                    <span className="block text-[9px] text-muted">
+                      {field.currentCropCycle ? "Crop cycle assigned" : "No crop assigned yet"}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <strong>{(field.areaHectares * HECTARES_TO_ACRES).toFixed(2)}</strong>
+                  <span className="block text-[9px] text-muted">Acres</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <AddFieldDialog
+        farmId={farm.id}
+        farmName={farm.name}
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onCreated={handleCreated}
+      />
+    </div>
+  );
+}

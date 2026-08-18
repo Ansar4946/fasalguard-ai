@@ -46,8 +46,14 @@ export class NotificationProcessor extends WorkerHost {
       this.metrics.increment('fasalguard_fcm_deliveries_total', { status: result.status });
       await this.db.transaction(async (tx) => {
         await tx.query(
-          `UPDATE notification_deliveries SET status=$2,provider_message_id=$3,attempt_count=attempt_count+1,sent_at=CASE WHEN $2 IN('SENT','DELIVERED') THEN now() ELSE sent_at END,delivered_at=CASE WHEN $2='DELIVERED' THEN now() ELSE delivered_at END,last_error_code=NULL WHERE id=$1`,
-          [row.id, result.status, result.messageId],
+          `UPDATE notification_deliveries SET status=$2,provider_message_id=$3,attempt_count=attempt_count+1,sent_at=CASE WHEN $4 THEN now() ELSE sent_at END,delivered_at=CASE WHEN $5 THEN now() ELSE delivered_at END,last_error_code=NULL WHERE id=$1`,
+          [
+            row.id,
+            result.status,
+            result.messageId,
+            result.status === 'SENT' || result.status === 'DELIVERED',
+            result.status === 'DELIVERED',
+          ],
         );
         if (result.status === 'INVALID_TOKEN')
           await tx.query(`UPDATE device_tokens SET active=false,invalidated_at=now() WHERE id=$1`, [

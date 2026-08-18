@@ -4,6 +4,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsDefined,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -15,6 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ConsentType, DevicePlatform } from '../../identity/identity.enums';
+import { AcquisitionSource } from '../../growth/growth.enums';
 const normalizeIdentifier = ({ value }: TransformFnParams): unknown =>
   typeof value === 'string' ? value.trim().toLowerCase() : value;
 export class ConsentInputDto {
@@ -39,15 +41,16 @@ export class RegisterDto {
   @ValidateNested({ each: true })
   @Type(() => ConsentInputDto)
   consents!: ConsentInputDto[];
-  @ValidateNested() @Type(() => DeviceInputDto) device!: DeviceInputDto;
+  @IsDefined() @ValidateNested() @Type(() => DeviceInputDto) device!: DeviceInputDto;
+  @IsOptional() @IsString() @Length(4, 12) referralCode?: string;
+  @IsOptional() @IsEnum(AcquisitionSource) acquisitionSource?: AcquisitionSource;
 }
 export class LoginDto {
   @Transform(normalizeIdentifier)
   @IsString()
   @IsNotEmpty()
   identifier!: string;
-  @IsString() @Length(1, 128) password!: string;
-  @ValidateNested() @Type(() => DeviceInputDto) device!: DeviceInputDto;
+  @IsDefined() @ValidateNested() @Type(() => DeviceInputDto) device!: DeviceInputDto;
 }
 export class RefreshDto {
   @IsString() @Length(64, 512) refreshToken!: string;
@@ -60,4 +63,13 @@ export class ForgotPasswordDto {
   @IsString()
   @MaxLength(320)
   identifier!: string;
+}
+export class RequestPasswordSetupDto {
+  @Transform(normalizeIdentifier)
+  @IsEmail()
+  email!: string;
+}
+export class CompletePasswordSetupDto {
+  @IsString() @Length(32, 256) token!: string;
+  @IsString() @Length(12, 128) password!: string;
 }

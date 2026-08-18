@@ -13,5 +13,10 @@ export class FarmerProfile extends BaseEntity {
   preferredLanguage!: string;
   @Column({ type: 'varchar', length: 120, nullable: true }) province!: string | null;
   @Column({ type: 'varchar', length: 120, nullable: true }) district!: string | null;
+  @Column({ name: 'acquisition_source', type: 'varchar', length: 24, default: 'DIRECT' })
+  acquisitionSource!: string;
+  @Column({ name: 'referred_by_user_id', type: 'uuid', nullable: true })
+  referredByUserId!: string | null;
+  @Column({ name: 'referral_code', type: 'varchar', length: 12 }) referralCode!: string;
   @OneToMany(() => Farm, (f) => f.farmer) farms!: Farm[];
 }

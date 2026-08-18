@@ -82,6 +82,13 @@ integration('Farmer farm and field ownership API', () => {
       'Other Farmer',
       'phase4-stranger-device',
     );
+    // This suite exercises ownership/geometry behavior, not billing limits, and creates
+    // several farms for `owner` across cases — put them on a high-limit plan so the FREE
+    // plan's maxFarms entitlement (exercised separately in billing.integration-spec.ts)
+    // doesn't interfere here.
+    await db.query(`UPDATE subscriptions SET plan_code='FARM_BUSINESS' WHERE user_id=$1`, [
+      owner.user.id,
+    ]);
   }, 30_000);
 
   afterAll(async () => {

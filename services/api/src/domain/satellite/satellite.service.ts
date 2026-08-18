@@ -138,6 +138,14 @@ export class SatelliteService {
       [id],
     );
   }
+  async evidence(userId: string, id: string): Promise<unknown> {
+    await this.get(userId, id);
+    const rows: Array<Record<string, unknown>> = await this.db.query(
+      `SELECT id,capture_id AS "captureId",field_id AS "fieldId",baseline_method AS "baselineMethod",baseline_capture_ids AS "baselineCaptureIds",status,engine_version AS "engineVersion",observed_at AS "observedAt",created_at AS "ingestedAt",source_identifier AS "sourceIdentifier",evidence FROM satellite_anomaly_assessments WHERE capture_id=$1`,
+      [id],
+    );
+    return rows[0] ?? null;
+  }
   async comparison(userId: string, fieldId: string): Promise<unknown> {
     await this.ownedField(userId, fieldId);
     const observations: Array<Record<string, unknown>> = await this.db.query(

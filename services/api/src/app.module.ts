@@ -29,7 +29,11 @@ import { AssistantModule } from './domain/assistant/assistant.module';
 import { SyncModule } from './domain/sync/sync.module';
 import { ReportModule } from './domain/reports/report.module';
 import { ObservabilityModule } from './observability/observability.module';
+import { FarmDigitalTwinModule } from './domain/digital-twin/farm-digital-twin.module';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter';
+import { FarmBrainModule } from './domain/farm-brain/farm-brain.module';
+import { BillingModule } from './domain/billing/billing.module';
+import { GrowthModule } from './domain/growth/growth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -91,6 +95,10 @@ import { ApiExceptionFilter } from './common/filters/api-exception.filter';
     AssistantModule,
     SyncModule,
     ReportModule,
+    FarmDigitalTwinModule,
+    FarmBrainModule,
+    BillingModule,
+    GrowthModule,
   ],
   providers: [
     ApiExceptionFilter,

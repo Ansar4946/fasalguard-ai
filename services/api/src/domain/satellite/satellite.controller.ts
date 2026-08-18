@@ -66,6 +66,14 @@ export class SatelliteController {
   ): Promise<unknown[]> {
     return this.service.stressZones(u.userId, id);
   }
+  @Get('satellite-scans/:id/evidence')
+  @ApiOperation({ summary: 'Get non-diagnostic satellite anomaly evidence and provenance' })
+  evidence(
+    @CurrentPrincipal() u: AuthPrincipal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<unknown> {
+    return this.service.evidence(u.userId, id);
+  }
   @Get('fields/:id/satellite-comparison')
   comparison(
     @CurrentPrincipal() u: AuthPrincipal,

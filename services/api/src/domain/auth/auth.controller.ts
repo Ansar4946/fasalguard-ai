@@ -17,17 +17,28 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentPrincipal } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
-import { LoginDto, LogoutDto, RefreshDto, RegisterDto } from './dto/auth.dto';
+import {
+  CompletePasswordSetupDto,
+  LoginDto,
+  LogoutDto,
+  RefreshDto,
+  RegisterDto,
+  RequestPasswordSetupDto,
+} from './dto/auth.dto';
+import { PasswordResetService } from './password-reset.service';
 import type { AuthPrincipal, CurrentUser, SessionContext, TokenPair } from './auth.types';
 @ApiTags('Authentication')
 @ApiBearerAuth()
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly passwords: PasswordResetService,
+  ) {}
   @Public() @Throttle({ default: { limit: 5, ttl: 60_000 } }) @Post('register') register(
     @Body() dto: RegisterDto,
     @Req() req: Request,
-  ): Promise<{ user: CurrentUser; tokens: TokenPair }> {
+  ): Promise<{ user: CurrentUser; tokens: TokenPair; emailDelivery: 'sent' | 'failed' }> {
     return this.auth.register(dto, this.context(req));
   }
   @Public()
@@ -46,6 +57,21 @@ export class AuthController {
   @Post('refresh')
   refresh(@Body() dto: RefreshDto, @Req() req: Request): Promise<TokenPair> {
     return this.auth.refresh(dto.refreshToken, this.context(req));
+  }
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Post('password/setup-request')
+  async requestPasswordSetup(@Body() dto: RequestPasswordSetupDto): Promise<{ accepted: true }> {
+    await this.passwords.requestSetup(dto.email);
+    return { accepted: true };
+  }
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post('password/setup')
+  async completePasswordSetup(@Body() dto: CompletePasswordSetupDto): Promise<void> {
+    await this.passwords.completeSetup(dto.token, dto.password);
   }
   @HttpCode(HttpStatus.NO_CONTENT) @Post('logout') async logout(
     @CurrentPrincipal() user: AuthPrincipal,

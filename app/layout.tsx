@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Noto_Sans_Arabic } from "next/font/google";
 import { OnboardingProvider } from "@/features/onboarding/onboarding-provider";
+import { AuthProvider } from "@/features/auth/auth-provider";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -20,12 +21,25 @@ const notoSansArabic = Noto_Sans_Arabic({
 export const metadata: Metadata = {
   title: { default: "FasalGuard AI", template: "%s | FasalGuard AI" },
   description: "AI-powered crop health monitoring and early outbreak warnings.",
+  icons: {
+    icon: "/fasalguard-mark.png",
+    apple: "/fasalguard-mark.png",
+  },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning className={`${manrope.variable} ${notoSansArabic.variable}`}><OnboardingProvider>{children}</OnboardingProvider></body>
+      <body
+        suppressHydrationWarning
+        className={`${manrope.variable} ${notoSansArabic.variable}`}
+      >
+        <AuthProvider>
+          <OnboardingProvider>{children}</OnboardingProvider>
+        </AuthProvider>
+      </body>
     </html>
   );
 }
