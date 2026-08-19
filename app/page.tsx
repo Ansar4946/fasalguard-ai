@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+export const dynamic = 'force-dynamic';
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/features/auth/auth-provider";
