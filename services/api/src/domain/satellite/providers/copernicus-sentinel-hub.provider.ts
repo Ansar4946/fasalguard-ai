@@ -32,6 +32,7 @@ export class CopernicusSentinelHubProvider implements SatelliteProvider {
   private token: { value: string; expiresAt: number } | null = null;
   private tokenPromise: Promise<string> | null = null;
   private readonly baseUrl: string;
+  private readonly authUrl: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
   constructor(
@@ -43,6 +44,15 @@ export class CopernicusSentinelHubProvider implements SatelliteProvider {
   ) {
     this.baseUrl = config
       .get<string>('sentinelHubBaseUrl', 'https://services.sentinel-hub.com')
+      .replace(/\/$/, '');
+    // Copernicus Data Space Ecosystem's OAuth token endpoint lives on a different domain
+    // AND realm (identity.dataspace.copernicus.eu, realm CDSE) than commercial Sentinel
+    // Hub's own (services.sentinel-hub.com, realm main) — not derivable from baseUrl alone.
+    this.authUrl = config
+      .get<string>(
+        'sentinelHubAuthUrl',
+        'https://services.sentinel-hub.com/auth/realms/main/protocol/openid-connect/token',
+      )
       .replace(/\/$/, '');
     this.clientId = config.get<string>('sentinelHubClientId', '');
     this.clientSecret = config.get<string>('sentinelHubClientSecret', '');
@@ -119,19 +129,16 @@ export class CopernicusSentinelHubProvider implements SatelliteProvider {
     let status: number | null = null;
     try {
       await this.limiter?.consume('COPERNICUS_SENTINEL_HUB');
-      const response = await this.fetcher(
-        `${this.baseUrl}/auth/realms/main/protocol/openid-connect/token`,
-        {
-          method: 'POST',
-          signal: AbortSignal.timeout(10_000),
-          headers: { 'content-type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: this.clientId,
-            client_secret: this.clientSecret,
-          }),
-        },
-      );
+      const response = await this.fetcher(this.authUrl, {
+        method: 'POST',
+        signal: AbortSignal.timeout(10_000),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+        }),
+      });
       status = response.status;
       if (!response.ok) throw this.errorFor(response.status);
       const body = (await response.json()) as TokenResponse;

@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 
 interface RevenueResponse {
   generatedAt: string;
-  policy: { excludesTestAccounts: boolean; note: string };
+  policy: {
+    excludesTestAccounts: boolean;
+    mixedCurrenciesAreNeverSummed: boolean;
+    revenueRequiresVerifiedPayment: boolean;
+  };
   totalRevenueByCurrency: Record<string, number>;
   monthlyRevenueByCurrency: Record<string, number>;
   mrrByCurrency: Record<string, number>;
@@ -147,10 +151,13 @@ export function BillingDashboard() {
         </p>
         <h1 className="mt-1 text-2xl font-bold text-brand-dark">Revenue &amp; Subscriptions</h1>
         <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
-          No payment gateway is integrated — payments are verified manually against a real bank or
-          mobile-money statement. Zero means zero, never a placeholder.
+          Card payments activate instantly via a verified Stripe webhook; bank/mobile-money
+          payments are verified manually against a real statement. Zero means zero, never a
+          placeholder.
         </p>
       </header>
+
+      <StripeStatusCard />
 
       {notice && (
         <div
@@ -202,7 +209,10 @@ export function BillingDashboard() {
         </article>
       </section>
 
-      <p className="mt-3 text-[10px] leading-4 text-muted">{revenue.policy.note}</p>
+      <p className="mt-3 text-[10px] leading-4 text-muted">
+        Currencies are never summed together. Revenue only counts payments with a real verified
+        source. Test/demo accounts are excluded from every number above.
+      </p>
 
       <section className="mt-6">
         <h2 className="text-base font-bold text-brand-dark">Pending payment verification</h2>
@@ -287,6 +297,37 @@ function Outcome({ label, value }: { label: string; value: number }) {
     <div>
       <dt className="text-[9px] font-semibold text-muted">{label}</dt>
       <dd className="text-base font-extrabold text-brand-dark">{value}</dd>
+    </div>
+  );
+}
+
+function StripeStatusCard() {
+  const [status, setStatus] = useState<{ configured: boolean; webhookConfigured: boolean } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    // setState only happens inside this .then()/.catch(), never synchronously in the effect body.
+    fetch("/api/admin/billing/stripe-status", { cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<typeof status>) : null))
+      .then((body) => setStatus(body))
+      .catch(() => setStatus(null));
+  }, []);
+
+  if (!status) return null;
+  const ready = status.configured && status.webhookConfigured;
+
+  return (
+    <div
+      className={`mt-4 rounded-2xl border p-4 text-xs font-semibold ${
+        ready
+          ? "border-success/20 bg-success/5 text-success"
+          : "border-amber-300 bg-amber-50 text-amber-900"
+      }`}
+    >
+      {ready
+        ? "Stripe is configured — card payments activate instantly via webhook."
+        : "Stripe is not fully configured yet — card payments are unavailable until STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are set."}
     </div>
   );
 }

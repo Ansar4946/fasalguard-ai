@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -49,5 +50,11 @@ export class CropScanController {
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ): Promise<unknown> {
     return this.scans.get(p.userId, id);
+  }
+  @Get() list(
+    @CurrentPrincipal() p: AuthPrincipal,
+    @Query('fieldId', new ParseUUIDPipe({ version: '4' })) fieldId: string,
+  ): Promise<unknown> {
+    return this.scans.listRecentForField(p.userId, fieldId);
   }
 }

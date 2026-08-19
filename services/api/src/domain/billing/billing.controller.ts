@@ -2,20 +2,24 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import type { Request } from 'express';
 import type { AuthPrincipal } from '../auth/auth.types';
 import { CurrentPrincipal } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { BillingService } from './billing.service';
-import { RequestUpgradeDto } from './dto/billing.dto';
+import { CreateCheckoutSessionDto, RequestUpgradeDto } from './dto/billing.dto';
 import { EntitlementService } from './entitlement.service';
+import { StripeService } from './stripe.service';
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 
 @ApiTags('Billing')
@@ -25,6 +29,7 @@ export class BillingController {
   constructor(
     private readonly billing: BillingService,
     private readonly entitlements: EntitlementService,
+    private readonly stripe: StripeService,
   ) {}
 
   @Public()
@@ -61,5 +66,25 @@ export class BillingController {
     @Param('paymentId', new ParseUUIDPipe({ version: '4' })) paymentId: string,
   ) {
     return this.billing.cancelMyUpgradeRequest(p.userId, paymentId);
+  }
+
+  @ApiOperation({ summary: 'Start a real Stripe Checkout session for a plan' })
+  @Post('stripe/checkout-session')
+  createCheckoutSession(
+    @CurrentPrincipal() p: AuthPrincipal,
+    @Body() dto: CreateCheckoutSessionDto,
+  ) {
+    return this.stripe.createCheckoutSession(p.userId, dto.planCode);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Stripe webhook receiver — authenticated by signature verification, not a bearer token',
+  })
+  @Post('stripe/webhook')
+  stripeWebhook(@Req() req: Request, @Headers('stripe-signature') signature?: string) {
+    return this.stripe.handleWebhook(req.body as Buffer, signature);
   }
 }

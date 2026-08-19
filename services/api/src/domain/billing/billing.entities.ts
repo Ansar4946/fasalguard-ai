@@ -20,6 +20,8 @@ export class SubscriptionPlan {
   @Column({ type: 'jsonb' }) limits!: PlanLimits;
   @Column({ name: 'is_active', type: 'boolean', default: true }) isActive!: boolean;
   @Column({ name: 'sort_order', type: 'integer', default: 0 }) sortOrder!: number;
+  @Column({ name: 'stripe_price_id', type: 'varchar', length: 255, nullable: true })
+  stripePriceId!: string | null;
   @Column({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
   @Column({ name: 'updated_at', type: 'timestamptz' }) updatedAt!: Date;
   @Column({ type: 'integer' }) version!: number;

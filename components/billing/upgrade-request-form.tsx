@@ -33,6 +33,35 @@ export function UpgradeRequestForm() {
   const [reference, setReference] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "error">("idle");
   const [message, setMessage] = useState<string>();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string>();
+
+  function payWithCard(): void {
+    if (!planCode) return;
+    setCheckoutLoading(true);
+    setCheckoutError(undefined);
+    fetch("/api/billing/stripe/checkout-session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ planCode }),
+    })
+      .then(async (res) => {
+        const body = (await res.json().catch(() => ({}))) as {
+          url?: string;
+          error?: { message?: string };
+        };
+        if (!res.ok || !body.url) {
+          setCheckoutError(body?.error?.message ?? "Card payment is not available right now.");
+          setCheckoutLoading(false);
+          return;
+        }
+        window.location.href = body.url;
+      })
+      .catch(() => {
+        setCheckoutError("Card payment is not available right now.");
+        setCheckoutLoading(false);
+      });
+  }
 
   useEffect(() => {
     // setState only happens inside these .then()s, never synchronously in the effect body.
@@ -113,6 +142,28 @@ export function UpgradeRequestForm() {
           ))}
         </select>
       </label>
+      <div className="rounded-xl border border-brand/15 bg-surface-soft p-3">
+        <button
+          type="button"
+          onClick={payWithCard}
+          disabled={checkoutLoading || !planCode}
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand text-xs font-bold text-white disabled:opacity-60"
+        >
+          {checkoutLoading ? "Redirecting to secure checkout..." : "Pay with card (Stripe)"}
+        </button>
+        {checkoutError && (
+          <p className="mt-2 text-[10px] font-semibold text-danger">{checkoutError}</p>
+        )}
+        <p className="mt-2 text-[10px] leading-4 text-muted">
+          Instant activation via Stripe&apos;s secure, hosted checkout. Card details never touch
+          our servers.
+        </p>
+      </div>
+
+      <p className="text-center text-[10px] font-bold uppercase tracking-wide text-muted">
+        or pay another way
+      </p>
+
       <label className="block">
         <span className="mb-1 block text-[10px] font-semibold">Payment method</span>
         <select
@@ -139,13 +190,13 @@ export function UpgradeRequestForm() {
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand text-xs font-bold text-white disabled:opacity-60"
+        className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-brand/30 bg-white text-xs font-bold text-brand-dark disabled:opacity-60"
       >
         {status === "submitting" ? "Submitting..." : "Submit Upgrade Request"}
       </button>
       <p className="text-[10px] leading-4 text-muted">
-        No payment gateway is connected yet — send your payment via the method above, then submit
-        your reference here. An admin verifies it manually before your plan activates.
+        Send your payment via the method above, then submit your reference here. An admin
+        verifies it manually before your plan activates.
       </p>
     </form>
   );

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectDataSource } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
-import { writeBillingEvent } from './billing.service';
+import { activateSubscription, writeBillingEvent } from './billing.service';
 import { BillingEventType, PaymentStatus, SubscriptionStatus } from './billing.enums';
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 
@@ -99,29 +99,18 @@ export class AdminBillingService {
         `UPDATE subscription_payments SET status='PAID',paid_at=now(),verified_at=now(),verification_source='ADMIN_MANUAL_VERIFICATION',verified_by_user_id=$2,notes=COALESCE($3,notes),updated_at=now(),version=version+1 WHERE id=$1`,
         [paymentId, adminUserId, notes ?? null],
       );
-      if (payment.plan_code)
-        await manager.query(
-          `UPDATE subscriptions SET plan_code=$2,status='ACTIVE',updated_at=now(),version=version+1 WHERE id=$1`,
-          [payment.subscription_id, payment.plan_code],
-        );
       await manager.query(
         `UPDATE invoices SET status='PAID',updated_at=now(),version=version+1 WHERE payment_id=$1`,
         [paymentId],
       );
-      await writeBillingEvent(
-        manager,
-        payment.subscription_id,
-        null,
-        BillingEventType.PaymentVerified,
-        { paymentId, verifiedBy: adminUserId, planCode: payment.plan_code },
-      );
-      await writeBillingEvent(
-        manager,
-        payment.subscription_id,
-        null,
-        BillingEventType.SubscriptionActivated,
-        { paymentId, planCode: payment.plan_code },
-      );
+      if (payment.plan_code)
+        await activateSubscription(
+          manager,
+          payment.subscription_id,
+          payment.plan_code,
+          paymentId,
+          adminUserId,
+        );
       return { id: paymentId, status: PaymentStatus.Paid };
     });
   }

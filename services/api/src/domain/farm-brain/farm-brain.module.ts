@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AiOpsModule } from '../ai-ops/ai-ops.module';
 import { BillingModule } from '../billing/billing.module';
 import { FarmDigitalTwinModule } from '../digital-twin/farm-digital-twin.module';
 import { GrowthModule } from '../growth/growth.module';
@@ -22,6 +23,7 @@ import { GeminiFarmReasoningProvider } from './providers/gemini-farm-reasoning.p
     NotificationModule,
     BillingModule,
     GrowthModule,
+    AiOpsModule,
     BullModule.registerQueue({ name: FARM_BRAIN_QUEUE }),
   ],
   controllers: [FarmBrainController],
@@ -41,5 +43,6 @@ import { GeminiFarmReasoningProvider } from './providers/gemini-farm-reasoning.p
         config.get<string>('farmBrainProvider', 'fake') === 'gemini' ? gemini : fake,
     },
   ],
+  exports: [FarmBrainService],
 })
 export class FarmBrainModule {}

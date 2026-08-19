@@ -200,11 +200,21 @@ export class SyncService {
   ): Promise<{ result?: unknown; conflict?: unknown }> {
     const id = this.uuid(x.taskId, 'taskId'),
       expected = this.integer(x.expectedVersion, 'expectedVersion');
-    const rows = await this.db.query<Array<Record<string, unknown>>>(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [rows] = await this.db.query<[Array<Record<string, unknown>>, number]>(
       `UPDATE farmer_tasks SET status='COMPLETED',completed_at=COALESCE(completed_at,now()),version=version+1,updated_at=now()WHERE id=$1 AND user_id=$2 AND version=$3 AND deleted_at IS NULL RETURNING id,status,version,completed_at "completedAt"`,
       [id, userId, expected],
     );
     if (rows[0]) {
+      try {
+        await this.db.query(
+          `UPDATE farm_interventions SET status='COMPLETED',completed_at=now(),updated_at=now(),version=version+1 WHERE task_id=$1 AND status<>'COMPLETED'`,
+          [id],
+        );
+      } catch {
+        /* best-effort: the impact ledger must never block task sync */
+      }
       return { result: rows[0] };
     }
     return this.conflict('TASK', id, userId, expected);
@@ -294,7 +304,9 @@ export class SyncService {
       return { result: r[0] };
     }
     const expected = this.integer(x.expectedVersion, 'expectedVersion');
-    const r = await this.db.query<Array<Record<string, unknown>>>(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [r] = await this.db.query<[Array<Record<string, unknown>>, number]>(
       `UPDATE field_inspections SET notes=$4,observed_at=$5,media_asset_ids=$6,version=version+1,updated_at=now()WHERE id=$1 AND user_id=$2 AND version=$3 RETURNING id,field_id "fieldId",notes,observed_at "observedAt",version`,
       [id, userId, expected, notes, observedAt, mediaAssetIds],
     );

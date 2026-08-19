@@ -39,6 +39,7 @@ export class Notification extends BaseEntity {
   confirmedEvidence!: boolean;
   @Column({ name: 'ai_confidence', type: 'double precision', nullable: true }) aiConfidence!:
     number | null;
+  @Column({ name: 'incident_id', type: 'uuid', nullable: true }) incidentId!: string | null;
 }
 @Entity({ name: 'device_tokens' })
 @Index('uq_device_tokens_token', ['tokenHash'], { unique: true })

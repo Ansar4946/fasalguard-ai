@@ -22,11 +22,14 @@ export class AutomaticMonitoringService {
     // subscription_plans.limits) — gated here (own subscription, then pilot-org
     // subscription, then deny) so an upgrade/downgrade takes effect on the next tick
     // with no per-field backfill needed.
-    const rows: Array<{
+    interface DueField {
       fieldId: string;
       boundary: Polygon;
       lastSuccessfulCaptureAt: Date | null;
-    }> = await this.db.query(
+    }
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [rows] = await this.db.query<[DueField[], number]>(
       `WITH due AS (
          SELECT fi.id FROM fields fi
          JOIN farms f ON f.id=fi.farm_id

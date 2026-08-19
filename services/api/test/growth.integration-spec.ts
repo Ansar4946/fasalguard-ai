@@ -61,7 +61,7 @@ integration('Growth: referrals, pilot leads, landing views, admin funnel', () =>
       `SELECT referral_code "code" FROM farmer_profiles WHERE user_id=$1`,
       [referrer.user.id],
     );
-    const referralCode = codeRow[0].code;
+    const referralCode = codeRow[0]!.code;
 
     const before = await request(app.getHttpServer())
       .get('/api/v1/growth/referral')
@@ -80,8 +80,8 @@ integration('Growth: referrals, pilot leads, landing views, admin funnel', () =>
       `SELECT acquisition_source "source", referred_by_user_id "referredBy" FROM farmer_profiles WHERE user_id=$1`,
       [referred.user.id],
     );
-    expect(profile[0].source).toBe('REFERRAL');
-    expect(profile[0].referredBy).toBe(referrer.user.id);
+    expect(profile[0]!.source).toBe('REFERRAL');
+    expect(profile[0]!.referredBy).toBe(referrer.user.id);
 
     const after = await request(app.getHttpServer())
       .get('/api/v1/growth/referral')
@@ -112,12 +112,12 @@ integration('Growth: referrals, pilot leads, landing views, admin funnel', () =>
     const rows: Array<{ total: string }> = await db.query(
       `SELECT COALESCE(sum(count),0)::text total FROM landing_page_views`,
     );
-    const before = Number(rows[0].total);
+    const before = Number(rows[0]!.total);
     await request(app.getHttpServer()).post('/api/v1/growth/landing-view').expect(204);
     const afterRows: Array<{ total: string }> = await db.query(
       `SELECT COALESCE(sum(count),0)::text total FROM landing_page_views`,
     );
-    expect(Number(afterRows[0].total)).toBeGreaterThan(before);
+    expect(Number(afterRows[0]!.total)).toBeGreaterThan(before);
   });
 
   async function register(

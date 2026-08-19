@@ -40,18 +40,24 @@ interface CaptureRow {
 const layers = [
   {
     type: 'TRUE_COLOR',
+    // Browser-displayable — nothing downstream reads this layer's bytes back for analysis,
+    // unlike NDVI (see stress-analysis.client.ts, which needs a real georeferenced raster).
+    format: 'image/png',
     evalscript: `//VERSION=3\nfunction setup(){return{input:["B02","B03","B04","dataMask"],output:{bands:4}}}function evaluatePixel(s){return[2.5*s.B04,2.5*s.B03,2.5*s.B02,s.dataMask]}`,
   },
   {
     type: 'NDVI',
+    format: 'image/tiff',
     evalscript: `//VERSION=3\nfunction setup(){return{input:["B04","B08","dataMask"],output:{bands:2,sampleType:"FLOAT32"}}}function evaluatePixel(s){let d=s.B08+s.B04;return[d===0?0:(s.B08-s.B04)/d,s.dataMask]}`,
   },
   {
     type: 'NDMI',
+    format: 'image/tiff',
     evalscript: `//VERSION=3\nfunction setup(){return{input:["B08","B11","dataMask"],output:{bands:2,sampleType:"FLOAT32"}}}function evaluatePixel(s){let d=s.B08+s.B11;return[d===0?0:(s.B08-s.B11)/d,s.dataMask]}`,
   },
   {
     type: 'DATA_QUALITY',
+    format: 'image/tiff',
     evalscript: `//VERSION=3\nfunction setup(){return{input:["SCL","dataMask"],output:{bands:2,sampleType:"UINT8"}}}function evaluatePixel(s){let valid=s.dataMask&&![0,1,3,8,9,10,11].includes(s.SCL);return[valid?1:0,s.SCL]}`,
   },
 ] as const;
@@ -97,8 +103,8 @@ export class SatelliteProcessor extends WorkerHost {
         operation: stage,
       });
       await this.db.query(
-        `UPDATE satellite_captures SET processing_status='FAILED',processed_date=now(),raw_metadata=raw_metadata||jsonb_build_object('lastFailedStage',$2),updated_at=now() WHERE id=$1`,
-        [job.data.captureId, stage],
+        `UPDATE satellite_captures SET processing_status='FAILED',processed_date=now(),raw_metadata=raw_metadata||jsonb_build_object('lastFailedStage',$2::text,'lastFailureReason',$3::text),updated_at=now() WHERE id=$1`,
+        [job.data.captureId, stage, error instanceof Error ? error.message : String(error)],
       );
       throw error;
     } finally {
@@ -143,12 +149,12 @@ export class SatelliteProcessor extends WorkerHost {
         `${x.fieldId}:${scene.id}`,
       ]);
       const duplicate: Array<{ id: string }> = await manager.query(
-        `SELECT id FROM satellite_captures WHERE field_id=$1 AND provider='COPERNICUS_SENTINEL_HUB' AND provider_scene_id=$2 AND id<>$3 LIMIT 1`,
+        `SELECT id FROM satellite_captures WHERE field_id=$1 AND provider='COPERNICUS_SENTINEL_HUB' AND provider_scene_id=$2 AND id<>$3 AND processing_status='COMPLETED' LIMIT 1`,
         [x.fieldId, scene.id, x.captureId],
       );
       if (duplicate[0]) {
         await manager.query(
-          `UPDATE satellite_captures SET processing_status='COMPLETED',raw_metadata=jsonb_build_object('deduplicatedTo',$2),processed_date=now(),updated_at=now() WHERE id=$1`,
+          `UPDATE satellite_captures SET processing_status='COMPLETED',raw_metadata=jsonb_build_object('deduplicatedTo',$2::text),processed_date=now(),updated_at=now() WHERE id=$1`,
           [x.captureId, duplicate[0].id],
         );
         return true;
@@ -187,9 +193,10 @@ export class SatelliteProcessor extends WorkerHost {
         );
         if (found[0]) continue;
         const rendered = await this.provider.render(
-          this.processPayload(c.boundary, x, layer.evalscript),
+          this.processPayload(c.boundary, x, layer.evalscript, layer.format),
         );
-        const key = `satellite/${x.fieldId}/${x.captureId}/${layer.type.toLowerCase()}.tiff`;
+        const extension = layer.format === 'image/png' ? 'png' : 'tiff';
+        const key = `satellite/${x.fieldId}/${x.captureId}/${layer.type.toLowerCase()}.${extension}`;
         const stored = await this.storage.putPrivateObject({
           objectKey: key,
           contentType: rendered.contentType,
@@ -198,11 +205,11 @@ export class SatelliteProcessor extends WorkerHost {
         });
         const checksum = createHash('sha256').update(rendered.body).digest('hex');
         const media: Array<{ id: string }> = await this.db.query(
-          `INSERT INTO media_assets(owner_id,object_key,original_filename,content_type,size_bytes,checksum,purpose,status,metadata,completed_at) VALUES($1,$2,$3,$4,$5,$6,'satellite','READY',$7,now()) ON CONFLICT(object_key) DO UPDATE SET updated_at=now() RETURNING id`,
+          `INSERT INTO media_assets(owner_id,object_key,original_filename,content_type,size_bytes,checksum,purpose,status,metadata,completed_at) VALUES($1,$2,$3,$4,$5,$6,'satellite','ready',$7,now()) ON CONFLICT(object_key) DO UPDATE SET updated_at=now() RETURNING id`,
           [
             c.owner_id,
             key,
-            `${layer.type.toLowerCase()}.tiff`,
+            `${layer.type.toLowerCase()}.${extension}`,
             rendered.contentType,
             stored.sizeBytes,
             checksum,
@@ -406,7 +413,9 @@ export class SatelliteProcessor extends WorkerHost {
   }
   private async next(stage: Stage, data: CaptureContext): Promise<void> {
     await this.queue.add(stage, data, {
-      jobId: `${data.captureId}-${stage}`,
+      // BullMQ rejects ':' in a custom jobId ("Custom Id cannot contain :") — stage names
+      // like 'satellite:process' must be sanitized here even though they're valid job names.
+      jobId: `${data.captureId}-${stage.replace(/:/g, '_')}`,
       attempts: 4,
       backoff: { type: 'exponential', delay: 1500 },
       removeOnComplete: 1000,
@@ -425,6 +434,7 @@ export class SatelliteProcessor extends WorkerHost {
     polygon: Polygon,
     x: CaptureContext,
     evalscript: string,
+    format: string,
   ): Record<string, unknown> {
     const range = this.sceneRange(x.acquisitionDate);
     return {
@@ -443,7 +453,7 @@ export class SatelliteProcessor extends WorkerHost {
       output: {
         width: 512,
         height: 512,
-        responses: [{ identifier: 'default', format: { type: 'image/tiff' } }],
+        responses: [{ identifier: 'default', format: { type: format } }],
       },
       evalscript,
     };

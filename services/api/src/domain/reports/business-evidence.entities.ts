@@ -15,12 +15,20 @@ export class Organization extends BaseEntity {
 @Entity({ name: 'pilot_users' })
 @Index('uq_pilot_users_org_user', ['organizationId', 'userId'], { unique: true })
 export class PilotUser extends BaseEntity {
-  @Column({ name: 'organization_id', type: 'uuid' }) organizationId!: string;
+  @Column({ name: 'organization_id', type: 'uuid', nullable: true }) organizationId!: string | null;
   @Column({ name: 'user_id', type: 'uuid' }) userId!: string;
   @Column({ type: 'varchar', length: 24 }) status!: string;
-  @Column({ name: 'consented_at', type: 'timestamptz' }) consentedAt!: Date;
+  @Column({ name: 'invited_at', type: 'timestamptz' }) invitedAt!: Date;
+  @Column({ name: 'invited_by', type: 'uuid', nullable: true }) invitedBy!: string | null;
+  @Column({ name: 'registered_at', type: 'timestamptz', nullable: true })
+  registeredAt!: Date | null;
   @Column({ name: 'onboarded_at', type: 'timestamptz', nullable: true }) onboardedAt!: Date | null;
-  @Column({ name: 'evidence_reference', type: 'varchar', length: 255 }) evidenceReference!: string;
+  @Column({ name: 'activated_at', type: 'timestamptz', nullable: true }) activatedAt!: Date | null;
+  @Column({ name: 'completed_at', type: 'timestamptz', nullable: true }) completedAt!: Date | null;
+  @Column({ name: 'dropped_at', type: 'timestamptz', nullable: true }) droppedAt!: Date | null;
+  @Column({ type: 'varchar', length: 24, nullable: true }) source!: string | null;
+  @Column({ name: 'evidence_reference', type: 'varchar', length: 255, nullable: true })
+  evidenceReference!: string | null;
 }
 
 @Entity({ name: 'subscriptions' })
@@ -65,9 +73,17 @@ export class SubscriptionPayment extends BaseEntity {
 export class UserFeedback extends BaseEntity {
   @Column({ name: 'organization_id', type: 'uuid', nullable: true }) organizationId!: string | null;
   @Column({ name: 'user_id', type: 'uuid' }) userId!: string;
+  @Column({ name: 'farm_id', type: 'uuid', nullable: true }) farmId!: string | null;
   @Column({ type: 'smallint', nullable: true }) rating!: number | null;
-  @Column({ type: 'text' }) feedback!: string;
+  @Column({ type: 'boolean', nullable: true }) useful!: boolean | null;
+  @Column({ name: 'would_recommend', type: 'boolean', nullable: true }) wouldRecommend!:
+    boolean | null;
+  @Column({ type: 'text', nullable: true }) feedback!: string | null;
   @Column({ name: 'context_type', type: 'varchar', length: 40 }) contextType!: string;
   @Column({ name: 'context_id', type: 'uuid', nullable: true }) contextId!: string | null;
   @Column({ name: 'consent_to_quote', type: 'boolean', default: false }) consentToQuote!: boolean;
+  @Column({ name: 'public_reference_url', type: 'varchar', length: 2048, nullable: true })
+  publicReferenceUrl!: string | null;
+  @Column({ name: 'published_at', type: 'timestamptz', nullable: true }) publishedAt!: Date | null;
+  @Column({ name: 'published_by', type: 'uuid', nullable: true }) publishedBy!: string | null;
 }

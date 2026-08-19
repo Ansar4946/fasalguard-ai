@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { BoundaryPreview } from "@/components/farms/boundary-preview";
 import { DeleteFarmButton } from "@/components/farms/delete-farm-button";
+import { FarmIncidentsPanel } from "@/components/farms/detail/farm-incidents-panel";
 import type { GeoJsonPolygon } from "@/lib/geo/polygon";
 
 export interface FarmDetailData {
@@ -101,12 +102,7 @@ export function FarmDetail({ farm }: { farm: FarmDetailData }) {
               <h2 className="text-base font-extrabold">Intelligence &amp; Alerts</h2>
             </div>
           </div>
-          <div className="flex min-h-32 flex-col items-center justify-center gap-2 p-8 text-center">
-            <p className="text-xs font-bold text-brand-dark">No alerts yet</p>
-            <p className="max-w-sm text-[10px] text-muted">
-              Weather, satellite, and crop-health alerts will appear here once monitoring is active for this farm.
-            </p>
-          </div>
+          <FarmIncidentsPanel farmId={farm.id} />
         </section>
       </div>
     </div>

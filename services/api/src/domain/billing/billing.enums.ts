@@ -1,7 +1,9 @@
 export enum PlanCode {
   Free = 'FREE',
   FarmerPro = 'FARMER_PRO',
+  FarmerProAnnual = 'FARMER_PRO_ANNUAL',
   FarmBusiness = 'FARM_BUSINESS',
+  FarmBusinessAnnual = 'FARM_BUSINESS_ANNUAL',
   Cooperative = 'COOPERATIVE',
 }
 export enum SubscriptionStatus {
@@ -22,6 +24,7 @@ export enum PaymentProvider {
   ManualBankTransfer = 'MANUAL_BANK_TRANSFER',
   ManualJazzCash = 'MANUAL_JAZZCASH',
   ManualEasyPaisa = 'MANUAL_EASYPAISA',
+  Stripe = 'STRIPE',
 }
 export enum InvoiceStatus {
   Draft = 'DRAFT',

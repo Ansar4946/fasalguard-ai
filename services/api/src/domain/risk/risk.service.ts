@@ -1,10 +1,11 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
+import { FarmBrainService } from '../farm-brain/farm-brain.service';
 import { RiskEngine, type RiskEvidence, type RiskRules } from './risk.engine';
-import { RiskTrigger } from './risk.enums';
+import { FieldRiskLevel, RiskTrigger } from './risk.enums';
 export const FIELD_RISK_QUEUE = 'field-risk-assessment';
 export interface FieldRiskJob {
   fieldId: string;
@@ -27,10 +28,12 @@ interface RulesRow {
 }
 @Injectable()
 export class RiskAssessmentService {
+  private readonly logger = new Logger(RiskAssessmentService.name);
   constructor(
     @InjectDataSource() private readonly db: DataSource,
     @InjectQueue(FIELD_RISK_QUEUE) private readonly queue: Queue<FieldRiskJob>,
     private readonly engine: RiskEngine,
+    private readonly farmBrain: FarmBrainService,
   ) {}
   async get(userId: string, fieldId: string): Promise<unknown> {
     const context = await this.context(fieldId, userId);
@@ -188,6 +191,8 @@ export class RiskAssessmentService {
         rules.validityHours,
       ],
     );
+    if (result.level === FieldRiskLevel.High || result.level === FieldRiskLevel.Critical)
+      await this.escalateToFarmBrain(c.fieldId, trigger, result.level);
     return {
       id: rows[0]!.id,
       fieldId: c.fieldId,
@@ -203,6 +208,37 @@ export class RiskAssessmentService {
         'This explainable assessment indicates inspection priority and does not predict or diagnose disease.',
     };
   }
+  /**
+   * "Detect signal" for the autonomous Farm Brain investigation loop — a HIGH/CRITICAL
+   * explainable risk score is the real signal. This is the one place in the whole product
+   * that starts a Gemini investigation without a farmer opening the app first; every other
+   * trigger point (weather alerts, satellite anomalies, community outbreaks) already flows
+   * through this same risk assessment, so wiring it here covers all of them at once.
+   * FarmBrainService.start() already dedupes by evidence hash and enforces the caller's
+   * plan entitlement — this is deliberately best-effort: an entitlement limit, a Gemini
+   * provider failure, or a deduplicated no-op investigation must never break the risk
+   * assessment response that triggered it.
+   */
+  private async escalateToFarmBrain(
+    fieldId: string,
+    trigger: RiskTrigger,
+    level: FieldRiskLevel,
+  ): Promise<void> {
+    try {
+      const owner: Array<{ farmId: string; userId: string }> = await this.db.query(
+        `SELECT fa.id "farmId",fp.user_id "userId" FROM fields fi JOIN farms fa ON fa.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=fa.farmer_id WHERE fi.id=$1 AND fi.deleted_at IS NULL AND fa.deleted_at IS NULL`,
+        [fieldId],
+      );
+      const row = owner[0];
+      if (!row) return;
+      await this.farmBrain.start(row.userId, row.farmId, fieldId);
+    } catch (error) {
+      this.logger.warn(
+        `Skipped autonomous Farm Brain escalation for field ${fieldId} (trigger=${trigger}, level=${level}): ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
+    }
+  }
+
   private async context(fieldId: string, userId?: string): Promise<Context> {
     const params: unknown[] = [fieldId];
     let owner = '';

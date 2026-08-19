@@ -34,6 +34,8 @@ import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 import { FarmBrainModule } from './domain/farm-brain/farm-brain.module';
 import { BillingModule } from './domain/billing/billing.module';
 import { GrowthModule } from './domain/growth/growth.module';
+import { AiOpsModule } from './domain/ai-ops/ai-ops.module';
+import { ImpactModule } from './domain/impact/impact.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -99,6 +101,8 @@ import { GrowthModule } from './domain/growth/growth.module';
     FarmBrainModule,
     BillingModule,
     GrowthModule,
+    AiOpsModule,
+    ImpactModule,
   ],
   providers: [
     ApiExceptionFilter,

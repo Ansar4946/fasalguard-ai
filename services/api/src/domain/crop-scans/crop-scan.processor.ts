@@ -18,6 +18,8 @@ import {
 } from './providers/vision-diagnosis.provider';
 import { CROP_SCAN_QUEUE, type CropScanJob } from './crop-scan.service';
 import { MetricsService } from '../../observability/metrics.service';
+import { AIOperation, AIRunStatus, HumanReviewStatus } from '../ai-ops/ai-run.enums';
+import { AIRunLogger } from '../ai-ops/ai-run-logger.service';
 import { LifecycleEmailService } from '../growth/lifecycle-email.service';
 interface ImageRow {
   id: string;
@@ -33,6 +35,7 @@ export class CropScanProcessor extends WorkerHost {
     @Inject(OBJECT_STORAGE_PROVIDER) private readonly storage: ObjectStorageProvider,
     @Inject(VISION_DIAGNOSIS_PROVIDER) private readonly vision: VisionDiagnosisProvider,
     private readonly lifecycle: LifecycleEmailService,
+    private readonly aiRunLogger: AIRunLogger,
     private readonly metrics: MetricsService = new MetricsService(),
   ) {
     super();
@@ -145,6 +148,28 @@ export class CropScanProcessor extends WorkerHost {
           [diagnoses[0]!.id, i + 1, x.condition, x.confidence],
         );
       await this.status(job.data.scanId, status);
+      const farmRow: Array<{ farmId: string | null }> = await this.db.query(
+        `SELECT f.id "farmId" FROM crop_scans cs LEFT JOIN fields fi ON fi.id=cs.field_id LEFT JOIN farms f ON f.id=fi.farm_id WHERE cs.id=$1`,
+        [job.data.scanId],
+      );
+      await this.aiRunLogger.record({
+        userId: job.data.ownerId,
+        farmId: farmRow[0]?.farmId ?? null,
+        operation: AIOperation.CropAnalysis,
+        provider: this.vision.constructor.name,
+        model: prediction.modelId,
+        status: AIRunStatus.Completed,
+        startedAt: new Date(inferenceStarted),
+        completedAt: new Date(),
+        inputType: 'crop_scan_images',
+        confidence: prediction.confidence,
+        humanReviewStatus:
+          disposition === 'EXPERT_REVIEW_RECOMMENDED'
+            ? HumanReviewStatus.Required
+            : HumanReviewStatus.NotRequired,
+        sourceTable: 'crop_scans',
+        sourceId: job.data.scanId,
+      });
       if (status === CropScanStatus.Diagnosed)
         await this.notifyIfFirstDiagnosis(
           job.data.ownerId,
@@ -162,6 +187,19 @@ export class CropScanProcessor extends WorkerHost {
           error instanceof Error ? error.message : 'SCREENING_FAILED',
         ],
       );
+      await this.aiRunLogger.record({
+        userId: job.data.ownerId,
+        operation: AIOperation.CropAnalysis,
+        provider: this.vision.constructor.name,
+        model: 'unknown',
+        status: AIRunStatus.Failed,
+        startedAt: new Date(jobStarted),
+        completedAt: new Date(),
+        inputType: 'crop_scan_images',
+        errorCode: error instanceof Error ? error.message : 'SCREENING_FAILED',
+        sourceTable: 'crop_scans',
+        sourceId: job.data.scanId,
+      });
       throw error;
     } finally {
       this.metrics.observe(
@@ -196,6 +234,7 @@ export class CropScanProcessor extends WorkerHost {
           row.email,
           row.fieldName ?? 'your crop scan',
           predictedCondition,
+          scanId,
         );
     } catch {
       /* best-effort */

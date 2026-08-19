@@ -1,13 +1,16 @@
 import { ValidationPipe, VersioningType, type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { json, urlencoded } from 'express';
+import { json, raw, urlencoded } from 'express';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 import { securityHeaders } from './common/middleware/security.middleware';
 export function configureApp(app: INestApplication): void {
   const config = app.get(ConfigService);
   const bodyLimit = config.get<number>('maxRequestBodyBytes', 262_144);
   app.use(securityHeaders);
+  // Stripe webhook signature verification requires the raw, unparsed body — registered ahead
+  // of the global JSON parser for this one path only; every other route stays JSON-parsed.
+  app.use('/api/v1/billing/stripe/webhook', raw({ type: 'application/json', limit: bodyLimit }));
   app.use(json({ limit: bodyLimit, strict: true }));
   app.use(urlencoded({ limit: bodyLimit, extended: false, parameterLimit: 100 }));
   app.setGlobalPrefix('api');

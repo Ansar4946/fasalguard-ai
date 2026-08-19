@@ -32,7 +32,9 @@ export class KnowledgeAdminService {
     return this.db.query(`SELECT * FROM guideline_sources ORDER BY created_at DESC`);
   }
   async updateSource(id: string, d: UpdateSourceDto): Promise<unknown> {
-    const rows: unknown[] = await this.db.query(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [rows] = await this.db.query<[unknown[], number]>(
       `UPDATE guideline_sources SET title=COALESCE($2,title),citation=COALESCE($3,citation),url=COALESCE($4,url),published_at=COALESCE($5,published_at),updated_at=now(),version=version+1 WHERE id=$1 RETURNING *`,
       [id, d.title ?? null, d.citation ?? null, d.url ?? null, d.publishedAt ?? null],
     );
@@ -41,7 +43,7 @@ export class KnowledgeAdminService {
   }
   async deleteSource(id: string): Promise<void> {
     try {
-      const rows: unknown[] = await this.db.query(
+      const [rows] = await this.db.query<[unknown[], number]>(
         `DELETE FROM guideline_sources WHERE id=$1 RETURNING id`,
         [id],
       );
@@ -62,7 +64,9 @@ export class KnowledgeAdminService {
     return this.db.query(`SELECT * FROM knowledge_articles ORDER BY created_at DESC`);
   }
   async updateArticle(id: string, d: UpdateArticleDto): Promise<unknown> {
-    const rows = await this.db.query<unknown[]>(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [rows] = await this.db.query<[unknown[], number]>(
       `UPDATE knowledge_articles SET title=COALESCE($2,title),content=COALESCE($3,content),language_code=COALESCE($4,language_code),updated_at=now(),version=version+1 WHERE id=$1 AND status<>'APPROVED' RETURNING *`,
       [id, d.title ?? null, d.content ?? null, d.languageCode ?? null],
     );
@@ -117,7 +121,9 @@ export class KnowledgeAdminService {
         monitoringActions: d.monitoringActions ?? ['x'],
         expertEscalationCriteria: d.expertEscalationCriteria ?? ['x'],
       });
-    const rows = await this.db.query<unknown[]>(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [rows] = await this.db.query<[unknown[], number]>(
       `UPDATE treatment_guidelines SET condition=COALESCE($2,condition),region=COALESCE($3,region),growth_stage=COALESCE($4,growth_stage),severity=COALESCE($5,severity),immediate_actions=COALESCE($6,immediate_actions),preventive_actions=COALESCE($7,preventive_actions),monitoring_actions=COALESCE($8,monitoring_actions),expert_escalation_criteria=COALESCE($9,expert_escalation_criteria),chemical_guidance=COALESCE($10,chemical_guidance),chemical_guidance_approved=false,review_due_at=COALESCE($11,review_due_at),guideline_version=guideline_version+1,updated_at=now(),version=version+1 WHERE id=$1 AND status IN('DRAFT','UNDER_REVIEW') RETURNING *`,
       [
         id,
@@ -163,10 +169,12 @@ export class KnowledgeAdminService {
       const chemical = Boolean(d.approveChemicalGuidance && current.chemical_guidance);
       const reviewer = d.status === GuidelineStatus.Approved ? p.userId : current.reviewer_id;
       const approvedAt = d.status === GuidelineStatus.Approved ? new Date() : current.approved_at;
-      const updatedRows = (await runner.query(
+      // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+      // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+      const [updatedRows] = (await runner.query(
         `UPDATE treatment_guidelines SET status=$2,reviewer_id=$3,approved_at=$4,chemical_guidance_approved=$5,updated_at=now(),version=version+1 WHERE id=$1 RETURNING *`,
         [id, d.status, reviewer, approvedAt, chemical],
-      )) as Array<Record<string, unknown>>;
+      )) as [Array<Record<string, unknown>>, number];
       const updated = updatedRows[0]!;
       await runner.query(
         `INSERT INTO guideline_approvals(guideline_id,actor_id,actor_type,from_status,to_status,notes,chemical_guidance_approved,guideline_snapshot)VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,

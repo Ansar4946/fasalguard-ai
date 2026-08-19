@@ -32,9 +32,13 @@ export interface AppConfiguration {
   ossBucket: string;
   ossAccessKeyId: string;
   ossAccessKeySecret: string;
+  stripeSecretKey: string;
+  stripeWebhookSecret: string;
+  stripePublishableKey: string;
   sentinelHubClientId: string;
   sentinelHubClientSecret: string;
   sentinelHubBaseUrl: string;
+  sentinelHubAuthUrl: string;
   satelliteMaxCloudCoverage: number;
   satelliteMinValidPixelPercentage: number;
   geospatialAiUrl: string;
@@ -69,6 +73,8 @@ export interface AppConfiguration {
   geminiApiKey: string;
   geminiModel: string;
   geminiTimeoutMs: number;
+  geminiInputPricePerMillionTokens: number | null;
+  geminiOutputPricePerMillionTokens: number | null;
   googleCloudProject: string;
   googleCloudLocation: string;
   googleAccessToken: string;
@@ -111,9 +117,15 @@ export default function configuration(): AppConfiguration {
     ossBucket: process.env.OSS_BUCKET ?? '',
     ossAccessKeyId: process.env.OSS_ACCESS_KEY_ID ?? '',
     ossAccessKeySecret: process.env.OSS_ACCESS_KEY_SECRET ?? '',
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? '',
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+    stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? '',
     sentinelHubClientId: process.env.SENTINEL_HUB_CLIENT_ID ?? '',
     sentinelHubClientSecret: process.env.SENTINEL_HUB_CLIENT_SECRET ?? '',
     sentinelHubBaseUrl: process.env.SENTINEL_HUB_BASE_URL ?? 'https://services.sentinel-hub.com',
+    sentinelHubAuthUrl:
+      process.env.SENTINEL_HUB_AUTH_URL ??
+      'https://services.sentinel-hub.com/auth/realms/main/protocol/openid-connect/token',
     satelliteMaxCloudCoverage: Number(process.env.SATELLITE_MAX_CLOUD_COVERAGE ?? 30),
     satelliteMinValidPixelPercentage: Number(
       process.env.SATELLITE_MIN_VALID_PIXEL_PERCENTAGE ?? 20,
@@ -153,6 +165,14 @@ export default function configuration(): AppConfiguration {
     geminiApiKey: process.env.GEMINI_API_KEY ?? '',
     geminiModel: process.env.GEMINI_MODEL ?? 'gemini-3.6-flash',
     geminiTimeoutMs: Number(process.env.GEMINI_TIMEOUT_MS ?? 30000),
+    // Cost estimation is opt-in and off by default (null) — never a hardcoded/guessed
+    // price. An operator must configure real, current per-million-token pricing.
+    geminiInputPricePerMillionTokens: process.env.GEMINI_INPUT_PRICE_PER_MILLION_TOKENS
+      ? Number(process.env.GEMINI_INPUT_PRICE_PER_MILLION_TOKENS)
+      : null,
+    geminiOutputPricePerMillionTokens: process.env.GEMINI_OUTPUT_PRICE_PER_MILLION_TOKENS
+      ? Number(process.env.GEMINI_OUTPUT_PRICE_PER_MILLION_TOKENS)
+      : null,
     googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT ?? '',
     googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION ?? 'us-central1',
     googleAccessToken: process.env.GOOGLE_ACCESS_TOKEN ?? '',

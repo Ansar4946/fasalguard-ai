@@ -8,6 +8,10 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 const nav = [
   { href: "/admin/billing", label: "Billing" },
   { href: "/admin/funnel", label: "Funnel" },
+  { href: "/admin/ai-operations", label: "AI Operations" },
+  { href: "/admin/impact", label: "Impact" },
+  { href: "/admin/pilot", label: "Pilot" },
+  { href: "/admin/feedback", label: "Feedback" },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

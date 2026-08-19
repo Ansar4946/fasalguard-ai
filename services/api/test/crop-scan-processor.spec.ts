@@ -9,6 +9,7 @@ import type { VisionDiagnosisProvider } from '../src/domain/crop-scans/providers
 import type { Job } from 'bullmq';
 import type { CropScanJob } from '../src/domain/crop-scans/crop-scan.service';
 import type { LifecycleEmailService } from '../src/domain/growth/lifecycle-email.service';
+import type { AIRunLogger } from '../src/domain/ai-ops/ai-run-logger.service';
 describe('CropScanProcessor with fake provider', () => {
   it('stores normalized low-confidence screening and requests expert review without a firm diagnosis', async () => {
     const buffer = await sharp({
@@ -55,7 +56,8 @@ describe('CropScanProcessor with fake provider', () => {
     });
     const fake: VisionDiagnosisProvider = { assessQuality, predict };
     const lifecycle = { notifyInsightReady: jest.fn() } as unknown as LifecycleEmailService;
-    const processor = new CropScanProcessor(db, storage, fake, lifecycle);
+    const aiRunLogger = { record: jest.fn() } as unknown as AIRunLogger;
+    const processor = new CropScanProcessor(db, storage, fake, lifecycle, aiRunLogger);
     await processor.process({ data: { scanId: 'scan-1', ownerId: 'owner-1' } } as Job<CropScanJob>);
     expect(assessQuality).toHaveBeenCalled();
     expect(predict).toHaveBeenCalled();

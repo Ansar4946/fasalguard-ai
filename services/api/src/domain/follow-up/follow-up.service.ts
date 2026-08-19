@@ -1,6 +1,8 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { AIOperation, AIRunStatus } from '../ai-ops/ai-run.enums';
+import { AIRunLogger } from '../ai-ops/ai-run-logger.service';
 import { CropScanStatus } from '../crop-scans/crop-scan.enums';
 import type { ExplainDto, SubmitAnswersDto } from './dto/follow-up.dto';
 import { LLM_PROVIDER, type LlmProvider, type LlmResult } from './providers/llm.provider';
@@ -20,6 +22,7 @@ export class FollowUpService {
   constructor(
     @InjectDataSource() private readonly db: DataSource,
     @Inject(LLM_PROVIDER) private readonly llm: LlmProvider,
+    private readonly aiRunLogger: AIRunLogger,
   ) {}
   async generate(userId: string, scanId: string): Promise<unknown> {
     const scan = await this.scan(userId, scanId);
@@ -36,11 +39,12 @@ export class FollowUpService {
       recentWeather: null,
       satelliteAnomaly: null,
     };
+    const startedAt = new Date();
     const result = await this.llm.selectQuestions({
       context,
       allowedQuestions: ALLOWED_QUESTION_LIBRARY,
     });
-    await this.audit(userId, scanId, 'QUESTION_SELECTION', context, result);
+    await this.audit(userId, scanId, 'QUESTION_SELECTION', context, result, startedAt);
     for (const [key, index] of result.output.questionIds.map((x, i) => [x, i] as const)) {
       const item = ALLOWED_QUESTION_LIBRARY.find((x) => x.key === key)!;
       await this.db.query(
@@ -81,8 +85,16 @@ export class FollowUpService {
       );
     }
     const answers = await this.answerRows(scanId);
+    const summaryStartedAt = new Date();
     const summary = await this.llm.summarizeAnswers({ answers });
-    await this.audit(userId, scanId, 'ANSWER_SUMMARY', { farmer_data: { answers } }, summary);
+    await this.audit(
+      userId,
+      scanId,
+      'ANSWER_SUMMARY',
+      { farmer_data: { answers } },
+      summary,
+      summaryStartedAt,
+    );
     return { answers, summary: summary.output, promptVersion: PROMPT_VERSION };
   }
   async explain(userId: string, scanId: string, dto: ExplainDto): Promise<unknown> {
@@ -98,6 +110,7 @@ export class FollowUpService {
       confidence: scan.confidence,
       isConfirmed: false,
     };
+    const explainStartedAt = new Date();
     const result = await this.llm.explainResult({
       visionResult,
       answerSummary: summary,
@@ -109,9 +122,11 @@ export class FollowUpService {
       'RESULT_EXPLANATION',
       { visionResult, farmer_data: { summary }, language: dto.language },
       result,
+      explainStartedAt,
     );
     if (dto.language.toLowerCase() !== 'english') {
       const approvedText = JSON.stringify(result.output);
+      const translateStartedAt = new Date();
       const translated = await this.llm.translateApprovedInformation({
         approvedText,
         targetLanguage: dto.language,
@@ -122,6 +137,7 @@ export class FollowUpService {
         'APPROVED_TRANSLATION',
         { approvedText, targetLanguage: dto.language },
         translated,
+        translateStartedAt,
       );
       return {
         ...result.output,
@@ -152,6 +168,7 @@ export class FollowUpService {
     purpose: string,
     input: unknown,
     result: LlmResult<T>,
+    startedAt: Date,
   ): Promise<void> {
     await this.db.query(
       `INSERT INTO ai_interactions(scan_id,user_id,purpose,provider,model_id,model_version,prompt_version,input_data,output_data,raw_provider_response,status) VALUES($1,$2,$3,'ALIBABA_QWEN',$4,$5,$6,$7,$8,$9,'COMPLETED')`,
@@ -167,5 +184,25 @@ export class FollowUpService {
         JSON.stringify(result.rawProviderResponse),
       ],
     );
+    // Best-effort cross-cutting summary for the judge-facing evidence ledger. The detailed
+    // raw prompt/response stays only in ai_interactions above; this row is structured-only.
+    const farmRow: Array<{ farmId: string | null }> = await this.db.query(
+      `SELECT f.id "farmId" FROM crop_scans cs LEFT JOIN fields fi ON fi.id=cs.field_id LEFT JOIN farms f ON f.id=fi.farm_id WHERE cs.id=$1`,
+      [scanId],
+    );
+    await this.aiRunLogger.record({
+      userId,
+      farmId: farmRow[0]?.farmId ?? null,
+      operation: AIOperation.FollowUpAnalysis,
+      provider: 'ALIBABA_QWEN',
+      model: result.modelId,
+      status: AIRunStatus.Completed,
+      startedAt,
+      completedAt: new Date(),
+      inputType: purpose,
+      outputSchemaVersion: PROMPT_VERSION,
+      sourceTable: 'ai_interactions',
+      sourceId: null,
+    });
   }
 }

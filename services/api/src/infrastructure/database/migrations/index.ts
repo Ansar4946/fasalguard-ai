@@ -27,6 +27,11 @@ import { PasswordSetupTokens1755000024000 } from './1755000024000-password-setup
 import { WeatherRiskAlerts1755000025000 } from './1755000025000-weather-risk-alerts';
 import { BillingSubscriptions1755000026000 } from './1755000026000-billing-subscriptions';
 import { GrowthFunnel1755000027000 } from './1755000027000-growth-funnel';
+import { AiRunTelemetry1755000028000 } from './1755000028000-ai-run-telemetry';
+import { ImpactOutcomeTracking1755000029000 } from './1755000029000-impact-outcome-tracking';
+import { PilotEnrollment1755000030000 } from './1755000030000-pilot-enrollment';
+import { FeedbackCollection1755000031000 } from './1755000031000-feedback-collection';
+import { StripePayments1755000032000 } from './1755000032000-stripe-payments';
 export const databaseMigrations = [
   InitialGeospatialSchema1755000000000,
   SeedReferenceCrops1755000001000,
@@ -57,4 +62,9 @@ export const databaseMigrations = [
   WeatherRiskAlerts1755000025000,
   BillingSubscriptions1755000026000,
   GrowthFunnel1755000027000,
+  AiRunTelemetry1755000028000,
+  ImpactOutcomeTracking1755000029000,
+  PilotEnrollment1755000030000,
+  FeedbackCollection1755000031000,
+  StripePayments1755000032000,
 ];

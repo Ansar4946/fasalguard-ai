@@ -2,6 +2,7 @@ import { BadGatewayException } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import { FollowUpService } from '../src/domain/follow-up/follow-up.service';
 import type { LlmProvider } from '../src/domain/follow-up/providers/llm.provider';
+import type { AIRunLogger } from '../src/domain/ai-ops/ai-run-logger.service';
 import {
   parseExplanation,
   parseQuestionSelection,
@@ -66,7 +67,8 @@ describe('Phase 11 constrained LLM boundary', () => {
         return Promise.resolve([{ question: 'Is the problem spreading?', answer: injection }]);
       return Promise.resolve([]);
     });
-    const service = new FollowUpService({ query } as unknown as DataSource, fake);
+    const aiRunLogger = { record: jest.fn() } as unknown as AIRunLogger;
+    const service = new FollowUpService({ query } as unknown as DataSource, fake, aiRunLogger);
     await service.answer('user', 'scan', {
       answers: [{ questionId: '10000000-0000-4000-8000-000000000001', answer: injection }],
     });

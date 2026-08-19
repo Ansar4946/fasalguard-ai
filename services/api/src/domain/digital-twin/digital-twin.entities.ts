@@ -20,6 +20,28 @@ export class FarmIncident extends BaseEntity {
   evidenceReferences!: Record<string, unknown>[];
   @Column({ name: 'detected_at', type: 'timestamptz' }) detectedAt!: Date;
   @Column({ name: 'resolved_at', type: 'timestamptz', nullable: true }) resolvedAt!: Date | null;
+  @Column({ name: 'investigation_run_id', type: 'uuid', nullable: true })
+  investigationRunId!: string | null;
+  @Column({ name: 'initial_vegetation_score', type: 'double precision', nullable: true })
+  initialVegetationScore!: number | null;
+  @Column({ name: 'initial_affected_area_hectares', type: 'double precision', nullable: true })
+  initialAffectedAreaHectares!: number | null;
+  @Column({ name: 'follow_up_risk_score', type: 'double precision', nullable: true })
+  followUpRiskScore!: number | null;
+  @Column({ name: 'follow_up_vegetation_score', type: 'double precision', nullable: true })
+  followUpVegetationScore!: number | null;
+  @Column({ name: 'follow_up_affected_area_hectares', type: 'double precision', nullable: true })
+  followUpAffectedAreaHectares!: number | null;
+  @Column({ name: 'farmer_confirmed', type: 'boolean', nullable: true })
+  farmerConfirmed!: boolean | null;
+  @Column({ name: 'farmer_confirmed_at', type: 'timestamptz', nullable: true })
+  farmerConfirmedAt!: Date | null;
+  @Column({ name: 'expert_confirmed', type: 'boolean', nullable: true })
+  expertConfirmed!: boolean | null;
+  @Column({ name: 'expert_confirmed_at', type: 'timestamptz', nullable: true })
+  expertConfirmedAt!: Date | null;
+  @Column({ name: 'expert_confirmed_by', type: 'uuid', nullable: true })
+  expertConfirmedBy!: string | null;
 }
 
 @Entity({ name: 'farm_interventions' })
@@ -38,6 +60,8 @@ export class FarmIntervention extends BaseEntity {
   @Column({ type: 'text', nullable: true }) notes!: string | null;
   @Column({ name: 'evidence_references', type: 'jsonb', default: () => "'[]'::jsonb" })
   evidenceReferences!: Record<string, unknown>[];
+  @Column({ name: 'started_at', type: 'timestamptz', nullable: true }) startedAt!: Date | null;
+  @Column({ name: 'completed_at', type: 'timestamptz', nullable: true }) completedAt!: Date | null;
 }
 
 @Entity({ name: 'farm_verifications' })

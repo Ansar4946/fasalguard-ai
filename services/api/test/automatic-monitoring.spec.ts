@@ -22,7 +22,8 @@ describe('AutomaticMonitoringService', () => {
       },
       lastSuccessfulCaptureAt: null,
     };
-    const query = jest.fn().mockResolvedValue([due]);
+    // DataSource.query() for an UPDATE...RETURNING returns a [rows, affectedCount] tuple.
+    const query = jest.fn().mockResolvedValue([[due], 1]);
     const add = jest.fn().mockResolvedValue(undefined);
     const service = new AutomaticMonitoringService(
       { query } as unknown as DataSource,
@@ -39,7 +40,7 @@ describe('AutomaticMonitoringService', () => {
   it('does not enqueue when no field is due', async () => {
     const add = jest.fn();
     const service = new AutomaticMonitoringService(
-      { query: jest.fn().mockResolvedValue([]) } as unknown as DataSource,
+      { query: jest.fn().mockResolvedValue([[], 0]) } as unknown as DataSource,
       { add } as unknown as Queue<MonitoringJob>,
     );
     expect(await service.dispatchDueFields()).toBe(0);

@@ -4,11 +4,15 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { createHash } from 'node:crypto';
 import type { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
+import type { AIRunToolCall } from '../ai-ops/ai-run.entity';
+import { AIOperation, AIRunStatus, HumanReviewStatus } from '../ai-ops/ai-run.enums';
+import { AIRunLogger } from '../ai-ops/ai-run-logger.service';
 import { EntitlementMetric } from '../billing/billing.enums';
 import { EntitlementService } from '../billing/entitlement.service';
 import { FarmDigitalTwinService } from '../digital-twin/farm-digital-twin.service';
 import { LifecycleEmailService } from '../growth/lifecycle-email.service';
 import { IncidentState } from '../digital-twin/digital-twin.enums';
+import { captureFieldSnapshot } from '../impact/incident-snapshot';
 import { NotificationCategory, TaskSource } from '../notifications/notification.enums';
 import { NotificationService } from '../notifications/notification.service';
 import { MetricsService } from '../../observability/metrics.service';
@@ -57,6 +61,7 @@ export class FarmBrainService {
     private readonly notifications: NotificationService,
     private readonly entitlements: EntitlementService,
     private readonly lifecycle: LifecycleEmailService,
+    private readonly aiRunLogger: AIRunLogger,
     @Inject(FARM_REASONING_PROVIDER) private readonly provider: FarmReasoningProvider,
     private readonly metrics: MetricsService = new MetricsService(),
   ) {}
@@ -159,6 +164,7 @@ export class FarmBrainService {
     );
     const run = rows[0];
     if (!run) return;
+    const runStartedAt = new Date();
     try {
       const providerStarted = process.hrtime.bigint();
       const output = await this.provider.investigate(run.inputManifest);
@@ -177,6 +183,7 @@ export class FarmBrainService {
         { direction: 'output' },
         output.outputTokens ?? 0,
       );
+      const loggedToolCalls: AIRunToolCall[] = [];
       await this.db.transaction(async (tx) => {
         await tx.query(
           `UPDATE farm_brain_runs SET status='COMPLETED',result=$2,provider=$3,model_id=$4,model_version=$5,input_tokens=$6,output_tokens=$7,latency_ms=$8,completed_at=now(),updated_at=now(),version=version+1 WHERE id=$1`,
@@ -197,6 +204,7 @@ export class FarmBrainService {
             output.result.riskScore,
             output.result.requiresHumanReview,
           );
+          loggedToolCalls.push({ name: proposal.tool, status });
           await tx.query(
             `INSERT INTO farm_brain_tool_calls(run_id,name,arguments,status,reason,result_reference,executed_at)
              VALUES($1,$2,$3,$4,$5,$6,$7)`,
@@ -212,7 +220,32 @@ export class FarmBrainService {
           );
         }
       });
-      await this.notifyIfFirstCompleted(run.userId, run.farmId);
+      const hypothesisConfidences = output.result.hypotheses.map((h) => h.confidence);
+      await this.aiRunLogger.record({
+        userId: run.userId,
+        farmId: run.farmId,
+        operation: AIOperation.FarmHealthAnalysis,
+        provider: output.provider,
+        model: output.modelId,
+        status: AIRunStatus.Completed,
+        startedAt: runStartedAt,
+        completedAt: new Date(),
+        inputType: 'farm_digital_twin_snapshot',
+        evidenceIds: evidenceManifest(run.inputManifest).map((e) => e.id),
+        toolCalls: loggedToolCalls,
+        confidence: hypothesisConfidences.length
+          ? hypothesisConfidences.reduce((a, b) => a + b, 0) / hypothesisConfidences.length
+          : null,
+        outputSchemaVersion: output.result.schemaVersion,
+        inputTokens: output.inputTokens,
+        outputTokens: output.outputTokens,
+        humanReviewStatus: output.result.requiresHumanReview
+          ? HumanReviewStatus.Required
+          : HumanReviewStatus.NotRequired,
+        sourceTable: 'farm_brain_runs',
+        sourceId: runId,
+      });
+      await this.notifyIfFirstCompleted(run.userId, run.farmId, runId);
     } catch (error) {
       this.metrics.increment('fasalguard_external_api_failures_total', {
         provider: 'gemini',
@@ -222,18 +255,36 @@ export class FarmBrainService {
         `UPDATE farm_brain_runs SET status=$2,error_code='PROVIDER_OR_SCHEMA_FAILURE',completed_at=CASE WHEN $3 THEN now() ELSE NULL END,updated_at=now() WHERE id=$1`,
         [runId, finalAttempt ? FarmBrainRunStatus.Failed : FarmBrainRunStatus.Queued, finalAttempt],
       );
+      if (finalAttempt)
+        await this.aiRunLogger.record({
+          userId: run.userId,
+          farmId: run.farmId,
+          operation: AIOperation.FarmHealthAnalysis,
+          provider: 'GOOGLE_GEMINI',
+          model: 'unknown',
+          status: AIRunStatus.Failed,
+          startedAt: runStartedAt,
+          completedAt: new Date(),
+          inputType: 'farm_digital_twin_snapshot',
+          errorCode: error instanceof Error ? error.name : 'PROVIDER_OR_SCHEMA_FAILURE',
+          sourceTable: 'farm_brain_runs',
+          sourceId: runId,
+        });
       throw error;
     }
   }
 
   async confirm(userId: string, runId: string, callId: string): Promise<unknown> {
     const run = await this.run(userId, runId);
-    const calls: Array<{
+    interface ConfirmedCall {
       id: string;
       name: FarmBrainToolName;
       arguments: Record<string, unknown>;
       status: FarmBrainToolCallStatus;
-    }> = await this.db.query(
+    }
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [calls] = await this.db.query<[ConfirmedCall[], number]>(
       `UPDATE farm_brain_tool_calls SET status='CONFIRMED',confirmed_by=$3,confirmed_at=now(),updated_at=now()
        WHERE id=$1 AND run_id=$2 AND status='AWAITING_CONFIRMATION'
        RETURNING id,name,arguments,status`,
@@ -291,14 +342,16 @@ export class FarmBrainService {
         dueAt: parseFutureDate(call.arguments.dueAt) ?? urgencyDueAt(urgency),
         sourceReference: `farm-brain:${call.id}`,
       })) as { id?: string } | null;
+      if (created?.id) await this.linkInterventionToIncident(run, fieldId, call.name, created.id);
       return `task:${created?.id ?? 'deduplicated'}`;
     }
     if (call.name === FarmBrainToolName.CreateIncident) {
       const result = run.result as { healthStatus?: string; riskScore?: number } | null;
+      const snapshot = await captureFieldSnapshot(this.db, fieldId);
       const rows: Array<{ id: string }> = await this.db.query(
-        `INSERT INTO farm_incidents(farm_id,field_id,type,state,severity,confidence,title,source,source_identifier,evidence_references,detected_at)
+        `INSERT INTO farm_incidents(farm_id,field_id,type,state,severity,confidence,title,source,source_identifier,evidence_references,detected_at,investigation_run_id,initial_vegetation_score,initial_affected_area_hectares)
          VALUES($1,$2,'POSSIBLE_CROP_HEALTH_STRESS',$3,$4,$5,$6,'GEMINI_FARM_BRAIN',$7,
-           (SELECT COALESCE(jsonb_agg(jsonb_build_object('evidenceId',evidence_id,'type',evidence_type,'source',source)),'[]'::jsonb) FROM farm_brain_run_evidence WHERE run_id=$8),now()) RETURNING id`,
+           (SELECT COALESCE(jsonb_agg(jsonb_build_object('evidenceId',evidence_id,'type',evidence_type,'source',source)),'[]'::jsonb) FROM farm_brain_run_evidence WHERE run_id=$8),now(),$8,$9,$10) RETURNING id`,
         [
           run.farmId,
           fieldId ?? null,
@@ -308,11 +361,14 @@ export class FarmBrainService {
           stringArg(call.arguments.title)?.slice(0, 200) ?? 'Farm health investigation',
           `farm-brain:${call.id}`,
           run.id,
+          snapshot.vegetationScore,
+          snapshot.affectedAreaHectares,
         ],
       );
       return `incident:${rows[0]!.id}`;
     }
     if (call.name === FarmBrainToolName.SendFarmerAlert) {
+      const incidentId = await this.findIncidentForRun(run.id);
       const notification = await this.notifications.createNotification({
         userId,
         category: NotificationCategory.System,
@@ -324,6 +380,7 @@ export class FarmBrainService {
         deduplicationKey: `farm-brain:${call.id}`,
         confirmedEvidence: false,
         aiConfidence: typeof run.result?.riskScore === 'number' ? run.result.riskScore : null,
+        incidentId,
       });
       return `notification:${(notification as { id?: string } | null)?.id ?? 'deduplicated'}`;
     }
@@ -335,7 +392,11 @@ export class FarmBrainService {
   /** "Roadmap ready" lifecycle email — this product has no dedicated crop-roadmap feature,
    * so the first COMPLETED Farm Brain investigation is the closest real analog. Best-effort:
    * never allowed to affect the investigation's own success. */
-  private async notifyIfFirstCompleted(userId: string, farmId: string): Promise<void> {
+  private async notifyIfFirstCompleted(
+    userId: string,
+    farmId: string,
+    runId: string,
+  ): Promise<void> {
     try {
       const completedCount: Array<{ count: string }> = await this.db.query(
         `SELECT count(*)::text count FROM farm_brain_runs WHERE user_id=$1 AND status='COMPLETED'`,
@@ -348,7 +409,12 @@ export class FarmBrainService {
       );
       const row = context[0];
       if (row?.email)
-        await this.lifecycle.notifyRoadmapReady(userId, row.email, row.farmName ?? 'your farm');
+        await this.lifecycle.notifyRoadmapReady(
+          userId,
+          row.email,
+          row.farmName ?? 'your farm',
+          runId,
+        );
     } catch {
       /* best-effort */
     }
@@ -376,6 +442,35 @@ export class FarmBrainService {
     );
     if (!rows[0]) throw new NotFoundException('Selected Farm Brain field was not found.');
     return rows[0].id;
+  }
+
+  /** The incident (if any) this investigation run itself created — real correlation, not a guess. */
+  private async findIncidentForRun(runId: string): Promise<string | undefined> {
+    const rows: Array<{ id: string }> = await this.db.query(
+      `SELECT id FROM farm_incidents WHERE investigation_run_id=$1 ORDER BY created_at DESC LIMIT 1`,
+      [runId],
+    );
+    return rows[0]?.id;
+  }
+
+  /** Activates `farm_interventions` as the real action ledger for an incident-linked task. Best-effort. */
+  private async linkInterventionToIncident(
+    run: RunRow,
+    fieldId: string | undefined,
+    toolName: FarmBrainToolName,
+    taskId: string,
+  ): Promise<void> {
+    try {
+      const incidentId = await this.findIncidentForRun(run.id);
+      if (!incidentId) return;
+      await this.db.query(
+        `INSERT INTO farm_interventions(farm_id,field_id,incident_id,task_id,type,status,performed_at)
+         VALUES($1,$2,$3,$4,$5,'PLANNED',now())`,
+        [run.farmId, fieldId ?? null, incidentId, taskId, toolName],
+      );
+    } catch {
+      /* best-effort: never breaks the primary task creation */
+    }
   }
 }
 

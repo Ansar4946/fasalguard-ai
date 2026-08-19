@@ -111,6 +111,7 @@ import {
   LifecycleEmailLog,
   PilotLead,
 } from '../../../domain/growth/growth.entities';
+import { AIRun } from '../../../domain/ai-ops/ai-run.entity';
 export const databaseEntities = [
   User,
   FarmerProfile,
@@ -198,4 +199,5 @@ export const databaseEntities = [
   PilotLead,
   LandingPageView,
   LifecycleEmailLog,
+  AIRun,
 ];

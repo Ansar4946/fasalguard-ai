@@ -9,8 +9,10 @@ import {
   AssignOrganizationPlanDto,
   RefundPaymentDto,
   RejectPaymentDto,
+  SetStripePriceDto,
   VerifyPaymentDto,
 } from './dto/billing.dto';
+import { StripeService } from './stripe.service';
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 
 @ApiTags('Admin billing')
@@ -18,7 +20,10 @@ import {
 @Roles(UserRole.Admin, UserRole.SuperAdmin)
 @Controller({ path: 'admin/billing', version: '1' })
 export class AdminBillingController {
-  constructor(private readonly admin: AdminBillingService) {}
+  constructor(
+    private readonly admin: AdminBillingService,
+    private readonly stripe: StripeService,
+  ) {}
 
   @ApiOperation({
     summary: 'Real revenue, plan distribution, and payment outcomes — never fabricated',
@@ -71,5 +76,17 @@ export class AdminBillingController {
     @Body() dto: AssignOrganizationPlanDto,
   ) {
     return this.admin.assignOrganizationPlan(p.userId, dto.organizationId, dto.planCode);
+  }
+
+  @ApiOperation({ summary: 'Whether Stripe keys are configured — never echoes the secrets' })
+  @Get('stripe-status')
+  stripeStatus() {
+    return this.stripe.status();
+  }
+
+  @ApiOperation({ summary: 'Attach a real Stripe Price id to a plan, once one exists' })
+  @Post('plans/:code/stripe-price')
+  setStripePrice(@Param('code') code: string, @Body() dto: SetStripePriceDto) {
+    return this.stripe.setPriceId(code, dto.stripePriceId);
   }
 }

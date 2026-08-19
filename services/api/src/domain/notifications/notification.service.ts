@@ -40,7 +40,9 @@ export class NotificationService {
     return rows[0];
   }
   async deleteToken(userId: string, id: string) {
-    const r = await this.db.query(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [r] = await this.db.query<[Array<{ id: string }>, number]>(
       `UPDATE device_tokens SET active=false,invalidated_at=now(),deleted_at=now() WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL RETURNING id`,
       [id, userId],
     );
@@ -54,7 +56,9 @@ export class NotificationService {
     );
   }
   async read(userId: string, id: string) {
-    const r = await this.db.query(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [r] = await this.db.query<[Array<{ id: string; readAt: Date }>, number]>(
       `UPDATE notifications SET read_at=COALESCE(read_at,now()) WHERE id=$1 AND user_id=$2 RETURNING id,read_at "readAt"`,
       [id, userId],
     );
@@ -116,7 +120,9 @@ export class NotificationService {
     )[0];
     if (!current) throw new NotFoundException('Task was not found.');
     const status = d.status ?? current.status;
-    const r = await this.db.query(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [r] = await this.db.query<[Array<Record<string, unknown>>, number]>(
       `UPDATE farmer_tasks SET title=$3,description=$4,due_at=$5,status=$6,completed_at=CASE WHEN $7 THEN COALESCE(completed_at,now()) ELSE NULL END WHERE id=$1 AND user_id=$2 RETURNING *`,
       [
         id,
@@ -128,6 +134,16 @@ export class NotificationService {
         status === 'COMPLETED',
       ],
     );
+    if (status === 'COMPLETED') {
+      try {
+        await this.db.query(
+          `UPDATE farm_interventions SET status='COMPLETED',completed_at=now(),updated_at=now(),version=version+1 WHERE task_id=$1 AND status<>'COMPLETED'`,
+          [id],
+        );
+      } catch {
+        /* best-effort: the impact ledger must never block task updates */
+      }
+    }
     return r[0];
   }
   async completeTask(userId: string, id: string) {
@@ -142,6 +158,7 @@ export class NotificationService {
     deduplicationKey?: string;
     confirmedEvidence?: boolean;
     aiConfidence?: number | null;
+    incidentId?: string;
   }) {
     this.safety.assertSafe({
       title: input.title,
@@ -151,7 +168,7 @@ export class NotificationService {
     });
     const persisted = await this.db.transaction(async (tx) => {
       const rows = await tx.query(
-        `INSERT INTO notifications(user_id,category,title,body,data,deduplication_key,confirmed_evidence,ai_confidence)VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(user_id,deduplication_key) WHERE deduplication_key IS NOT NULL DO NOTHING RETURNING id`,
+        `INSERT INTO notifications(user_id,category,title,body,data,deduplication_key,confirmed_evidence,ai_confidence,incident_id)VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(user_id,deduplication_key) WHERE deduplication_key IS NOT NULL DO NOTHING RETURNING id`,
         [
           input.userId,
           input.category,
@@ -161,6 +178,7 @@ export class NotificationService {
           input.deduplicationKey ?? null,
           input.confirmedEvidence ?? false,
           input.aiConfidence ?? null,
+          input.incidentId ?? null,
         ],
       );
       if (!rows.length) return null;

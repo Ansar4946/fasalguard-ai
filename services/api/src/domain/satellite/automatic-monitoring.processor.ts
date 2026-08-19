@@ -76,7 +76,8 @@ export class AutomaticMonitoringProcessor extends WorkerHost {
             maxCloudCoverage: threshold,
           },
           {
-            jobId: `${captures[0].id}-satellite:process`,
+            // BullMQ rejects ':' in a custom jobId ("Custom Id cannot contain :").
+            jobId: `${captures[0].id}-satellite_process`,
             attempts: 4,
             backoff: { type: 'exponential', delay: 1500 },
             removeOnComplete: 1000,

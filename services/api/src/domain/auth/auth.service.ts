@@ -238,14 +238,16 @@ export class AuthService {
     );
   }
   async revokeSession(userId: string, sessionId: string): Promise<boolean> {
-    const result: Array<{ id: string }> = await this.db.query(
+    // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
+    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    const [result] = await this.db.query<[Array<{ id: string }>, number]>(
       `UPDATE auth_sessions SET revoked_at=coalesce(revoked_at,now()),revoke_reason=coalesce(revoke_reason,'user_revoked'),updated_at=now(),version=version+1 WHERE id=$1 AND user_id=$2 RETURNING id`,
       [sessionId, userId],
     );
     return result.length > 0;
   }
   async revokeAllSessions(userId: string): Promise<number> {
-    const rows: Array<{ id: string }> = await this.db.query(
+    const [rows] = await this.db.query<[Array<{ id: string }>, number]>(
       `UPDATE auth_sessions SET revoked_at=coalesce(revoked_at,now()),revoke_reason=coalesce(revoke_reason,'revoke_all'),updated_at=now(),version=version+1 WHERE user_id=$1 AND revoked_at IS NULL RETURNING id`,
       [userId],
     );

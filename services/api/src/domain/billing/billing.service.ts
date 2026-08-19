@@ -158,8 +158,9 @@ export class BillingService {
   }
 
   /** Every registered user has a subscription created at registration; this is a defensive
-   * fallback only for accounts that predate the billing migration. */
-  private async ensureSubscription(
+   * fallback only for accounts that predate the billing migration. Public so `StripeService`
+   * (same module) can resolve the same real row before creating a Checkout Session. */
+  async ensureSubscription(
     userId: string,
     runner: DataSource | EntityManager,
   ): Promise<SubscriptionRow> {
@@ -207,4 +208,31 @@ export async function writeBillingEvent(
     `INSERT INTO billing_events(id,subscription_id,user_id,type,payload) VALUES($1,$2,$3,$4,$5)`,
     [randomUUID(), subscriptionId, userId, type, JSON.stringify(payload)],
   );
+}
+
+/**
+ * The one real activation path — flips a subscription onto a paid plan and writes the audit
+ * trail. Shared by `AdminBillingService.verifyPayment` (manual review) and `StripeService`'s
+ * webhook handler (instant, signature-verified) so the two paths can never diverge in behavior.
+ */
+export async function activateSubscription(
+  runner: DataSource | EntityManager,
+  subscriptionId: string,
+  planCode: string,
+  paymentId: string,
+  verifiedBy?: string | null,
+): Promise<void> {
+  await runner.query(
+    `UPDATE subscriptions SET plan_code=$2,status='ACTIVE',updated_at=now(),version=version+1 WHERE id=$1`,
+    [subscriptionId, planCode],
+  );
+  await writeBillingEvent(runner, subscriptionId, null, BillingEventType.PaymentVerified, {
+    paymentId,
+    planCode,
+    verifiedBy: verifiedBy ?? null,
+  });
+  await writeBillingEvent(runner, subscriptionId, null, BillingEventType.SubscriptionActivated, {
+    paymentId,
+    planCode,
+  });
 }

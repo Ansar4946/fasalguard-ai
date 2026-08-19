@@ -1,6 +1,14 @@
 import { IsEnum, IsOptional, IsString, IsUUID, Length } from 'class-validator';
 import { PaymentProvider, PlanCode } from '../billing.enums';
 
+export class CreateCheckoutSessionDto {
+  @IsEnum(PlanCode) planCode!: PlanCode;
+}
+
+export class SetStripePriceDto {
+  @IsString() @Length(1, 255) stripePriceId!: string;
+}
+
 export class RequestUpgradeDto {
   @IsEnum(PlanCode) planCode!: PlanCode;
   @IsEnum(PaymentProvider) provider!: PaymentProvider;

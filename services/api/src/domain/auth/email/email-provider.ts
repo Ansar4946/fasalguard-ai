@@ -27,18 +27,21 @@ export interface OnboardingReminderEmail {
 export interface RoadmapReadyEmail {
   recipient: string;
   farmName: string;
+  feedbackUrl: string;
 }
 
 export interface InsightReadyEmail {
   recipient: string;
   context: string;
   diagnosis: string;
+  feedbackUrl: string;
 }
 
 export interface WeeklySummaryEmail {
   recipient: string;
   pendingTasks: number;
   completedTasks: number;
+  feedbackUrl: string;
 }
 
 export interface EmailProvider {

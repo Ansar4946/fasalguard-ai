@@ -109,6 +109,23 @@ export class CropScanService {
     );
     return rows[0];
   }
+  /** Recent, diagnosed scans for one field — used to let a farmer pick real evidence for an incident follow-up. */
+  async listRecentForField(ownerId: string, fieldId: string): Promise<unknown[]> {
+    return this.db.query(
+      `SELECT cs.id,cs.created_at AS "createdAt",d.screened_condition AS "screenedCondition"
+       FROM crop_scans cs LEFT JOIN diagnoses d ON d.scan_id=cs.id
+       WHERE cs.owner_id=$1 AND cs.field_id=$2 AND cs.status IN($3,$4,$5,$6)
+       ORDER BY cs.created_at DESC LIMIT 10`,
+      [
+        ownerId,
+        fieldId,
+        CropScanStatus.Diagnosed,
+        CropScanStatus.ExpertReview,
+        CropScanStatus.Verified,
+        CropScanStatus.Resolved,
+      ],
+    );
+  }
   private async require(
     ownerId: string,
     id: string,

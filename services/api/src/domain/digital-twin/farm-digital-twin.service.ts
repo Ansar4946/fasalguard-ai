@@ -233,7 +233,7 @@ export class FarmDigitalTwinService {
 
   private activeIncidents(farmId: string, fieldIds: string[]): Promise<Record<string, unknown>[]> {
     return this.db.query(
-      `SELECT id,farm_id AS "farmId",field_id AS "fieldId",crop_cycle_id AS "cropCycleId",type,state,severity,confidence,title,source,source_identifier AS "sourceIdentifier",evidence_references AS evidence,detected_at AS "observedAt",created_at AS "ingestedAt" FROM farm_incidents WHERE farm_id=$1 AND ($2::uuid[]='{}'::uuid[] OR field_id IS NULL OR field_id=ANY($2::uuid[])) AND state NOT IN ($3,$4) ORDER BY detected_at DESC`,
+      `SELECT id,farm_id AS "farmId",field_id AS "fieldId",crop_cycle_id AS "cropCycleId",type,state,severity,confidence,title,source,source_identifier AS "sourceIdentifier",evidence_references AS evidence,detected_at AS "observedAt",created_at AS "ingestedAt",farmer_confirmed AS "farmerConfirmed" FROM farm_incidents WHERE farm_id=$1 AND ($2::uuid[]='{}'::uuid[] OR field_id IS NULL OR field_id=ANY($2::uuid[])) AND state NOT IN ($3,$4) ORDER BY detected_at DESC`,
       [farmId, fieldIds, IncidentState.Resolved, IncidentState.Dismissed],
     );
   }

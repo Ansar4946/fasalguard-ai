@@ -1,6 +1,6 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 import type {
   CredentialsEmail,
   EmailProvider,
@@ -68,8 +68,8 @@ export class SmtpEmailProvider implements EmailProvider {
       from,
       to: message.recipient,
       subject: `Your first farm investigation for ${message.farmName} is ready`,
-      text: `Your first Gemini-powered farm investigation for ${message.farmName} has finished. Open the app to review findings and recommended actions.\n\nYou can manage notification preferences anytime in the app.`,
-      html: `<p>Your first Gemini-powered farm investigation for <strong>${message.farmName}</strong> has finished.</p><p>Open the app to review findings and recommended actions.</p><p style="color:#666;font-size:12px">You can manage notification preferences anytime in the app.</p>`,
+      text: `Your first Gemini-powered farm investigation for ${message.farmName} has finished. Open the app to review findings and recommended actions.\n\nWas this useful? ${message.feedbackUrl}\n\nYou can manage notification preferences anytime in the app.`,
+      html: `<p>Your first Gemini-powered farm investigation for <strong>${message.farmName}</strong> has finished.</p><p>Open the app to review findings and recommended actions.</p><p><a href="${message.feedbackUrl}">Was this useful? Tell us</a></p><p style="color:#666;font-size:12px">You can manage notification preferences anytime in the app.</p>`,
     });
   }
 
@@ -79,8 +79,8 @@ export class SmtpEmailProvider implements EmailProvider {
       from,
       to: message.recipient,
       subject: `Your crop scan result for ${message.context} is ready`,
-      text: `Your crop scan for ${message.context} has been screened: ${message.diagnosis}. This is an AI screening, not a confirmed diagnosis — open the app for full details and next steps.\n\nYou can manage notification preferences anytime in the app.`,
-      html: `<p>Your crop scan for <strong>${message.context}</strong> has been screened: <strong>${message.diagnosis}</strong>.</p><p>This is an AI screening, not a confirmed diagnosis — open the app for full details and next steps.</p><p style="color:#666;font-size:12px">You can manage notification preferences anytime in the app.</p>`,
+      text: `Your crop scan for ${message.context} has been screened: ${message.diagnosis}. This is an AI screening, not a confirmed diagnosis — open the app for full details and next steps.\n\nWas this useful? ${message.feedbackUrl}\n\nYou can manage notification preferences anytime in the app.`,
+      html: `<p>Your crop scan for <strong>${message.context}</strong> has been screened: <strong>${message.diagnosis}</strong>.</p><p>This is an AI screening, not a confirmed diagnosis — open the app for full details and next steps.</p><p><a href="${message.feedbackUrl}">Was this useful? Tell us</a></p><p style="color:#666;font-size:12px">You can manage notification preferences anytime in the app.</p>`,
     });
   }
 
@@ -90,8 +90,8 @@ export class SmtpEmailProvider implements EmailProvider {
       from,
       to: message.recipient,
       subject: 'Your weekly farm summary',
-      text: `This week: ${message.pendingTasks} pending task(s), ${message.completedTasks} completed task(s). Open the app for full details.\n\nYou can manage notification preferences anytime in the app.`,
-      html: `<p>This week: <strong>${message.pendingTasks}</strong> pending task(s), <strong>${message.completedTasks}</strong> completed task(s).</p><p>Open the app for full details.</p><p style="color:#666;font-size:12px">You can manage notification preferences anytime in the app.</p>`,
+      text: `This week: ${message.pendingTasks} pending task(s), ${message.completedTasks} completed task(s). Open the app for full details.\n\nWas this useful? ${message.feedbackUrl}\n\nYou can manage notification preferences anytime in the app.`,
+      html: `<p>This week: <strong>${message.pendingTasks}</strong> pending task(s), <strong>${message.completedTasks}</strong> completed task(s).</p><p>Open the app for full details.</p><p><a href="${message.feedbackUrl}">Was this useful? Tell us</a></p><p style="color:#666;font-size:12px">You can manage notification preferences anytime in the app.</p>`,
     });
   }
 
