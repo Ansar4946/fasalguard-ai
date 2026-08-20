@@ -83,7 +83,16 @@ export function EditFarmForm({ farm }: { farm: EditFarmFormData }) {
           Adjust the corners on the map to update the farm boundary.
         </p>
         <div className="mt-4">
-          <BoundaryPicker points={points} onChange={setPoints} center={mapCenter} />
+          <BoundaryPicker
+            points={points}
+            onChange={setPoints}
+            center={mapCenter}
+            onLocationResolved={(result) => {
+              if (result.province) setProvince(result.province);
+              if (result.district) setDistrict(result.district);
+              if (result.tehsil) setTehsil(result.tehsil);
+            }}
+          />
         </div>
       </section>
 

@@ -6,13 +6,54 @@ import { FormEvent, useState } from "react";
 import { useOnboarding } from "@/features/onboarding/onboarding-provider";
 import type { OnboardingData } from "@/features/onboarding/types";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import { describeGeolocationError } from "@/lib/geo/geolocation";
 
+// Real, complete administrative divisions — the previous list only covered a handful of
+// districts per province (e.g. 5 of Punjab's 36), so most farmers couldn't find their own.
 const districts: Record<string, string[]> = {
-  Punjab: ["Bahawalpur", "Faisalabad", "Lahore", "Multan", "Rahim Yar Khan"],
-  Sindh: ["Hyderabad", "Khairpur", "Sukkur"],
-  "Khyber Pakhtunkhwa": ["Mardan", "Peshawar", "Swat"],
-  Balochistan: ["Quetta", "Sibi"],
+  Punjab: [
+    "Attock", "Bahawalnagar", "Bahawalpur", "Bhakkar", "Chakwal", "Chiniot",
+    "Dera Ghazi Khan", "Faisalabad", "Gujranwala", "Gujrat", "Hafizabad", "Jhang",
+    "Jhelum", "Kasur", "Khanewal", "Khushab", "Lahore", "Layyah", "Lodhran",
+    "Mandi Bahauddin", "Mianwali", "Multan", "Muzaffargarh", "Nankana Sahib",
+    "Narowal", "Okara", "Pakpattan", "Rahim Yar Khan", "Rajanpur", "Rawalpindi",
+    "Sahiwal", "Sargodha", "Sheikhupura", "Sialkot", "Toba Tek Singh", "Vehari",
+  ],
+  Sindh: [
+    "Badin", "Dadu", "Ghotki", "Hyderabad", "Jacobabad", "Jamshoro",
+    "Kambar Shahdadkot", "Karachi", "Kashmore", "Khairpur", "Korangi", "Larkana",
+    "Matiari", "Mirpur Khas", "Naushahro Feroze", "Sanghar", "Shaheed Benazirabad",
+    "Shikarpur", "Sujawal", "Sukkur", "Tando Allahyar", "Tando Muhammad Khan",
+    "Tharparkar", "Thatta", "Umerkot",
+  ],
+  "Khyber Pakhtunkhwa": [
+    "Abbottabad", "Bajaur", "Bannu", "Batagram", "Buner", "Charsadda",
+    "Chitral Lower", "Chitral Upper", "Dera Ismail Khan", "Hangu", "Haripur",
+    "Karak", "Khyber", "Kohat", "Kolai-Palas", "Kurram", "Lakki Marwat",
+    "Lower Dir", "Malakand", "Mansehra", "Mardan", "Mohmand", "North Waziristan",
+    "Nowshera", "Orakzai", "Peshawar", "Shangla", "South Waziristan", "Swabi",
+    "Swat", "Tank", "Torghar", "Upper Dir",
+  ],
+  Balochistan: [
+    "Awaran", "Barkhan", "Chagai", "Chaman", "Dera Bugti", "Duki", "Gwadar",
+    "Harnai", "Jafarabad", "Jhal Magsi", "Kacchi", "Kalat", "Kech", "Kharan",
+    "Khuzdar", "Killa Abdullah", "Killa Saifullah", "Kohlu", "Lasbela",
+    "Loralai", "Mastung", "Musakhel", "Nasirabad", "Nushki", "Panjgur",
+    "Pishin", "Quetta", "Sherani", "Sibi", "Sohbatpur", "Washuk", "Zhob", "Ziarat",
+  ],
+  "Islamabad Capital Territory": ["Islamabad"],
 };
+
+/** Geoapify's district name doesn't always match ours exactly ("Multan District" vs
+ * "Multan"). Try an exact match first, then a normalized one, before giving up honestly. */
+function matchDistrict(candidates: string[], detected: string): string | null {
+  // Geoapify's admin-area suffix isn't consistent — Peshawar comes back "Peshawar District",
+  // Karachi comes back "Karachi Division" — strip either before comparing.
+  const normalize = (value: string) =>
+    value.toLowerCase().replace(/\s*(district|division)$/, "").trim();
+  const target = normalize(detected);
+  return candidates.find((c) => normalize(c) === target) ?? null;
+}
 
 type FarmErrors = Partial<Record<keyof OnboardingData["farm"], string>>;
 
@@ -21,6 +62,48 @@ export function FarmDetails() {
   const draft = data.farm;
   const router = useRouter();
   const [errors, setErrors] = useState<FarmErrors>({});
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState("");
+
+  function useCurrentLocation(): void {
+    if (!("geolocation" in navigator)) {
+      setLocateError("Your browser doesn't support location detection.");
+      return;
+    }
+    setLocating(true);
+    setLocateError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        fetch(`/api/geocode/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((result: { province?: string | null; district?: string | null } | null) => {
+            const provinceKey = result?.province
+              ? Object.keys(districts).find(
+                  (p) => p.toLowerCase() === result.province!.toLowerCase(),
+                )
+              : undefined;
+            if (!provinceKey) {
+              setLocateError("Couldn't match your location to a listed province — select it manually.");
+              return;
+            }
+            update("province", provinceKey);
+            const matchedDistrict = result?.district
+              ? matchDistrict(districts[provinceKey]!, result.district)
+              : null;
+            update("district", matchedDistrict ?? "");
+            if (!matchedDistrict)
+              setLocateError(`Set province to ${provinceKey} — select your district manually.`);
+          })
+          .catch(() => setLocateError("Couldn't look up your location — select it manually."))
+          .finally(() => setLocating(false));
+      },
+      (error) => {
+        setLocating(false);
+        setLocateError(describeGeolocationError(error));
+      },
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  }
 
   function update<K extends keyof OnboardingData["farm"]>(
     key: K,
@@ -126,7 +209,25 @@ export function FarmDetails() {
                 </ErrorText>
               )}
             </div>
-            <div className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
+            <div className="mt-4 flex items-center justify-between gap-2">
+              <p className="text-[10px] font-semibold text-foreground">Province &amp; district</p>
+              <button
+                type="button"
+                onClick={useCurrentLocation}
+                disabled={locating}
+                className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#ccd6cf] bg-[#f7f8fc] px-2.5 text-[9px] font-bold text-brand-dark hover:bg-brand-soft disabled:opacity-60"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" />
+                  <circle cx="12" cy="9" r="2.5" />
+                </svg>
+                {locating ? "Locating…" : "Use my location"}
+              </button>
+            </div>
+            {locateError && (
+              <p className="mt-1 text-[9px] font-semibold text-amber-700">{locateError}</p>
+            )}
+            <div className="mt-2 grid min-w-0 gap-3 sm:grid-cols-2">
               <div>
                 <FieldLabel htmlFor="province">Province</FieldLabel>
                 <select

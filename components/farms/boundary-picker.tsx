@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { describeGeolocationError } from "@/lib/geo/geolocation";
 
 const BoundaryMapInner = dynamic(() => import("./boundary-map-inner"), {
   ssr: false,
@@ -18,13 +19,35 @@ interface GeocodeResult {
   lng: number;
 }
 
+interface ResolvedLocation {
+  province: string | null;
+  district: string | null;
+  tehsil: string | null;
+}
+
 interface BoundaryPickerProps {
   points: [number, number][];
   onChange: (points: [number, number][]) => void;
   center?: [number, number];
+  onLocationResolved?: (result: ResolvedLocation) => void;
 }
 
-export function BoundaryPicker({ points, onChange, center = DEFAULT_CENTER }: BoundaryPickerProps) {
+async function reverseGeocode(lat: number, lng: number): Promise<ResolvedLocation | null> {
+  try {
+    const response = await fetch(`/api/geocode/reverse?lat=${lat}&lon=${lng}`);
+    if (!response.ok) return null;
+    return (await response.json()) as ResolvedLocation;
+  } catch {
+    return null;
+  }
+}
+
+export function BoundaryPicker({
+  points,
+  onChange,
+  center = DEFAULT_CENTER,
+  onLocationResolved,
+}: BoundaryPickerProps) {
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
   const addPoint = useCallback(
     (point: [number, number]) => onChange([...points, point]),
@@ -33,9 +56,16 @@ export function BoundaryPicker({ points, onChange, center = DEFAULT_CENTER }: Bo
   const undo = useCallback(() => onChange(points.slice(0, -1)), [points, onChange]);
   const clear = useCallback(() => onChange([]), [onChange]);
 
+  async function moveTo(lat: number, lng: number): Promise<void> {
+    setMapCenter([lat, lng]);
+    // Best-effort — a farmer can always type the address fields by hand if this fails.
+    const resolved = await reverseGeocode(lat, lng);
+    if (resolved) onLocationResolved?.(resolved);
+  }
+
   return (
     <div className="space-y-2">
-      <LocationSearch onSelect={(result) => setMapCenter([result.lat, result.lng])} />
+      <LocationSearch onSelect={(result) => moveTo(result.lat, result.lng)} onUseCurrentLocation={moveTo} />
       <BoundaryMapInner center={mapCenter} points={points} onAddPoint={addPoint} />
       <div className="flex items-center justify-between gap-3 text-[10px]">
         <p className="text-muted">
@@ -67,12 +97,40 @@ export function BoundaryPicker({ points, onChange, center = DEFAULT_CENTER }: Bo
   );
 }
 
-function LocationSearch({ onSelect }: { onSelect: (result: GeocodeResult) => void }) {
+function LocationSearch({
+  onSelect,
+  onUseCurrentLocation,
+}: {
+  onSelect: (result: GeocodeResult) => void;
+  onUseCurrentLocation: (lat: number, lng: number) => void;
+}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState("");
   const requestId = useRef(0);
+
+  function useCurrentLocation(): void {
+    if (!("geolocation" in navigator)) {
+      setLocateError("Your browser doesn't support location detection.");
+      return;
+    }
+    setLocating(true);
+    setLocateError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocating(false);
+        onUseCurrentLocation(position.coords.latitude, position.coords.longitude);
+      },
+      (error) => {
+        setLocating(false);
+        setLocateError(describeGeolocationError(error));
+      },
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  }
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -106,38 +164,55 @@ function LocationSearch({ onSelect }: { onSelect: (result: GeocodeResult) => voi
   }
 
   return (
-    <div className="relative">
-      <label htmlFor="location-search" className="sr-only">
-        Search for a place to center the map
-      </label>
-      <input
-        id="location-search"
-        type="text"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        onFocus={() => results.length > 0 && setOpen(true)}
-        placeholder="Search for your village, town, or address…"
-        className="h-10 w-full rounded-lg border border-[#ccd6cf] bg-[#f7f8fc] px-3 text-[11px] outline-none focus:border-brand"
-        autoComplete="off"
-      />
-      {status === "error" && (
-        <p className="mt-1 text-[9px] font-semibold text-danger">Location search is temporarily unavailable.</p>
-      )}
-      {showDropdown && (
-        <ul className="absolute z-[500] mt-1 w-full overflow-hidden rounded-lg border border-[#ccd6cf] bg-white text-[11px] shadow-lg">
-          {results.map((result) => (
-            <li key={`${result.lat}-${result.lng}`}>
-              <button
-                type="button"
-                onClick={() => select(result)}
-                className="block w-full px-3 py-2 text-left hover:bg-brand-soft"
-              >
-                {result.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="flex items-start gap-2">
+      <div className="relative min-w-0 flex-1">
+        <label htmlFor="location-search" className="sr-only">
+          Search for a place to center the map
+        </label>
+        <input
+          id="location-search"
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onFocus={() => results.length > 0 && setOpen(true)}
+          placeholder="Search for your village, town, or address…"
+          className="h-10 w-full rounded-lg border border-[#ccd6cf] bg-[#f7f8fc] px-3 text-[11px] outline-none focus:border-brand"
+          autoComplete="off"
+        />
+        {status === "error" && (
+          <p className="mt-1 text-[9px] font-semibold text-danger">Location search is temporarily unavailable.</p>
+        )}
+        {locateError && (
+          <p className="mt-1 text-[9px] font-semibold text-danger">{locateError}</p>
+        )}
+        {showDropdown && (
+          <ul className="absolute z-[500] mt-1 w-full overflow-hidden rounded-lg border border-[#ccd6cf] bg-white text-[11px] shadow-lg">
+            {results.map((result) => (
+              <li key={`${result.lat}-${result.lng}`}>
+                <button
+                  type="button"
+                  onClick={() => select(result)}
+                  className="block w-full px-3 py-2 text-left hover:bg-brand-soft"
+                >
+                  {result.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={useCurrentLocation}
+        disabled={locating}
+        className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-[#ccd6cf] bg-[#f7f8fc] px-3 text-[10px] font-bold text-brand-dark hover:bg-brand-soft disabled:opacity-60"
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" />
+          <circle cx="12" cy="9" r="2.5" />
+        </svg>
+        {locating ? "Locating…" : "Use my location"}
+      </button>
     </div>
   );
 }

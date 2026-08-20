@@ -210,9 +210,7 @@ export function FarmerShell({ children }: { children: React.ReactNode }) {
           />
         </label>
         <div className="ml-auto flex items-center gap-2">
-          <span className="hidden text-xs font-semibold text-muted sm:inline">
-            24°C · Multan
-          </span>
+          <HeaderWeather />
           <button
             type="button"
             aria-label="Change language"
@@ -322,5 +320,53 @@ export function FarmerShell({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
     </div>
+  );
+}
+
+interface HeaderWeatherState {
+  temperatureC: number;
+  location: string;
+}
+
+async function loadHeaderWeather(): Promise<HeaderWeatherState | null> {
+  const farmsRes = await fetch("/api/farms", { cache: "no-store" });
+  if (!farmsRes.ok) return null;
+  const farms = (await farmsRes.json()) as Array<{ id: string; name: string; district: string | null }>;
+  const farm = farms[0];
+  if (!farm) return null;
+
+  const fieldsRes = await fetch(`/api/farms/${farm.id}/fields`, { cache: "no-store" });
+  if (!fieldsRes.ok) return null;
+  const fields = (await fieldsRes.json()) as Array<{ id: string }>;
+  const field = fields[0];
+  if (!field) return null;
+
+  const weatherRes = await fetch(`/api/fields/${field.id}/weather/current`, { cache: "no-store" });
+  if (!weatherRes.ok) return null;
+  const weather = (await weatherRes.json()) as { weather?: { temperatureC?: number | null } };
+  const temperatureC = weather.weather?.temperatureC;
+  if (temperatureC == null) return null;
+
+  return { temperatureC, location: farm.district ?? farm.name };
+}
+
+function HeaderWeather() {
+  const [state, setState] = useState<HeaderWeatherState | null>(null);
+
+  useEffect(() => {
+    // setState only happens inside this .then()/.catch(), never synchronously in the effect body.
+    loadHeaderWeather()
+      .then(setState)
+      .catch(() => setState(null));
+  }, []);
+
+  // No farm/field yet, or the weather provider isn't available right now — say nothing
+  // rather than show a placeholder number, matching this header's non-critical role.
+  if (!state) return null;
+
+  return (
+    <span className="hidden text-xs font-semibold text-muted sm:inline">
+      {Math.round(state.temperatureC)}°C · {state.location}
+    </span>
   );
 }

@@ -69,7 +69,15 @@ export function CreateFarmForm() {
           Walk the edge of your farm or use satellite view to place each corner.
         </p>
         <div className="mt-4">
-          <BoundaryPicker points={points} onChange={setPoints} />
+          <BoundaryPicker
+            points={points}
+            onChange={setPoints}
+            onLocationResolved={(result) => {
+              if (result.province) setProvince(result.province);
+              if (result.district) setDistrict(result.district);
+              if (result.tehsil) setTehsil(result.tehsil);
+            }}
+          />
         </div>
       </section>
 
