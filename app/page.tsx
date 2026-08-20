@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-export const dynamic = 'force-dynamic';
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useOnboarding } from "@/features/onboarding/onboarding-provider";
@@ -24,7 +23,17 @@ const ACQUISITION_SOURCES = new Set([
   "OTHER",
 ]);
 
-export default function Home() {
+// useSearchParams() requires a Suspense boundary from an ANCESTOR — wrapping this component's
+// own return value doesn't count, since the hook is already called before that JSX exists.
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-[#f8f4ea]" />}>
+      <HomeClient />
+    </Suspense>
+  );
+}
+
+function HomeClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading } = useAuth();
@@ -36,9 +45,6 @@ export default function Home() {
 
   useEffect(() => {
     if (!hydrated || isLoading || user) return;
-    // setState (via updateSection) is deferred to a microtask, matching the same pattern
-    // OnboardingProvider itself uses for its hydration setData call — never synchronously
-    // inside the effect body.
     queueMicrotask(() => {
       const ref = searchParams.get("ref")?.trim();
       const rawSrc = searchParams.get("src")?.trim().toUpperCase();
@@ -50,7 +56,6 @@ export default function Home() {
         });
     });
     fetch("/api/growth/landing-view", { method: "POST" }).catch(() => null);
-    // Only run once per mount — this is a one-shot capture/beacon, not a live sync.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, isLoading, user]);
 

@@ -158,6 +158,7 @@ export function BillingDashboard() {
       </header>
 
       <StripeStatusCard />
+      <PricingPlansSection />
 
       {notice && (
         <div
@@ -298,6 +299,162 @@ function Outcome({ label, value }: { label: string; value: number }) {
       <dt className="text-[9px] font-semibold text-muted">{label}</dt>
       <dd className="text-base font-extrabold text-brand-dark">{value}</dd>
     </div>
+  );
+}
+
+interface PlanRow {
+  code: string;
+  name: string;
+  priceMinor: number | null;
+  currency: string;
+  billingInterval: string;
+  isActive: boolean;
+  stripePriceId: string | null;
+  activeSubscriptions: number;
+}
+
+function PricingPlansSection() {
+  const [plans, setPlans] = useState<PlanRow[] | null>(null);
+  const [editingCode, setEditingCode] = useState<string | null>(null);
+  const [draftPriceId, setDraftPriceId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [planNotice, setPlanNotice] = useState<string | null>(null);
+
+  const loadPlans = (): void => {
+    fetch("/api/admin/billing/plans", { cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<PlanRow[]>) : null))
+      .then((body) => setPlans(body ?? []))
+      .catch(() => setPlans([]));
+  };
+
+  useEffect(() => {
+    // setState only happens inside this .then()/.catch(), never synchronously in the effect body.
+    loadPlans();
+  }, []);
+
+  const savePrice = (code: string): void => {
+    if (!draftPriceId.trim()) return;
+    setSaving(true);
+    fetch(`/api/admin/billing/plans/${code}/stripe-price`, {
+      method: "POST",
+      body: JSON.stringify({ stripePriceId: draftPriceId.trim() }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("save failed");
+        setPlanNotice(`Stripe price mapped for ${code}.`);
+        setEditingCode(null);
+        setDraftPriceId("");
+        loadPlans();
+      })
+      .catch(() => setPlanNotice(`Could not map a Stripe price for ${code}. Try again.`))
+      .finally(() => setSaving(false));
+  };
+
+  if (plans === null)
+    return (
+      <div className="mt-4 rounded-2xl border border-brand/10 bg-white p-4 text-xs text-muted">
+        Loading real plan catalog…
+      </div>
+    );
+
+  return (
+    <section className="mt-4 rounded-2xl border border-brand/10 bg-white shadow-sm">
+      <div className="p-5 pb-0">
+        <h2 className="text-base font-bold text-brand-dark">Pricing plans</h2>
+        <p className="text-[9px] font-semibold text-muted">
+          The real plan catalog, mapped to real Stripe Prices where card payment is live.
+        </p>
+      </div>
+      {planNotice && (
+        <p className="mx-5 mt-3 rounded-xl border border-brand/15 bg-brand-soft px-3 py-2 text-[10px] font-semibold text-brand">
+          {planNotice}
+        </p>
+      )}
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-xs">
+          <thead className="bg-surface-soft text-[9px] font-bold uppercase tracking-wide text-muted">
+            <tr>
+              <th className="px-5 py-3">Plan</th>
+              <th className="px-5 py-3">Price</th>
+              <th className="px-5 py-3">Interval</th>
+              <th className="px-5 py-3">Active subscribers</th>
+              <th className="px-5 py-3">Stripe price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {plans.map((plan) => (
+              <tr key={plan.code} className="border-t border-border">
+                <td className="px-5 py-3 font-semibold text-brand-dark">
+                  {plan.name}
+                  {!plan.isActive && <span className="ml-2 text-[9px] font-bold text-muted">(inactive)</span>}
+                </td>
+                <td className="px-5 py-3">
+                  {plan.priceMinor === null ? "Contact sales" : money(plan.priceMinor, plan.currency)}
+                </td>
+                <td className="px-5 py-3">{plan.billingInterval}</td>
+                <td className="px-5 py-3 font-bold">{plan.activeSubscriptions}</td>
+                <td className="px-5 py-3">
+                  {plan.priceMinor === null ? (
+                    <span className="text-[10px] text-muted">No Stripe price needed</span>
+                  ) : plan.stripePriceId && editingCode !== plan.code ? (
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-success/10 px-2 py-1 text-[9px] font-bold text-success">
+                        Mapped
+                      </span>
+                      <span className="font-mono text-[10px] text-muted">{plan.stripePriceId.slice(0, 18)}…</span>
+                      <button
+                        type="button"
+                        onClick={() => { setEditingCode(plan.code); setDraftPriceId(plan.stripePriceId ?? ""); }}
+                        className="text-[10px] font-bold text-brand underline"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  ) : editingCode === plan.code ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={draftPriceId}
+                        onChange={(e) => setDraftPriceId(e.target.value)}
+                        placeholder="price_..."
+                        className="h-8 w-40 rounded-lg border border-border px-2 font-mono text-[10px]"
+                      />
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => savePrice(plan.code)}
+                        className="min-h-8 rounded-lg bg-brand px-3 text-[10px] font-bold text-white disabled:opacity-50"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEditingCode(null); setDraftPriceId(""); }}
+                        className="text-[10px] font-bold text-muted"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-900">
+                        Not mapped
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { setEditingCode(plan.code); setDraftPriceId(""); }}
+                        className="text-[10px] font-bold text-brand underline"
+                      >
+                        Map a Stripe price
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

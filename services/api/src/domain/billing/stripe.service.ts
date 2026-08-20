@@ -157,6 +157,9 @@ export class StripeService {
       case 'invoice.payment_failed':
         await this.onPaymentFailed(event.data.object);
         break;
+      case 'invoice.paid':
+        await this.onInvoicePaid(event.data.object);
+        break;
       default:
         break; // every other event type is intentionally ignored
     }
@@ -210,6 +213,67 @@ export class StripeService {
         ],
       );
       await activateSubscription(manager, subscriptionId, planCode, paymentId);
+    });
+  }
+
+  private async onInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+    // The first invoice of a subscription is already recorded by onCheckoutCompleted() (keyed by
+    // session.id) — this handler exists for renewals, which Stripe bills automatically and never
+    // route through Checkout at all. Skipping subscription_create here avoids double-counting the
+    // first period's revenue under two different provider_payment_reference values.
+    if (invoice.billing_reason === 'subscription_create') return;
+    const customerId =
+      typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer?.id ?? null);
+    if (!customerId) return;
+
+    const subs: Array<{ id: string; plan_code: string }> = await this.db.query(
+      `SELECT id,plan_code FROM subscriptions WHERE provider_customer_reference=$1`,
+      [customerId],
+    );
+    const subscription = subs[0];
+    if (!subscription) return;
+
+    const plans: Array<{ price_minor: string | null; currency: string; name: string }> =
+      await this.db.query(`SELECT price_minor,currency,name FROM subscription_plans WHERE code=$1`, [
+        subscription.plan_code,
+      ]);
+    const plan = plans[0];
+    if (!plan || plan.price_minor === null) return;
+
+    await this.db.transaction(async (manager) => {
+      const paymentId = randomUUID();
+      try {
+        await manager.query(
+          `INSERT INTO subscription_payments(id,subscription_id,plan_code,provider,provider_payment_reference,amount_minor,currency,status,paid_at,verified_at,verification_source)
+           VALUES($1,$2,$3,$4,$5,$6,$7,'PAID',now(),now(),'STRIPE_WEBHOOK')`,
+          [
+            paymentId,
+            subscription.id,
+            subscription.plan_code,
+            PaymentProvider.Stripe,
+            invoice.id,
+            plan.price_minor,
+            plan.currency,
+          ],
+        );
+      } catch (error) {
+        if (this.isUniqueViolation(error)) return; // duplicate webhook redelivery — real no-op
+        throw error;
+      }
+      await manager.query(
+        `INSERT INTO invoices(id,subscription_id,payment_id,amount_minor,currency,status,line_description,issued_at)
+         VALUES($1,$2,$3,$4,$5,'PAID',$6,now())`,
+        [
+          randomUUID(),
+          subscription.id,
+          paymentId,
+          plan.price_minor,
+          plan.currency,
+          `${plan.name} renewal (Stripe)`,
+        ],
+      );
+      // Also recovers a subscription that had drifted to PAST_DUE once its retry succeeds.
+      await activateSubscription(manager, subscription.id, subscription.plan_code, paymentId);
     });
   }
 

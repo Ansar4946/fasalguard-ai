@@ -1,10 +1,4 @@
-import type { CropWeatherDay, SatelliteZone, SmartAlert } from "./types";
-
-export const satelliteZones: SatelliteZone[] = [
-  { id: "north-west", name: "North-west zone", status: "high-stress", areaAcres: 5.1, changePercent: -12, left: 27, top: 31 },
-  { id: "canal-edge", name: "Canal edge", status: "watch", areaAcres: 7.4, changePercent: -4, left: 61, top: 57 },
-  { id: "east-block", name: "Eastern block", status: "healthy", areaAcres: 29.5, changePercent: 6, left: 72, top: 25 },
-];
+import type { CropWeatherDay, SmartAlert } from "./types";
 
 export const cropWeatherDays: CropWeatherDay[] = [
   { day: "Today", date: "3 Aug", temperature: "25–34°", rain: 20, humidity: 72, windKph: 12, suitability: 74, risk: "caution", action: "Inspect younger leaves", spray: "Good window before 10 AM" },

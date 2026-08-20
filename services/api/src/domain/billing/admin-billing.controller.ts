@@ -33,6 +33,12 @@ export class AdminBillingController {
     return this.admin.revenue();
   }
 
+  @ApiOperation({ summary: 'Real plan catalog with real per-plan subscriber counts' })
+  @Get('plans')
+  plans() {
+    return this.admin.listPlans();
+  }
+
   @ApiOperation({ summary: 'List subscription payments, optionally filtered by status' })
   @Get('payments')
   payments(@Query('status') status?: string) {

@@ -173,6 +173,44 @@ describe('StripeService', () => {
     });
   });
 
+  it('invoice.paid is a no-op for the first invoice of a subscription (already recorded by checkout)', async () => {
+    const db = fakeDb();
+    constructEventMock.mockReturnValue({
+      type: 'invoice.paid',
+      data: { object: { id: 'in_test_1', customer: 'cus_test_1', billing_reason: 'subscription_create' } },
+    });
+    const service = new StripeService(
+      db as never,
+      fakeConfig() as never,
+      fakeBillingService() as never,
+    );
+    await expect(service.handleWebhook(Buffer.from('{}'), 'sig')).resolves.toEqual({
+      received: true,
+    });
+    expect(db.query).not.toHaveBeenCalled();
+    expect(db.transaction).not.toHaveBeenCalled();
+  });
+
+  it('records a real renewal payment on invoice.paid for a later billing cycle', async () => {
+    const db = fakeDb();
+    constructEventMock.mockReturnValue({
+      type: 'invoice.paid',
+      data: { object: { id: 'in_test_2', customer: 'cus_test_1', billing_reason: 'subscription_cycle' } },
+    });
+    db.query.mockResolvedValueOnce([{ id: 'sub-1', plan_code: 'FARMER_PRO' }]);
+    db.query.mockResolvedValueOnce([{ price_minor: '99900', currency: 'PKR', name: 'Farmer Pro' }]);
+    const service = new StripeService(
+      db as never,
+      fakeConfig() as never,
+      fakeBillingService() as never,
+    );
+    const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+    expect(result).toEqual({ received: true });
+    expect(db.transaction).toHaveBeenCalled();
+    const insertCall = db.query.mock.calls.find(([sql]) => String(sql).includes('INSERT INTO subscription_payments'));
+    expect(insertCall?.[1]).toContain('in_test_2');
+  });
+
   it('downgrades to PAST_DUE on invoice.payment_failed', async () => {
     const db = fakeDb();
     constructEventMock.mockReturnValue({

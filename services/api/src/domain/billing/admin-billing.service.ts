@@ -71,6 +71,34 @@ export class AdminBillingService {
     };
   }
 
+  /** Real plan catalog with real per-plan subscriber counts — same exclusions as revenue(). */
+  async listPlans(): Promise<unknown[]> {
+    const rows: Array<{
+      code: string;
+      name: string;
+      priceMinor: string | null;
+      currency: string;
+      billingInterval: string;
+      isActive: boolean;
+      stripePriceId: string | null;
+      activeSubscriptions: number;
+    }> = await this.db.query(
+      `SELECT sp.code,sp.name,sp.price_minor "priceMinor",sp.currency,sp.billing_interval "billingInterval",
+        sp.is_active "isActive",sp.stripe_price_id "stripePriceId",
+        (SELECT count(*) FROM subscriptions s LEFT JOIN users u ON u.id=s.user_id
+         WHERE s.plan_code=sp.code AND s.status IN('TRIAL','ACTIVE') AND (s.user_id IS NULL OR u.is_test_account=false)
+        )::int "activeSubscriptions"
+       FROM subscription_plans sp ORDER BY sp.sort_order`,
+    );
+    // price_minor is a Postgres numeric column — node-pg returns it as a string to avoid
+    // precision loss, matching the same Number() normalization billing.service.ts's
+    // publicPlan() already does for the public /billing/plans endpoint.
+    return rows.map((row) => ({
+      ...row,
+      priceMinor: row.priceMinor === null ? null : Number(row.priceMinor),
+    }));
+  }
+
   async listPayments(status?: string): Promise<unknown[]> {
     return this.db.query<unknown[]>(
       `SELECT p.id,p.subscription_id "subscriptionId",s.user_id "userId",p.plan_code "planCode",p.provider,

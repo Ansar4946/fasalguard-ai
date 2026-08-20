@@ -1,15 +1,5 @@
 export type RiskLevel = "beneficial" | "caution" | "harmful" | "critical";
 
-export interface SatelliteZone {
-  id: string;
-  name: string;
-  status: "healthy" | "watch" | "high-stress";
-  areaAcres: number;
-  changePercent: number;
-  left: number;
-  top: number;
-}
-
 export interface CropWeatherDay {
   day: string;
   date: string;

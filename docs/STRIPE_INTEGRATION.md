@@ -24,8 +24,8 @@ Every Stripe env var (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PUBL
 1. Create a Stripe account (test mode first), get `sk_test_...`/`whsec_...`/`pk_test_...`.
 2. Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PUBLISHABLE_KEY` in `.env`.
 3. In the Stripe Dashboard, create a real Product + recurring Price for each paid plan (Farmer Pro monthly/annual, Farm Business monthly/annual).
-4. Paste each real Price id in via `POST /admin/billing/plans/:code/stripe-price` (or the admin UI once wired to a form — currently API-only).
-5. Point a Stripe webhook endpoint at `POST /api/v1/billing/stripe/webhook`, subscribed to `checkout.session.completed`, `invoice.payment_failed`, `customer.subscription.deleted`. For local testing, use `stripe listen --forward-to localhost:4000/api/v1/billing/stripe/webhook`.
+4. Paste each real Price id in via the admin dashboard's Pricing Plans section (`components/admin/billing-dashboard.tsx`), or directly via `POST /admin/billing/plans/:code/stripe-price`.
+5. Point a Stripe webhook endpoint at `POST /api/v1/billing/stripe/webhook`, subscribed to `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`. For local testing, use `stripe listen --forward-to localhost:4000/api/v1/billing/stripe/webhook`.
 6. Complete a real test-card checkout and confirm the subscription activates via the webhook, not a client-side redirect (the `success_url` redirect is UX only — activation is only ever driven by the verified server-to-server webhook).
 
 ## The one real Nest+Stripe gotcha, handled
@@ -35,6 +35,10 @@ Stripe signature verification requires the raw, unparsed request body. `services
 ## Idempotency
 
 Stripe may redeliver the same webhook event. `checkout.session.completed` inserts a `subscription_payments` row with `provider_payment_reference = session.id`; the real, already-existing `UNIQUE(provider, provider_payment_reference)` constraint makes a duplicate delivery a genuine no-op (caught via Postgres error code `23505`), not a double-activation. Live-verified via a real duplicate-key simulation in `stripe.service.spec.ts`.
+
+## Renewals (`invoice.paid`)
+
+Stripe bills every renewal automatically — it never routes back through Checkout, so `checkout.session.completed` only ever fires once per subscription. Renewals are recorded by a separate `invoice.paid` handler, keyed by `invoice.id` (not `session.id`) for idempotency. That handler explicitly skips `billing_reason === 'subscription_create'`, because that specific invoice is the same first payment `checkout.session.completed` already recorded — without the skip, the two handlers would record the same payment twice under two different reference values, since the unique constraint can't tell they're the same period. A successful renewal also runs through the same shared `activateSubscription()` every other activation path uses, so it correctly recovers a subscription that had drifted to `PAST_DUE` after a failed retry.
 
 ## Also fixed along the way
 
