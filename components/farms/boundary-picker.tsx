@@ -15,6 +15,9 @@ const DEFAULT_CENTER: [number, number] = [30.1575, 71.5249]; // Multan, Punjab
 
 interface GeocodeResult {
   label: string;
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  type?: string;
   lat: number;
   lng: number;
 }
@@ -156,6 +159,7 @@ function LocationSearch({
   }, [query]);
 
   const showDropdown = open && query.trim().length >= 3 && results.length > 0;
+  const showEmpty = open && status === "idle" && query.trim().length >= 3 && results.length === 0;
 
   function select(result: GeocodeResult) {
     onSelect(result);
@@ -186,19 +190,32 @@ function LocationSearch({
           <p className="mt-1 text-[9px] font-semibold text-danger">{locateError}</p>
         )}
         {showDropdown && (
-          <ul className="absolute z-[500] mt-1 w-full overflow-hidden rounded-lg border border-[#ccd6cf] bg-white text-[11px] shadow-lg">
+          <ul className="absolute z-[500] mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-[#ccd6cf] bg-white p-1 text-[11px] shadow-xl">
             {results.map((result) => (
               <li key={`${result.lat}-${result.lng}`}>
                 <button
                   type="button"
                   onClick={() => select(result)}
-                  className="block w-full px-3 py-2 text-left hover:bg-brand-soft"
+                  className="flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left hover:bg-brand-soft focus:bg-brand-soft focus:outline-none"
                 >
-                  {result.label}
+                  <span aria-hidden="true" className="mt-0.5 text-brand">●</span>
+                  <span className="min-w-0">
+                    <strong className="block truncate text-[11px] text-brand-dark">
+                      {result.primaryLabel ?? result.label}
+                    </strong>
+                    <span className="mt-0.5 block truncate text-[9px] text-muted">
+                      {result.secondaryLabel ?? result.label}
+                    </span>
+                  </span>
                 </button>
               </li>
             ))}
           </ul>
+        )}
+        {showEmpty && (
+          <div className="absolute z-[500] mt-1 w-full rounded-xl border border-[#ccd6cf] bg-white px-3 py-3 text-[10px] text-muted shadow-xl">
+            No exact match found. Try the nearest village, road, union council, or add “Lahore, Pakistan”.
+          </div>
         )}
       </div>
       <button

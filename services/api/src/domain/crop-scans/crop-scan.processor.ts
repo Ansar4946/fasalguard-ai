@@ -54,6 +54,7 @@ export class CropScanProcessor extends WorkerHost {
       );
       const inputs: VisionInput[] = [];
       let qualityFailed = false;
+      const qualityIssueCodes = new Set<string>();
       for (const row of images) {
         if (Number(row.sizeBytes) > 15 * 1024 * 1024) throw new Error('IMAGE_TOO_LARGE');
         const image = await this.storage.getPrivateObject(row.objectKey);
@@ -74,6 +75,7 @@ export class CropScanProcessor extends WorkerHost {
         inputs.push(input);
         const quality = await this.vision.assessQuality(input);
         qualityFailed ||= !quality.acceptable;
+        quality.issues.forEach((issue) => qualityIssueCodes.add(issue.code));
         await this.db.query(
           `INSERT INTO image_quality_results(scan_image_id,acceptable,issues,provider_metadata) VALUES($1,$2,$3,$4) ON CONFLICT(scan_image_id) DO UPDATE SET acceptable=excluded.acceptable,issues=excluded.issues,provider_metadata=excluded.provider_metadata,updated_at=now()`,
           [
@@ -85,7 +87,14 @@ export class CropScanProcessor extends WorkerHost {
         );
       }
       if (qualityFailed) {
-        await this.status(job.data.scanId, CropScanStatus.NeedsFollowUp);
+        await this.db.query(
+          `UPDATE crop_scans SET status=$2,failure_code=$3,updated_at=now(),version=version+1 WHERE id=$1`,
+          [
+            job.data.scanId,
+            CropScanStatus.NeedsFollowUp,
+            [...qualityIssueCodes].join(',') || 'IMAGE_QUALITY_REJECTED',
+          ],
+        );
         return;
       }
       await this.status(job.data.scanId, CropScanStatus.Analysing);
@@ -117,8 +126,10 @@ export class CropScanProcessor extends WorkerHost {
         Array<{ confidence_policy: { minimumConfidence: number; expertReviewBelow: number } }>
       >(`SELECT confidence_policy FROM crop_scans WHERE id=$1`, [job.data.scanId]);
       const policy = scan[0]!.confidence_policy;
-      const disposition =
-        prediction.confidence < policy.minimumConfidence
+      const unknownCondition = isUnknownCondition(prediction.predictedCondition);
+      const disposition = unknownCondition
+        ? 'EXPERT_REVIEW_RECOMMENDED'
+        : prediction.confidence < policy.minimumConfidence
           ? 'BETTER_IMAGES_REQUIRED'
           : prediction.confidence < policy.expertReviewBelow
             ? 'EXPERT_REVIEW_RECOMMENDED'
@@ -247,4 +258,10 @@ export class CropScanProcessor extends WorkerHost {
       [id, status],
     );
   }
+}
+
+function isUnknownCondition(condition: string): boolean {
+  return /(^|[\s_-])(unknown|unsupported|not[\s_-]?cotton|no[\s_-]?plant)([\s_-]|$)/i.test(
+    condition,
+  );
 }

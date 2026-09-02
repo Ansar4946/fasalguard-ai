@@ -1,12 +1,19 @@
 from typing import Any, Literal
+import base64
+import io
+import json
+import os
+from pathlib import Path
 import httpx
 import numpy as np
+import onnxruntime as ort
 import rasterio
 from rasterio.features import geometry_mask, shapes
 from rasterio.io import MemoryFile
 from shapely.geometry import shape, mapping
 from pydantic import BaseModel, Field, HttpUrl
 from fastapi import FastAPI, HTTPException
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 Label = Literal["VEGETATION_DECLINE","POSSIBLE_WATER_STRESS","POSSIBLE_EXCESS_MOISTURE","UNEVEN_GROWTH","UNKNOWN_STRESS"]
 class Request(BaseModel):
@@ -34,7 +41,120 @@ class AnalysisResponse(BaseModel):
 
 app=FastAPI(title="FasalGuard Geospatial Analysis",version="1.0.0")
 @app.get("/health")
-def health()->dict[str,str]: return {"status":"ok"}
+def health()->dict[str,str|bool]: return {"status":"ok","visionModelConfigured":vision_model_available()}
+
+class VisionImage(BaseModel):
+    imageBase64: str = Field(min_length=16)
+    contentType: Literal["image/jpeg","image/png","image/webp"]
+    category: Literal["LEAF_FRONT","LEAF_BACK","WHOLE_PLANT","FIELD_CONTEXT","PEST_IMAGE"]
+
+class VisionQualityResponse(BaseModel):
+    acceptable: bool
+    issues: list[dict[str,Any]]
+    metadata: dict[str,Any]
+
+class VisionPredictRequest(BaseModel):
+    images: list[VisionImage] = Field(min_length=1,max_length=5)
+
+class VisionAlternative(BaseModel):
+    condition: str
+    confidence: float
+
+class VisionPredictionResponse(BaseModel):
+    modelId: str
+    modelVersion: str
+    predictedCondition: str
+    confidence: float
+    alternatives: list[VisionAlternative]
+    inferenceTimestamp: str
+    rawProviderResponse: dict[str,Any]
+
+_vision_session: ort.InferenceSession|None=None
+_vision_manifest: dict[str,Any]|None=None
+
+def vision_paths()->tuple[Path,Path]:
+    return (Path(os.getenv("VISION_MODEL_PATH","/models/cotton-disease.onnx")),Path(os.getenv("VISION_MODEL_MANIFEST_PATH","/models/cotton-disease.json")))
+
+def vision_model_available()->bool:
+    model,manifest=vision_paths()
+    return model.is_file() and manifest.is_file()
+
+def decode_vision_image(item:VisionImage)->Image.Image:
+    try:
+        raw=base64.b64decode(item.imageBase64,validate=True)
+        if len(raw)>15*1024*1024: raise HTTPException(413,"IMAGE_TOO_LARGE")
+        image=Image.open(io.BytesIO(raw)); image.verify()
+        image=Image.open(io.BytesIO(raw)); image=ImageOps.exif_transpose(image).convert("RGB")
+    except (ValueError,UnidentifiedImageError,OSError) as exc:
+        raise HTTPException(422,"CORRUPT_OR_INVALID_IMAGE") from exc
+    if image.width<320 or image.height<320: raise HTTPException(422,"IMAGE_DIMENSIONS_TOO_SMALL")
+    return image
+
+def quality_metrics(image:Image.Image)->VisionQualityResponse:
+    gray=np.asarray(image.resize((256,256)).convert("L"),dtype=np.float32)
+    mean=float(gray.mean()); dark=float((gray<=18).mean()); bright=float((gray>=245).mean())
+    lap=-4*gray+np.roll(gray,1,0)+np.roll(gray,-1,0)+np.roll(gray,1,1)+np.roll(gray,-1,1)
+    focus=float(lap[1:-1,1:-1].var())
+    issues=[]
+    if mean<38 or dark>.65: issues.append({"code":"TOO_DARK","score":round(mean/255,4)})
+    if mean>225 or bright>.65: issues.append({"code":"OVEREXPOSED","score":round(bright,4)})
+    if focus<18: issues.append({"code":"POSSIBLY_BLURRY","score":round(focus,4)})
+    return VisionQualityResponse(acceptable=not issues,issues=issues,metadata={"method":"PIXEL_QUALITY_V1","brightnessMean":round(mean,4),"focusScore":round(focus,4),"darkRatio":round(dark,4),"brightRatio":round(bright,4)})
+
+def load_vision_model()->tuple[ort.InferenceSession,dict[str,Any]]:
+    global _vision_session,_vision_manifest
+    if _vision_session is not None and _vision_manifest is not None:return _vision_session,_vision_manifest
+    model_path,manifest_path=vision_paths()
+    if not model_path.is_file() or not manifest_path.is_file():
+        raise HTTPException(503,"MODEL_NOT_CONFIGURED")
+    try:
+        manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
+        required=("modelId","modelVersion","inputWidth","inputHeight","classes","mean","std")
+        valid_dimensions=32<=int(manifest.get("inputWidth",0))<=2048 and 32<=int(manifest.get("inputHeight",0))<=2048
+        valid_classes=isinstance(manifest.get("classes"),list) and 2<=len(manifest["classes"])<=100 and all(isinstance(x,str) and 1<=len(x)<=120 for x in manifest["classes"])
+        valid_normalization=all(isinstance(manifest.get(key),list) and len(manifest[key])==3 for key in ("mean","std")) and all(float(x)>0 for x in manifest["std"])
+        if any(key not in manifest for key in required) or not valid_dimensions or not valid_classes or not valid_normalization:raise ValueError("invalid manifest")
+        session=ort.InferenceSession(str(model_path),providers=["CPUExecutionProvider"])
+    except Exception as exc:
+        raise HTTPException(503,"MODEL_LOAD_FAILED") from exc
+    _vision_session=session;_vision_manifest=manifest
+    return session,manifest
+
+def softmax(values:np.ndarray)->np.ndarray:
+    shifted=values-np.max(values)
+    exp=np.exp(shifted)
+    return exp/np.sum(exp)
+
+def infer_image(image:Image.Image,session:ort.InferenceSession,manifest:dict[str,Any])->np.ndarray:
+    resized=image.resize((int(manifest["inputWidth"]),int(manifest["inputHeight"])),Image.Resampling.LANCZOS)
+    tensor=np.asarray(resized,dtype=np.float32)/255.0
+    mean=np.asarray(manifest["mean"],dtype=np.float32);std=np.asarray(manifest["std"],dtype=np.float32)
+    tensor=(tensor-mean)/std;tensor=np.transpose(tensor,(2,0,1))[None,...]
+    output=np.asarray(session.run(None,{session.get_inputs()[0].name:tensor})[0]).reshape(-1)
+    if output.size!=len(manifest["classes"]):raise HTTPException(503,"MODEL_OUTPUT_CLASS_MISMATCH")
+    if np.all(output>=0) and np.all(output<=1) and .98<=float(output.sum())<=1.02:return output/output.sum()
+    return softmax(output)
+
+@app.get("/v1/vision/models")
+def vision_models()->dict[str,Any]:
+    if not vision_model_available():return {"configured":False,"reason":"MODEL_NOT_CONFIGURED"}
+    _,manifest=load_vision_model()
+    return {"configured":True,"modelId":manifest["modelId"],"modelVersion":manifest["modelVersion"],"classes":manifest["classes"]}
+
+@app.post("/v1/vision/quality",response_model=VisionQualityResponse)
+def vision_quality(req:VisionImage)->VisionQualityResponse:
+    return quality_metrics(decode_vision_image(req))
+
+@app.post("/v1/vision/predict",response_model=VisionPredictionResponse)
+def vision_predict(req:VisionPredictRequest)->VisionPredictionResponse:
+    from datetime import datetime,timezone
+    session,manifest=load_vision_model();per_image=[]
+    for item in req.images:
+        probabilities=infer_image(decode_vision_image(item),session,manifest)
+        per_image.append(probabilities)
+    combined=np.mean(np.stack(per_image),axis=0);order=np.argsort(combined)[::-1]
+    classes=list(manifest["classes"]);top=int(order[0])
+    return VisionPredictionResponse(modelId=str(manifest["modelId"]),modelVersion=str(manifest["modelVersion"]),predictedCondition=classes[top],confidence=round(float(combined[top]),6),alternatives=[VisionAlternative(condition=classes[int(i)],confidence=round(float(combined[int(i)]),6)) for i in order[1:4]],inferenceTimestamp=datetime.now(timezone.utc).isoformat(),rawProviderResponse={"engine":"ONNX_RUNTIME","imageCount":len(req.images),"categories":[item.category for item in req.images],"aggregation":"MEAN_CLASS_PROBABILITY"})
 
 def historical_mean(items:list[dict[str,Any]], index:str)->float|None:
     values=[]

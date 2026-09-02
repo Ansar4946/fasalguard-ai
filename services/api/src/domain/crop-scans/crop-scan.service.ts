@@ -104,7 +104,11 @@ export class CropScanService {
   async get(ownerId: string, scanId: string): Promise<unknown> {
     await this.require(ownerId, scanId);
     const rows = await this.db.query<Array<Record<string, unknown>>>(
-      `SELECT cs.id,cs.field_id AS "fieldId",cs.status,cs.confidence_policy AS "confidencePolicy",cs.failure_code AS "failureCode",cs.created_at AS "createdAt",COALESCE(jsonb_agg(DISTINCT jsonb_build_object('id',si.id,'mediaId',si.media_asset_id,'category',si.category,'widthPixels',si.width_pixels,'heightPixels',si.height_pixels)) FILTER(WHERE si.id IS NOT NULL),'[]') AS images,d.screened_condition AS "screenedCondition",d.confidence,d.disposition,d.is_firm_diagnosis AS "isFirmDiagnosis",d.disclaimer FROM crop_scans cs LEFT JOIN scan_images si ON si.scan_id=cs.id LEFT JOIN diagnoses d ON d.scan_id=cs.id WHERE cs.id=$1 AND cs.owner_id=$2 GROUP BY cs.id,d.id`,
+      `SELECT cs.id,cs.field_id AS "fieldId",cs.status,cs.confidence_policy AS "confidencePolicy",cs.failure_code AS "failureCode",cs.created_at AS "createdAt",
+        COALESCE(jsonb_agg(DISTINCT jsonb_build_object('id',si.id,'mediaId',si.media_asset_id,'category',si.category,'widthPixels',si.width_pixels,'heightPixels',si.height_pixels)) FILTER(WHERE si.id IS NOT NULL),'[]') AS images,
+        d.screened_condition AS "screenedCondition",d.confidence,d.disposition,d.is_firm_diagnosis AS "isFirmDiagnosis",d.disclaimer,
+        COALESCE((SELECT jsonb_agg(jsonb_build_object('condition',da.condition,'confidence',da.confidence) ORDER BY da.rank) FROM diagnosis_alternatives da WHERE da.diagnosis_id=d.id),'[]') AS alternatives
+       FROM crop_scans cs LEFT JOIN scan_images si ON si.scan_id=cs.id LEFT JOIN diagnoses d ON d.scan_id=cs.id WHERE cs.id=$1 AND cs.owner_id=$2 GROUP BY cs.id,d.id`,
       [scanId, ownerId],
     );
     return rows[0];

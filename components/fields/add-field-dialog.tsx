@@ -73,6 +73,8 @@ export function AddFieldDialog({ farmId, farmName, open, onClose, onCreated }: P
       onCreated(body as FieldSummary);
       router.refresh();
       handleClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not create the field. Try again.");
     } finally {
       setSubmitting(false);
     }

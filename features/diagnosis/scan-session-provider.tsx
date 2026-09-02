@@ -1,8 +1,17 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { initialScanSession } from "./mock-repository";
 import type { ScanSession } from "./types";
+
+const initialScanSession: ScanSession = {
+  farmId: null,
+  fieldId: null,
+  backendScanId: null,
+  images: [],
+  step: "field",
+  progress: 0,
+  updatedAt: new Date(0).toISOString(),
+};
 
 type ScanContextValue = {
   session: ScanSession;

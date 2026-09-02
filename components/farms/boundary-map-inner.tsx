@@ -2,7 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
-import { CircleMarker, MapContainer, Polygon, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { CircleMarker, LayersControl, MapContainer, Polygon, TileLayer, useMap, useMapEvents } from "react-leaflet";
 
 interface BoundaryMapInnerProps {
   center: [number, number];
@@ -23,7 +23,7 @@ function ClickCapture({ onAdd }: { onAdd: (point: [number, number]) => void }) {
 function RecenterOnChange({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, map.getZoom());
+    map.setView(center, Math.max(map.getZoom(), 17));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center[0], center[1]]);
   return null;
@@ -59,10 +59,21 @@ export default function BoundaryMapInner({ center, points, onAddPoint }: Boundar
       zoom={15}
       style={{ height: "320px", width: "100%", borderRadius: "12px" }}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <LayersControl position="topright">
+        <LayersControl.BaseLayer name="Street map">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer checked name="Satellite">
+          <TileLayer
+            attribution="Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={19}
+          />
+        </LayersControl.BaseLayer>
+      </LayersControl>
       <SizeInvalidator />
       <RecenterOnChange center={center} />
       <ClickCapture onAdd={onAddPoint} />

@@ -41,8 +41,9 @@ export class HealthService {
       // Readiness reports dependency state without exposing connection details.
     }
     const storage = this.config.get<string>('objectStorageProvider', 'mock');
+    const notProduction = this.config.get<string>('nodeEnv') !== 'production';
     status.objectStorage =
-      storage === 'mock' && this.config.get<string>('nodeEnv') !== 'production'
+      (storage === 'mock' || storage === 'local-disk') && notProduction
         ? 'up'
         : storage === 'alibaba' &&
             Boolean(this.config.get<string>('ossRegion')) &&

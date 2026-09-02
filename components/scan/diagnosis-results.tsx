@@ -2,43 +2,253 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {useEffect,useRef,useState} from "react";
-import {mockDiagnosisRepository} from "@/features/diagnosis/mock-repository";
-import {useScanSession} from "@/features/diagnosis/scan-session-provider";
-import type {DiagnosisResult,ReviewStatus,Severity} from "@/features/diagnosis/types";
-import {ScanStepper} from "./scan-stepper";
+import { useEffect, useState } from "react";
+import { useScanSession } from "@/features/diagnosis/scan-session-provider";
+import type { CropScan } from "@/features/diagnosis/types";
+import { ScanStepper } from "./scan-stepper";
 
-type SaveState="idle"|"saving"|"saved"|"error";
-type RequestState="idle"|"submitting"|"submitted"|"error";
-const severityLabel:Record<Severity,string>={low:"Low",moderate:"Medium",high:"High",critical:"Critical"};
-const reviewLabel:Record<ReviewStatus,string>={ai_suspected:"Pending",expert_pending:"Requested",expert_confirmed:"Confirmed",rejected:"Not confirmed"};
+const dispositionLabel: Record<NonNullable<CropScan["disposition"]>, string> = {
+  SCREENING_COMPLETE: "Screening complete",
+  EXPERT_REVIEW_RECOMMENDED: "Expert review recommended",
+  BETTER_IMAGES_REQUIRED: "Better images required",
+};
 
-export function DiagnosisResults(){
- const {session,updateSession,hydrated}=useScanSession();
- const [result,setResult]=useState(session.result);const [loadError,setLoadError]=useState(false);const [saveState,setSaveState]=useState<SaveState>("idle");const [requestState,setRequestState]=useState<RequestState>("idle");const [consent,setConsent]=useState(false);const dialogRef=useRef<HTMLDialogElement>(null);
- useEffect(()=>{if(!hydrated||result||loadError)return;let active=true;mockDiagnosisRepository.analyze(session).then(d=>{if(!active)return;setResult(d);updateSession({result:d,step:"results",progress:100})}).catch(()=>active&&setLoadError(true));return()=>{active=false}},[hydrated,loadError,result,session,updateSession]);
- async function saveReport(){if(!result||saveState==="saving")return;setSaveState("saving");try{await mockDiagnosisRepository.saveSession({...session,result,step:"results",progress:100});updateSession({result,step:"results",progress:100});setSaveState("saved")}catch{setSaveState("error")}}
- async function requestReview(){if(!result||!consent||requestState==="submitting")return;setRequestState("submitting");try{const reviewed:DiagnosisResult={...result,reviewStatus:"expert_pending"};await mockDiagnosisRepository.saveSession({...session,result:reviewed,step:"results",progress:100});setResult(reviewed);updateSession({result:reviewed,step:"results",progress:100});setRequestState("submitted");dialogRef.current?.close()}catch{setRequestState("error")}}
- if(!hydrated||(!result&&!loadError))return <ResultState title="Preparing your result" detail="Loading the scan evidence and AI analysis…"/>;
- if(loadError||!result)return <ResultState title="We could not load this result" detail="Your scan is safe. Retry when your connection is stable." action={<button className="rounded-xl bg-brand px-5 py-3 font-bold text-white" onClick={()=>setLoadError(false)}>Try again</button>}/>;
- const confidence=Math.round(result.confidence*100);const image=session.images[0];const reviewRequested=result.reviewStatus==="expert_pending"||requestState==="submitted";
- const recommendations=[{icon:"◉",title:"Control Humidity",text:"Reduce overhead irrigation to lower leaf moisture."},{icon:"↔",title:"Isolate Area",text:"Restrict movement between affected and healthy blocks."},{icon:"⚗",title:"Fungicide Check",text:"Ask an expert before choosing any chemical treatment."},{icon:"▤",title:"Log History",text:"Add this diagnosis to the field health timeline."}];
- return <div className="mx-auto max-w-[1060px] space-y-4 px-4 py-5 md:px-6 md:py-7">
-  <ScanStepper current="results"/>
-  <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h1 className="text-2xl font-extrabold text-brand-dark">Scan Your Crop: Results</h1><p className="mt-1 text-xs text-muted">AI-powered diagnostic report for Field ID: {session.fieldId??"#CTN-204"}</p></div><Link href="/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-full border border-brand/15 bg-white px-5 text-xs font-extrabold text-brand">← Back to Dashboard</Link></header>
-  <div className="grid gap-4 lg:grid-cols-3">
-   <article className="relative overflow-hidden rounded-2xl border border-brand/10 bg-white p-5 shadow-sm lg:col-span-2"><span aria-hidden className="absolute -right-3 -top-7 text-[120px] text-brand/5">♧</span><div className="relative"><span className="inline-flex items-center gap-2 rounded-full border border-success/20 bg-brand-soft px-3 py-1 text-[9px] font-extrabold uppercase tracking-wide text-brand"><span className="size-2 rounded-full bg-success"/>AI analysis complete</span><h2 className="mt-3 text-xl font-extrabold text-brand-dark">Possible Condition: {titleCase(result.condition)}</h2><p className="mt-1 text-xs italic text-muted">{result.scientificName}</p>
-    <dl className="mt-6 grid grid-cols-3 gap-3"><Metric label="AI Confidence"><strong className="text-2xl text-brand-dark">{confidence}%</strong><span className="ml-1 text-[10px] font-bold text-success">High</span></Metric><Metric label="Severity"><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-900">{severityLabel[result.severity]}</span></Metric><Metric label="Expert Review"><span className="text-xs font-bold text-muted">◷ {reviewLabel[result.reviewStatus]}</span></Metric></dl>
-    <div className="mt-6"><h3 className="text-sm font-extrabold text-brand-dark">▧ &nbsp;Diagnostic Summary</h3><p className="mt-2 text-xs leading-5 text-muted">{result.explanation} The visible pattern appears localized, but it may spread under favorable field conditions. Treat this as preliminary guidance until an agriculture expert reviews the evidence.</p></div></div>
-   </article>
-   <aside className="space-y-4"><section className="relative overflow-hidden rounded-2xl border border-brand/10 bg-[#dbe9d5] shadow-sm">{image?.previewUrl?<Image unoptimized width={640} height={480} src={image.previewUrl} alt={`Submitted crop image: ${image.name}`} className="aspect-[4/3] w-full object-cover"/>:<div className="grid aspect-[4/3] place-items-center bg-[radial-gradient(circle_at_70%_35%,#f4b942_0_3%,transparent_4%),linear-gradient(135deg,#b8d68f,#477b42)] px-5 text-center text-xs font-bold text-white">Crop scan evidence preview</div>}<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand/90 to-transparent p-4 pt-10 text-[10px] font-bold text-white">Scanned Image: {image?.name??"Capture_402.jpg"}</div></section><section className="rounded-2xl border border-brand/10 bg-white p-4 shadow-sm"><h3 className="text-sm font-extrabold text-brand-dark">▣ &nbsp;Detected Symptoms</h3><ul className="mt-3 flex flex-wrap gap-2">{result.symptoms.map(s=><li key={s} className="rounded-full border border-brand/10 bg-[#edf6e9] px-3 py-1.5 text-[10px] font-bold text-[#3c6929]">• {s}</li>)}</ul></section></aside>
-   <section className="rounded-2xl bg-[#00452d] p-5 text-white lg:col-span-3"><div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"><div><h2 className="text-base font-extrabold">Ready to take action?</h2><p className="mt-1 text-xs text-emerald-100">Secure your crop by requesting professional verification or saving this diagnostic for your records.</p></div><div className="flex flex-col gap-3 sm:flex-row"><button onClick={saveReport} disabled={saveState==="saving"||saveState==="saved"} className="min-h-12 rounded-full border border-emerald-200 px-6 text-xs font-extrabold disabled:opacity-65">{saveState==="saving"?"Saving…":saveState==="saved"?"✓ Report saved":"▣ Save Report"}</button><button onClick={()=>dialogRef.current?.showModal()} disabled={reviewRequested} className="min-h-12 rounded-full bg-[#b9ee9e] px-7 text-xs font-extrabold text-[#245113] disabled:opacity-65">{reviewRequested?"✓ Review requested":"● Request Expert Review"}</button></div></div><p aria-live="polite" className="mt-2 text-xs text-red-100">{saveState==="error"?"The report could not be saved. Please retry.":requestState==="error"?"The expert request could not be sent. Please retry.":""}</p></section>
-  </div>
-  <section><h2 className="mb-3 px-1 text-xs font-extrabold text-brand-dark">Immediate Recommendations</h2><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{recommendations.map(item=><article key={item.title} className="flex gap-3 rounded-xl border border-brand/10 bg-white p-4 shadow-sm"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">{item.icon}</span><div><h3 className="text-xs font-extrabold">{item.title}</h3><p className="mt-1 text-[10px] leading-4 text-muted">{item.text}</p></div></article>)}</div></section>
-  <div className="text-center"><Link href="/crop-health/FG-98441" className="inline-flex min-h-10 items-center rounded-full border border-brand/15 bg-white px-5 text-xs font-extrabold text-brand">Open full crop-health assessment →</Link></div>
-  <dialog ref={dialogRef} className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-border bg-white p-0 text-foreground shadow-2xl backdrop:bg-black/50"><form className="p-6" onSubmit={e=>{e.preventDefault();void requestReview()}}><div className="flex justify-between gap-4"><div><p className="text-xs font-bold text-brand">Expert consultation</p><h2 className="mt-1 text-xl font-extrabold">Share this case for review?</h2></div><button type="button" onClick={()=>dialogRef.current?.close()} aria-label="Close" className="size-10 rounded-full hover:bg-surface-soft">×</button></div><p className="mt-4 text-sm leading-6 text-muted">The expert will receive this image, AI result, field context and symptom answers. The result remains pending until they respond.</p><label className="mt-5 flex cursor-pointer gap-3 rounded-xl border border-border p-4 text-sm"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="mt-1 size-5 accent-brand"/><span><strong className="block">I agree to share this case</strong>I understand the AI result is preliminary.</span></label><div className="mt-5 flex justify-end gap-3"><button type="button" onClick={()=>dialogRef.current?.close()} className="min-h-11 rounded-xl border border-border px-5 font-bold">Cancel</button><button disabled={!consent||requestState==="submitting"} className="min-h-11 rounded-xl bg-brand px-5 font-bold text-white disabled:opacity-50">{requestState==="submitting"?"Sending…":"Send for review"}</button></div></form></dialog>
- </div>
+export function DiagnosisResults() {
+  const { session, hydrated } = useScanSession();
+  const [scan, setScan] = useState<CropScan | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    if (!hydrated || !session.backendScanId) return;
+    let active = true;
+    fetch(`/api/crop-scans/${session.backendScanId}`, { cache: "no-store" })
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<CropScan>)
+          : Promise.reject(new Error("not ok")),
+      )
+      .then((data) => {
+        if (active) setScan(data);
+      })
+      .catch(() => {
+        if (active) setLoadError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [hydrated, session.backendScanId]);
+
+  if (!hydrated || (!scan && !loadError && session.backendScanId))
+    return (
+      <ResultState
+        title="Preparing your result"
+        detail="Loading the real scan evidence and AI analysis…"
+      />
+    );
+  if (!session.backendScanId)
+    return (
+      <ResultState
+        title="No scan found"
+        detail="Start a new scan to get a real AI screening result."
+        action={
+          <Link
+            href="/scan"
+            className="rounded-xl bg-brand px-5 py-3 font-bold text-white"
+          >
+            Start a scan
+          </Link>
+        }
+      />
+    );
+  if (loadError || !scan)
+    return (
+      <ResultState
+        title="We could not load this result"
+        detail="Your scan is safe. Retry when your connection is stable."
+        action={
+          <button
+            className="rounded-xl bg-brand px-5 py-3 font-bold text-white"
+            onClick={() => setLoadError(false)}
+          >
+            Try again
+          </button>
+        }
+      />
+    );
+  if (!scan.screenedCondition)
+    return (
+      <ResultState
+        title="This scan has no result yet"
+        detail={`Current status: ${scan.status.replace(/_/g, " ").toLowerCase()}.`}
+        action={
+          <Link
+            href="/scan/analysis"
+            className="rounded-xl bg-brand px-5 py-3 font-bold text-white"
+          >
+            Back to analysis
+          </Link>
+        }
+      />
+    );
+
+  const confidence = Math.round((scan.confidence ?? 0) * 100);
+  const image =
+    session.images.find((i) => i.id === "leaf-closeup") ?? session.images[0];
+
+  return (
+    <div className="mx-auto max-w-[1060px] space-y-4 px-4 py-5 md:px-6 md:py-7">
+      <ScanStepper current="results" />
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-brand-dark">
+            Scan Your Crop: Results
+          </h1>
+          <p className="mt-1 text-xs text-muted">
+            Real AI screening report{" "}
+            {scan.fieldId ? `for field ${scan.fieldId}` : ""}
+          </p>
+        </div>
+        <Link
+          href="/dashboard"
+          className="inline-flex min-h-10 items-center justify-center rounded-full border border-brand/15 bg-white px-5 text-xs font-extrabold text-brand"
+        >
+          ← Back to Dashboard
+        </Link>
+      </header>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <article className="relative overflow-hidden rounded-2xl border border-brand/10 bg-white p-5 shadow-sm lg:col-span-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-success/20 bg-brand-soft px-3 py-1 text-[9px] font-extrabold uppercase tracking-wide text-brand">
+            <span className="size-2 rounded-full bg-success" />
+            AI screening complete
+          </span>
+          <h2 className="mt-3 text-xl font-extrabold text-brand-dark">
+            Possible Condition: {titleCase(scan.screenedCondition)}
+          </h2>
+          <dl className="mt-6 grid grid-cols-3 gap-3">
+            <Metric label="Model score">
+              <strong className="text-2xl text-brand-dark">
+                {confidence}%
+              </strong>
+            </Metric>
+            <Metric label="Disposition">
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-900">
+                {scan.disposition ? dispositionLabel[scan.disposition] : "—"}
+              </span>
+            </Metric>
+            <Metric label="Result type">
+              <span className="text-xs font-bold text-muted">
+                {scan.isFirmDiagnosis
+                  ? "Expert confirmed"
+                  : "Unconfirmed screening"}
+              </span>
+            </Metric>
+          </dl>
+          {scan.alternatives.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-extrabold text-brand-dark">
+                Other possible conditions
+              </h3>
+              <ul className="mt-2 space-y-1">
+                {scan.alternatives.map((alt) => (
+                  <li
+                    key={alt.condition}
+                    className="flex justify-between text-xs text-muted"
+                  >
+                    <span>{titleCase(alt.condition)}</span>
+                    <span className="font-bold">
+                      {Math.round(alt.confidence * 100)}%
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {scan.disclaimer && (
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+              <strong>Important:</strong> {scan.disclaimer}
+            </div>
+          )}
+        </article>
+        <aside className="space-y-4">
+          <section className="relative overflow-hidden rounded-2xl border border-brand/10 bg-[#dbe9d5] shadow-sm">
+            {image?.previewUrl ? (
+              <Image
+                unoptimized
+                width={640}
+                height={480}
+                src={image.previewUrl}
+                alt={`Submitted crop image: ${image.name}`}
+                className="aspect-[4/3] w-full object-cover"
+              />
+            ) : (
+              <div className="grid aspect-[4/3] place-items-center bg-brand-dark px-5 text-center text-xs font-bold text-white">
+                Crop scan evidence
+              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand/90 to-transparent p-4 pt-10 text-[10px] font-bold text-white">
+              Scanned Image: {image?.name ?? "—"}
+            </div>
+          </section>
+        </aside>
+        <section className="rounded-2xl bg-[#00452d] p-5 text-white lg:col-span-3">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-base font-extrabold">
+                Ready to take action?
+              </h2>
+              <p className="mt-1 text-xs text-emerald-100">
+                {scan.disposition === "EXPERT_REVIEW_RECOMMENDED"
+                  ? "This screening's confidence is low enough that we recommend a real expert review before acting on it."
+                  : "This scan is already saved to your account. An expert can review it any time."}
+              </p>
+            </div>
+            <Link
+              href="/consultations"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#b9ee9e] px-7 text-xs font-extrabold text-[#245113]"
+            >
+              Request Expert Review
+            </Link>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }
-function Metric({label,children}:{label:string;children:React.ReactNode}){return <div className="min-h-20 rounded-xl border border-brand/5 bg-[#f4f8f1] p-3"><dt className="mb-2 text-[8px] font-extrabold uppercase tracking-wide text-muted">{label}</dt><dd>{children}</dd></div>}
-function ResultState({title,detail,action}:{title:string;detail:string;action?:React.ReactNode}){return <div className="mx-auto max-w-xl p-8"><section className="rounded-2xl border border-border bg-white p-8 text-center"><div className="mx-auto grid size-12 place-items-center rounded-full bg-brand-soft text-brand">•••</div><h1 className="mt-4 text-xl font-extrabold">{title}</h1><p className="mt-2 text-sm text-muted">{detail}</p>{action&&<div className="mt-5">{action}</div>}</section></div>}
-function titleCase(value:string){return value.replace(/\b\w/g,c=>c.toUpperCase())}
+function Metric({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-20 rounded-xl border border-brand/5 bg-[#f4f8f1] p-3">
+      <dt className="mb-2 text-[8px] font-extrabold uppercase tracking-wide text-muted">
+        {label}
+      </dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+function ResultState({
+  title,
+  detail,
+  action,
+}: {
+  title: string;
+  detail: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="mx-auto max-w-xl p-8">
+      <section className="rounded-2xl border border-border bg-white p-8 text-center">
+        <h1 className="mt-4 text-xl font-extrabold">{title}</h1>
+        <p className="mt-2 text-sm text-muted">{detail}</p>
+        {action && <div className="mt-5">{action}</div>}
+      </section>
+    </div>
+  );
+}
+function titleCase(value: string): string {
+  return value.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}

@@ -11,6 +11,10 @@ export function configureApp(app: INestApplication): void {
   // Stripe webhook signature verification requires the raw, unparsed body — registered ahead
   // of the global JSON parser for this one path only; every other route stays JSON-parsed.
   app.use('/api/v1/billing/stripe/webhook', raw({ type: 'application/json', limit: bodyLimit }));
+  // The local-disk storage provider's presigned PUT receives raw binary image bytes, not
+  // JSON — same "ahead of the global parser" treatment, with a real per-file size ceiling
+  // matching the largest real media-policy limit (media-policy.ts).
+  app.use('/api/v1/media/local-upload', raw({ type: '*/*', limit: '100mb' }));
   app.use(json({ limit: bodyLimit, strict: true }));
   app.use(urlencoded({ limit: bodyLimit, extended: false, parameterLimit: 100 }));
   app.setGlobalPrefix('api');

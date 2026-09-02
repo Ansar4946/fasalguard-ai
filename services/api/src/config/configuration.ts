@@ -27,11 +27,13 @@ export interface AppConfiguration {
   smtpUser: string;
   smtpPassword: string;
   smtpFrom: string;
-  objectStorageProvider: 'mock' | 'alibaba';
+  objectStorageProvider: 'mock' | 'alibaba' | 'local-disk';
   ossRegion: string;
   ossBucket: string;
   ossAccessKeyId: string;
   ossAccessKeySecret: string;
+  mediaLocalDir: string;
+  apiPublicUrl: string;
   stripeSecretKey: string;
   stripeWebhookSecret: string;
   stripePublishableKey: string;
@@ -55,6 +57,7 @@ export interface AppConfiguration {
   roboflowApiKey: string;
   roboflowModelId: string;
   roboflowModelVersion: string;
+  roboflowModelTask: 'classification' | 'detection';
   selfHostedVisionUrl: string;
   visionMinimumConfidence: number;
   visionExpertReviewBelow: number;
@@ -112,11 +115,14 @@ export default function configuration(): AppConfiguration {
     smtpUser: process.env.SMTP_USER ?? '',
     smtpPassword: process.env.SMTP_PASSWORD ?? '',
     smtpFrom: process.env.SMTP_FROM ?? '',
-    objectStorageProvider: (process.env.OBJECT_STORAGE_PROVIDER ?? 'mock') as 'mock' | 'alibaba',
+    objectStorageProvider: (process.env.OBJECT_STORAGE_PROVIDER ?? 'mock') as
+      'mock' | 'alibaba' | 'local-disk',
     ossRegion: process.env.OSS_REGION ?? '',
     ossBucket: process.env.OSS_BUCKET ?? '',
     ossAccessKeyId: process.env.OSS_ACCESS_KEY_ID ?? '',
     ossAccessKeySecret: process.env.OSS_ACCESS_KEY_SECRET ?? '',
+    mediaLocalDir: process.env.MEDIA_LOCAL_DIR ?? '/data/media',
+    apiPublicUrl: process.env.API_PUBLIC_URL ?? 'http://localhost:4000/api/v1',
     stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? '',
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? '',
@@ -147,6 +153,8 @@ export default function configuration(): AppConfiguration {
     roboflowApiKey: process.env.ROBOFLOW_API_KEY ?? '',
     roboflowModelId: process.env.ROBOFLOW_MODEL_ID ?? '',
     roboflowModelVersion: process.env.ROBOFLOW_MODEL_VERSION ?? '',
+    roboflowModelTask: (process.env.ROBOFLOW_MODEL_TASK ?? 'classification') as
+      'classification' | 'detection',
     selfHostedVisionUrl: process.env.SELF_HOSTED_VISION_URL ?? 'http://localhost:8000',
     visionMinimumConfidence: Number(process.env.VISION_MINIMUM_CONFIDENCE ?? 0.65),
     visionExpertReviewBelow: Number(process.env.VISION_EXPERT_REVIEW_BELOW ?? 0.85),

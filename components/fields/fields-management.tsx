@@ -8,8 +8,14 @@ import type { FarmSummary, FieldSummary } from "./types";
 
 const HECTARES_TO_ACRES = 2.47105;
 
-export function FieldsManagement({ farm }: { farm: FarmSummary }) {
-  const [fields, setFields] = useState<FieldSummary[]>([]);
+export function FieldsManagement({
+  farm,
+  initialFields,
+}: {
+  farm: FarmSummary;
+  initialFields: FieldSummary[];
+}) {
+  const [fields, setFields] = useState<FieldSummary[]>(initialFields);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -30,8 +36,8 @@ export function FieldsManagement({ farm }: { farm: FarmSummary }) {
           <h1 className="mt-2 text-[26px] font-extrabold">{farm.name} — Fields</h1>
           <p className="mt-1 text-xs text-muted">
             {fields.length === 0
-              ? "No fields added in this session yet."
-              : `${fields.length} field${fields.length === 1 ? "" : "s"} added this session.`}
+              ? "No fields have been added to this farm yet."
+              : `${fields.length} field${fields.length === 1 ? "" : "s"} registered.`}
           </p>
         </div>
         <button
@@ -48,16 +54,6 @@ export function FieldsManagement({ farm }: { farm: FarmSummary }) {
           {notice}
         </div>
       )}
-
-      <div
-        role="alert"
-        className="mt-4 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-[11px] font-semibold text-amber-900"
-      >
-        Fields management for this farm requires a backend endpoint that doesn&apos;t exist yet — there is no{" "}
-        <code>GET /farms/:id/fields</code> route to list a farm&apos;s fields. New fields you add below are saved to
-        the backend for real, but this page can only show the fields you&apos;ve created during this browser session
-        until that endpoint ships.
-      </div>
 
       <section className="mt-5 overflow-hidden rounded-3xl border border-brand/10 bg-white shadow-sm">
         <header className="flex items-center justify-between border-b border-brand/5 p-5">

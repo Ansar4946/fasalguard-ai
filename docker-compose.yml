@@ -22,7 +22,9 @@ x-app-env: &app-env
   SMTP_USER: ${SMTP_USER:-}
   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
   SMTP_FROM: ${SMTP_FROM:-}
-  OBJECT_STORAGE_PROVIDER: mock
+  OBJECT_STORAGE_PROVIDER: local-disk
+  MEDIA_LOCAL_DIR: /data/media
+  API_PUBLIC_URL: http://localhost:4000/api/v1
   STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
   STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
   STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
@@ -36,8 +38,15 @@ x-app-env: &app-env
   OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY:-}
   WEATHER_CACHE_TTL_SECONDS: 900
   WEATHER_ALERT_MIN_INTERVAL_HOURS: ${WEATHER_ALERT_MIN_INTERVAL_HOURS:-12}
-  VISION_PROVIDER: self-hosted
-  SELF_HOSTED_VISION_URL: http://geospatial-ai:8000
+  VISION_PROVIDER: ${VISION_PROVIDER:-self-hosted}
+  SELF_HOSTED_VISION_URL: ${SELF_HOSTED_VISION_URL:-http://geospatial-ai:8000}
+  ROBOFLOW_BASE_URL: ${ROBOFLOW_BASE_URL:-https://serverless.roboflow.com}
+  ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY:-}
+  ROBOFLOW_MODEL_ID: ${ROBOFLOW_MODEL_ID:-}
+  ROBOFLOW_MODEL_VERSION: ${ROBOFLOW_MODEL_VERSION:-}
+  ROBOFLOW_MODEL_TASK: ${ROBOFLOW_MODEL_TASK:-classification}
+  VISION_MODEL_PATH: ${VISION_MODEL_PATH:-/models/cotton-disease.onnx}
+  VISION_MODEL_MANIFEST_PATH: ${VISION_MODEL_MANIFEST_PATH:-/models/cotton-disease.json}
   VISION_MINIMUM_CONFIDENCE: 0.65
   VISION_EXPERT_REVIEW_BELOW: 0.85
   QWEN_BASE_URL: https://dashscope-intl.aliyuncs.com
@@ -90,14 +99,21 @@ services:
         retries: 20,
       }
     restart: unless-stopped
+  media-init:
+    image: node:22-alpine
+    command: ["sh", "-c", "mkdir -p /data/media && chown -R node:node /data/media"]
+    volumes: ["media_data:/data/media"]
+    restart: "no"
   api:
     build: { context: ./services/api, target: production }
     environment: *app-env
     ports: ["4000:4000"]
+    volumes: ["media_data:/data/media"]
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
       migrate: { condition: service_completed_successfully }
+      media-init: { condition: service_completed_successfully }
     healthcheck:
       test:
         [
@@ -115,15 +131,22 @@ services:
   worker:
     build: { context: ./services/api, target: worker }
     environment: *app-env
+    volumes: ["media_data:/data/media"]
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
       migrate: { condition: service_completed_successfully }
+      media-init: { condition: service_completed_successfully }
     init: true
     restart: unless-stopped
   geospatial-ai:
     build: { context: ./services/geospatial-ai }
     ports: ["8000:8000"]
+    environment:
+      VISION_MODEL_PATH: ${VISION_MODEL_PATH:-/models/cotton-disease.onnx}
+      VISION_MODEL_MANIFEST_PATH: ${VISION_MODEL_MANIFEST_PATH:-/models/cotton-disease.json}
+    volumes:
+      - ./services/geospatial-ai/models:/models:ro
     healthcheck:
       {
         test:
@@ -150,3 +173,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  media_data:
