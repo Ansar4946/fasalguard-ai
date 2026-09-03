@@ -1,4 +1,4 @@
-type IconName = "home" | "farm" | "field" | "scan" | "satellite" | "weather" | "radar" | "task" | "expert" | "learn" | "report" | "settings" | "bell" | "menu" | "search" | "plus";
+type IconName = "home" | "farm" | "field" | "scan" | "satellite" | "weather" | "market" | "radar" | "task" | "expert" | "learn" | "report" | "settings" | "bell" | "menu" | "search" | "plus";
 
 const paths: Record<IconName, React.ReactNode> = {
   home: <><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></>,
@@ -7,6 +7,7 @@ const paths: Record<IconName, React.ReactNode> = {
   scan: <><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><path d="M8 12h8M12 8v8"/></>,
   satellite: <><path d="m8 16-4 4m12-12 4-4M9 5l10 10-4 4L5 9z"/><path d="M4 14a6 6 0 0 0 6 6M4 10a10 10 0 0 0 10 10"/></>,
   weather: <><circle cx="8" cy="8" r="3"/><path d="M8 2v1M8 13v1M2 8h1M13 8h1M3.8 3.8l.7.7M11.5 11.5l.7.7"/><path d="M8 18h10a3 3 0 0 0 0-6 5 5 0 0 0-9.6 1.8A2.5 2.5 0 0 0 8 18Z"/></>,
+  market: <><path d="M4 19V9M10 19V5M16 19v-7M3 19h18"/><path d="m4 8 5-4 5 4 6-5M17 3h3v3"/></>,
   radar: <><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 18 6M12 12h.01"/></>,
   task: <><path d="M9 5h11M9 12h11M9 19h11"/><path d="m3 5 1 1 2-2m-3 8 1 1 2-2m-3 8 1 1 2-2"/></>,
   expert: <><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></>,

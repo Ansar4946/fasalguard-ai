@@ -24,6 +24,7 @@ const navigation: NavItem[] = [
     icon: "satellite" as const,
   },
   { href: "/weather", label: "Weather Intelligence", icon: "weather" as const },
+  { href: "/market-intelligence", label: "Market Intelligence", icon: "market" as const },
   { href: "/radar", label: "Outbreak Radar", icon: "radar" as const },
   { href: "/alerts", label: "Alerts", icon: "bell" as const },
   { href: "/tasks", label: "Tasks", icon: "task" as const },

@@ -112,6 +112,7 @@ import {
   PilotLead,
 } from '../../../domain/growth/growth.entities';
 import { AIRun } from '../../../domain/ai-ops/ai-run.entity';
+import { MandiPrice } from '../../../domain/market/market.entity';
 export const databaseEntities = [
   User,
   FarmerProfile,
@@ -200,4 +201,5 @@ export const databaseEntities = [
   LandingPageView,
   LifecycleEmailLog,
   AIRun,
+  MandiPrice,
 ];

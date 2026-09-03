@@ -20,6 +20,8 @@ const productionEnvironment = {
   OSS_BUCKET: 'private-fasalguard',
   OSS_ACCESS_KEY_ID: 'runtime-id',
   OSS_ACCESS_KEY_SECRET: 'runtime-secret',
+  SMTP_HOST: 'smtp.example.com',
+  SMTP_FROM: 'FasalGuard <no-reply@fasalguard.example>',
   METRICS_TOKEN: 'metrics-observer-token',
   FARM_BRAIN_PROVIDER: 'gemini',
   GEMINI_TRANSPORT: 'vertex',

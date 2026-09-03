@@ -32,6 +32,7 @@ import { ImpactOutcomeTracking1755000029000 } from './1755000029000-impact-outco
 import { PilotEnrollment1755000030000 } from './1755000030000-pilot-enrollment';
 import { FeedbackCollection1755000031000 } from './1755000031000-feedback-collection';
 import { StripePayments1755000032000 } from './1755000032000-stripe-payments';
+import { MarketIntelligence1755000033000 } from './1755000033000-market-intelligence';
 export const databaseMigrations = [
   InitialGeospatialSchema1755000000000,
   SeedReferenceCrops1755000001000,
@@ -67,4 +68,5 @@ export const databaseMigrations = [
   PilotEnrollment1755000030000,
   FeedbackCollection1755000031000,
   StripePayments1755000032000,
+  MarketIntelligence1755000033000,
 ];

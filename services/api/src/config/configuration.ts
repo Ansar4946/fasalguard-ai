@@ -44,6 +44,9 @@ export interface AppConfiguration {
   satelliteMaxCloudCoverage: number;
   satelliteMinValidPixelPercentage: number;
   geospatialAiUrl: string;
+  amisSyncEnabled: boolean;
+  amisScrapeTimeoutMs: number;
+  marketCacheTtlSeconds: number;
   satelliteMonitoringIntervalHours: number;
   satelliteProviderRequestsPerMinute: number;
   weatherProvider: 'open-meteo' | 'openweathermap';
@@ -137,6 +140,9 @@ export default function configuration(): AppConfiguration {
       process.env.SATELLITE_MIN_VALID_PIXEL_PERCENTAGE ?? 20,
     ),
     geospatialAiUrl: process.env.GEOSPATIAL_AI_URL ?? 'http://localhost:8000',
+    amisSyncEnabled: process.env.AMIS_SYNC_ENABLED === 'true',
+    amisScrapeTimeoutMs: Number(process.env.AMIS_SCRAPE_TIMEOUT_MS ?? 120000),
+    marketCacheTtlSeconds: Number(process.env.MARKET_CACHE_TTL_SECONDS ?? 3600),
     satelliteMonitoringIntervalHours: Number(process.env.SATELLITE_MONITORING_INTERVAL_HOURS ?? 8),
     satelliteProviderRequestsPerMinute: Number(
       process.env.SATELLITE_PROVIDER_REQUESTS_PER_MINUTE ?? 30,

@@ -1,4 +1,5 @@
 from typing import Any, Literal
+from datetime import datetime, timezone
 import base64
 import io
 import json
@@ -14,6 +15,7 @@ from shapely.geometry import shape, mapping
 from pydantic import BaseModel, Field, HttpUrl
 from fastapi import FastAPI, HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
+from app.amis_scraper import AmisScrapeError, AmisScraper
 
 Label = Literal["VEGETATION_DECLINE","POSSIBLE_WATER_STRESS","POSSIBLE_EXCESS_MOISTURE","UNEVEN_GROWTH","UNKNOWN_STRESS"]
 class Request(BaseModel):
@@ -42,6 +44,24 @@ class AnalysisResponse(BaseModel):
 app=FastAPI(title="FasalGuard Geospatial Analysis",version="1.0.0")
 @app.get("/health")
 def health()->dict[str,str|bool]: return {"status":"ok","visionModelConfigured":vision_model_available()}
+
+class AmisCommodity(BaseModel):
+    name: str = Field(min_length=1,max_length=100)
+    commodityId: str = Field(pattern=r"^\d{1,5}$")
+
+class AmisPriceRequest(BaseModel):
+    commodities: list[AmisCommodity] = Field(min_length=1,max_length=20)
+
+@app.post("/v1/market/amis/prices")
+def amis_prices(req:AmisPriceRequest)->dict[str,Any]:
+    if os.getenv("AMIS_SCRAPER_ENABLED","false").casefold()!="true":
+        raise HTTPException(503,"AMIS_SCRAPER_DISABLED")
+    scraper=AmisScraper(base_url=os.getenv("AMIS_BASE_URL","http://www.amis.pk"),timeout_seconds=float(os.getenv("AMIS_TIMEOUT_SECONDS","20")),delay_seconds=float(os.getenv("AMIS_REQUEST_DELAY_SECONDS","1")))
+    try:
+        records=scraper.fetch([item.model_dump() for item in req.commodities])
+    except AmisScrapeError as exc:
+        raise HTTPException(502,"AMIS_SCRAPE_FAILED") from exc
+    return {"provider":"AMIS","fetchedAt":datetime.now(timezone.utc).isoformat(),"records":records}
 
 class VisionImage(BaseModel):
     imageBase64: str = Field(min_length=16)
@@ -147,7 +167,6 @@ def vision_quality(req:VisionImage)->VisionQualityResponse:
 
 @app.post("/v1/vision/predict",response_model=VisionPredictionResponse)
 def vision_predict(req:VisionPredictRequest)->VisionPredictionResponse:
-    from datetime import datetime,timezone
     session,manifest=load_vision_model();per_image=[]
     for item in req.images:
         probabilities=infer_image(decode_vision_image(item),session,manifest)

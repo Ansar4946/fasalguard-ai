@@ -36,6 +36,7 @@ import { BillingModule } from './domain/billing/billing.module';
 import { GrowthModule } from './domain/growth/growth.module';
 import { AiOpsModule } from './domain/ai-ops/ai-ops.module';
 import { ImpactModule } from './domain/impact/impact.module';
+import { MarketModule } from './domain/market/market.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -103,6 +104,7 @@ import { ImpactModule } from './domain/impact/impact.module';
     GrowthModule,
     AiOpsModule,
     ImpactModule,
+    MarketModule,
   ],
   providers: [
     ApiExceptionFilter,
