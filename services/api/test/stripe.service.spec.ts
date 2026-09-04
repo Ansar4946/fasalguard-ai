@@ -177,7 +177,9 @@ describe('StripeService', () => {
     const db = fakeDb();
     constructEventMock.mockReturnValue({
       type: 'invoice.paid',
-      data: { object: { id: 'in_test_1', customer: 'cus_test_1', billing_reason: 'subscription_create' } },
+      data: {
+        object: { id: 'in_test_1', customer: 'cus_test_1', billing_reason: 'subscription_create' },
+      },
     });
     const service = new StripeService(
       db as never,
@@ -195,7 +197,9 @@ describe('StripeService', () => {
     const db = fakeDb();
     constructEventMock.mockReturnValue({
       type: 'invoice.paid',
-      data: { object: { id: 'in_test_2', customer: 'cus_test_1', billing_reason: 'subscription_cycle' } },
+      data: {
+        object: { id: 'in_test_2', customer: 'cus_test_1', billing_reason: 'subscription_cycle' },
+      },
     });
     db.query.mockResolvedValueOnce([{ id: 'sub-1', plan_code: 'FARMER_PRO' }]);
     db.query.mockResolvedValueOnce([{ price_minor: '99900', currency: 'PKR', name: 'Farmer Pro' }]);
@@ -207,7 +211,9 @@ describe('StripeService', () => {
     const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
     expect(result).toEqual({ received: true });
     expect(db.transaction).toHaveBeenCalled();
-    const insertCall = db.query.mock.calls.find(([sql]) => String(sql).includes('INSERT INTO subscription_payments'));
+    const insertCall = db.query.mock.calls.find(([sql]) =>
+      String(sql).includes('INSERT INTO subscription_payments'),
+    );
     expect(insertCall?.[1]).toContain('in_test_2');
   });
 

@@ -7,7 +7,15 @@ export const metadata: Metadata = {
   description: "Sign in to manage your farms and monitor crop health.",
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const returnTo = Array.isArray(params.returnTo)
+    ? params.returnTo[0]
+    : params.returnTo;
   return (
     <main className="min-h-dvh bg-[radial-gradient(circle_at_85%_10%,rgba(217,245,199,.34),transparent_28%),#fbfcfa] lg:grid lg:grid-cols-[minmax(0,1.02fr)_minmax(520px,.98fr)]">
       <section
@@ -52,7 +60,7 @@ export default function LoginPage() {
         </p>
       </section>
       <section className="flex min-h-dvh items-center justify-center border-l border-border/70 px-5 py-10 sm:px-10 lg:px-14 xl:px-20">
-        <LoginForm />
+        <LoginForm returnTo={returnTo} />
       </section>
     </main>
   );

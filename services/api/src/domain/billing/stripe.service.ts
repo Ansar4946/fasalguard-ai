@@ -234,9 +234,10 @@ export class StripeService {
     if (!subscription) return;
 
     const plans: Array<{ price_minor: string | null; currency: string; name: string }> =
-      await this.db.query(`SELECT price_minor,currency,name FROM subscription_plans WHERE code=$1`, [
-        subscription.plan_code,
-      ]);
+      await this.db.query(
+        `SELECT price_minor,currency,name FROM subscription_plans WHERE code=$1`,
+        [subscription.plan_code],
+      );
     const plan = plans[0];
     if (!plan || plan.price_minor === null) return;
 

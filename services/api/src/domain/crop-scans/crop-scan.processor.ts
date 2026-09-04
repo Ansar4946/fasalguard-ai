@@ -27,6 +27,7 @@ interface ImageRow {
   contentType: string;
   sizeBytes: string;
   category: ScanImageCategory;
+  cropName: string | null;
 }
 @Processor(CROP_SCAN_QUEUE, { concurrency: 2, lockDuration: 120000 })
 export class CropScanProcessor extends WorkerHost {
@@ -49,7 +50,7 @@ export class CropScanProcessor extends WorkerHost {
     );
     try {
       const images = await this.db.query<ImageRow[]>(
-        `SELECT si.id,ma.object_key AS "objectKey",ma.content_type AS "contentType",ma.size_bytes AS "sizeBytes",si.category FROM scan_images si JOIN media_assets ma ON ma.id=si.media_asset_id JOIN crop_scans cs ON cs.id=si.scan_id WHERE si.scan_id=$1 AND cs.owner_id=$2 AND ma.status='ready'`,
+        `SELECT si.id,ma.object_key AS "objectKey",ma.content_type AS "contentType",ma.size_bytes AS "sizeBytes",si.category,c.name AS "cropName" FROM scan_images si JOIN media_assets ma ON ma.id=si.media_asset_id JOIN crop_scans cs ON cs.id=si.scan_id LEFT JOIN fields fi ON fi.id=cs.field_id LEFT JOIN LATERAL(SELECT * FROM crop_cycles x WHERE x.field_id=fi.id AND x.status='active' AND x.deleted_at IS NULL ORDER BY x.created_at DESC LIMIT 1)cc ON true LEFT JOIN crops c ON c.id=cc.crop_id WHERE si.scan_id=$1 AND cs.owner_id=$2 AND ma.status='ready'`,
         [job.data.scanId, job.data.ownerId],
       );
       const inputs: VisionInput[] = [];
@@ -71,7 +72,12 @@ export class CropScanProcessor extends WorkerHost {
           `UPDATE scan_images SET width_pixels=$2,height_pixels=$3,updated_at=now() WHERE id=$1`,
           [row.id, metadata.width, metadata.height],
         );
-        const input = { image, contentType: row.contentType, category: row.category };
+        const input = {
+          image,
+          contentType: row.contentType,
+          category: row.category,
+          cropName: row.cropName,
+        };
         inputs.push(input);
         const quality = await this.vision.assessQuality(input);
         qualityFailed ||= !quality.acceptable;

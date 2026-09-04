@@ -14,6 +14,9 @@
   --warning: #a25c00;
   --danger: #c5352e;
   --info: #2670a8;
+  /* Build-safe font stacks: no production build-time dependency on Google Fonts. */
+  --font-manrope: "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
+  --font-noto-arabic: "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
 }
 
 /* The desktop expert case-review rail follows the compact Stitch decision card. */

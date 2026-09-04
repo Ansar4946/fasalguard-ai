@@ -73,6 +73,16 @@ export const environmentSchema = Joi.object({
   ROBOFLOW_MODEL_ID: Joi.string().allow('').default(''),
   ROBOFLOW_MODEL_VERSION: Joi.string().allow('').default(''),
   ROBOFLOW_MODEL_TASK: Joi.string().valid('classification', 'detection').default('classification'),
+  ROBOFLOW_WHEAT_MODEL_ID: Joi.string().allow('').default(''),
+  ROBOFLOW_WHEAT_MODEL_VERSION: Joi.string().allow('').default(''),
+  ROBOFLOW_WHEAT_MODEL_TASK: Joi.string()
+    .valid('classification', 'detection')
+    .default('classification'),
+  ROBOFLOW_RICE_MODEL_ID: Joi.string().allow('').default(''),
+  ROBOFLOW_RICE_MODEL_VERSION: Joi.string().allow('').default(''),
+  ROBOFLOW_RICE_MODEL_TASK: Joi.string()
+    .valid('classification', 'detection')
+    .default('classification'),
   SELF_HOSTED_VISION_URL: Joi.string().uri().default('http://localhost:8000'),
   VISION_MINIMUM_CONFIDENCE: Joi.number().min(0).max(1).default(0.65),
   VISION_EXPERT_REVIEW_BELOW: Joi.number().min(0).max(1).default(0.85),

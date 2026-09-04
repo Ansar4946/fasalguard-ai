@@ -23,6 +23,11 @@ interface AggregatedClass {
   confidence: number;
   supportingImages: number;
 }
+interface RoboflowModelConfig {
+  model: string;
+  version: string;
+  task: 'classification' | 'detection';
+}
 
 @Injectable()
 export class RoboflowVisionProvider implements VisionDiagnosisProvider {
@@ -63,11 +68,15 @@ export class RoboflowVisionProvider implements VisionDiagnosisProvider {
 
   async predict(inputs: VisionInput[]): Promise<VisionPrediction> {
     if (!inputs.length) throw new Error('At least one image is required for vision screening.');
-    const model = this.config.get<string>('roboflowModelId', '');
-    const version = this.config.get<string>('roboflowModelVersion', '');
-    if (!this.config.get<string>('roboflowApiKey', '') || !model || !version)
+    const cropNames = new Set(
+      inputs.map((input) => normalizeCropName(input.cropName)).filter(Boolean),
+    );
+    if (cropNames.size > 1) throw new Error('CROP_CONTEXT_MISMATCH');
+    const cropName = [...cropNames][0] ?? '';
+    const selected = this.modelForCrop(cropName);
+    if (!this.config.get<string>('roboflowApiKey', '') || !selected.model || !selected.version)
       throw new Error('Roboflow provider selected without credentials and model configuration.');
-    const responses = await Promise.all(inputs.map((input) => this.infer(input, model, version)));
+    const responses = await Promise.all(inputs.map((input) => this.infer(input, selected)));
     const totals = new Map<string, { confidence: number; supportingImages: number }>();
     for (const response of responses) {
       for (const prediction of normalizePredictions(response)) {
@@ -90,8 +99,8 @@ export class RoboflowVisionProvider implements VisionDiagnosisProvider {
     const top = aggregated[0];
     if (!top) throw new Error('Vision provider returned no usable prediction.');
     return {
-      modelId: model,
-      modelVersion: version,
+      modelId: selected.model,
+      modelVersion: selected.version,
       predictedCondition: top.condition,
       confidence: top.confidence,
       alternatives: aggregated
@@ -99,7 +108,8 @@ export class RoboflowVisionProvider implements VisionDiagnosisProvider {
         .map(({ condition, confidence }) => ({ condition, confidence })),
       inferenceTimestamp: new Date().toISOString(),
       rawProviderResponse: {
-        task: this.config.get<string>('roboflowModelTask', 'classification'),
+        task: selected.task,
+        cropName: cropName || null,
         imageCount: inputs.length,
         perImage: responses,
         aggregation: aggregated,
@@ -109,20 +119,21 @@ export class RoboflowVisionProvider implements VisionDiagnosisProvider {
 
   private async infer(
     input: VisionInput,
-    model: string,
-    version: string,
+    selected: RoboflowModelConfig,
   ): Promise<RoboflowResponse> {
     const key = this.config.getOrThrow<string>('roboflowApiKey');
-    const task = this.config.get<string>('roboflowModelTask', 'classification');
     const configuredBase = this.config.get<string>(
       'roboflowBaseUrl',
       'https://detect.roboflow.com',
     );
     const base =
-      task === 'classification' && configuredBase === 'https://detect.roboflow.com'
+      selected.task === 'classification' && configuredBase === 'https://detect.roboflow.com'
         ? 'https://classify.roboflow.com'
         : configuredBase;
-    const url = new URL(`/${encodeURIComponent(model)}/${encodeURIComponent(version)}`, base);
+    const url = new URL(
+      `/${encodeURIComponent(selected.model)}/${encodeURIComponent(selected.version)}`,
+      base,
+    );
     url.searchParams.set('api_key', key);
     url.searchParams.set('format', 'json');
     const response = await fetch(url, {
@@ -134,6 +145,42 @@ export class RoboflowVisionProvider implements VisionDiagnosisProvider {
     if (!response.ok) throw new Error(`Vision provider request failed (${response.status}).`);
     return (await response.json()) as RoboflowResponse;
   }
+
+  private modelForCrop(cropName: string): RoboflowModelConfig {
+    if (cropName === 'wheat') {
+      const wheat = {
+        model: this.config.get<string>('roboflowWheatModelId', ''),
+        version: this.config.get<string>('roboflowWheatModelVersion', ''),
+        task: this.config.get<'classification' | 'detection'>(
+          'roboflowWheatModelTask',
+          'classification',
+        ),
+      };
+      if (!wheat.model || !wheat.version) throw new Error('WHEAT_VISION_MODEL_NOT_CONFIGURED');
+      return wheat;
+    }
+    if (cropName === 'rice') {
+      const rice = {
+        model: this.config.get<string>('roboflowRiceModelId', ''),
+        version: this.config.get<string>('roboflowRiceModelVersion', ''),
+        task: this.config.get<'classification' | 'detection'>(
+          'roboflowRiceModelTask',
+          'classification',
+        ),
+      };
+      if (!rice.model || !rice.version) throw new Error('RICE_VISION_MODEL_NOT_CONFIGURED');
+      return rice;
+    }
+    return {
+      model: this.config.get<string>('roboflowModelId', ''),
+      version: this.config.get<string>('roboflowModelVersion', ''),
+      task: this.config.get<'classification' | 'detection'>('roboflowModelTask', 'classification'),
+    };
+  }
+}
+
+function normalizeCropName(value: string | null | undefined): string {
+  return (value ?? '').trim().toLocaleLowerCase('en');
 }
 
 function normalizePredictions(

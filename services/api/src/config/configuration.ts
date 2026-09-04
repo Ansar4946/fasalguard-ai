@@ -61,6 +61,12 @@ export interface AppConfiguration {
   roboflowModelId: string;
   roboflowModelVersion: string;
   roboflowModelTask: 'classification' | 'detection';
+  roboflowWheatModelId: string;
+  roboflowWheatModelVersion: string;
+  roboflowWheatModelTask: 'classification' | 'detection';
+  roboflowRiceModelId: string;
+  roboflowRiceModelVersion: string;
+  roboflowRiceModelTask: 'classification' | 'detection';
   selfHostedVisionUrl: string;
   visionMinimumConfidence: number;
   visionExpertReviewBelow: number;
@@ -160,6 +166,14 @@ export default function configuration(): AppConfiguration {
     roboflowModelId: process.env.ROBOFLOW_MODEL_ID ?? '',
     roboflowModelVersion: process.env.ROBOFLOW_MODEL_VERSION ?? '',
     roboflowModelTask: (process.env.ROBOFLOW_MODEL_TASK ?? 'classification') as
+      'classification' | 'detection',
+    roboflowWheatModelId: process.env.ROBOFLOW_WHEAT_MODEL_ID ?? '',
+    roboflowWheatModelVersion: process.env.ROBOFLOW_WHEAT_MODEL_VERSION ?? '',
+    roboflowWheatModelTask: (process.env.ROBOFLOW_WHEAT_MODEL_TASK ?? 'classification') as
+      'classification' | 'detection',
+    roboflowRiceModelId: process.env.ROBOFLOW_RICE_MODEL_ID ?? '',
+    roboflowRiceModelVersion: process.env.ROBOFLOW_RICE_MODEL_VERSION ?? '',
+    roboflowRiceModelTask: (process.env.ROBOFLOW_RICE_MODEL_TASK ?? 'classification') as
       'classification' | 'detection',
     selfHostedVisionUrl: process.env.SELF_HOSTED_VISION_URL ?? 'http://localhost:8000',
     visionMinimumConfidence: Number(process.env.VISION_MINIMUM_CONFIDENCE ?? 0.65),

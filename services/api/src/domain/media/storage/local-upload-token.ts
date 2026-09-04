@@ -36,7 +36,11 @@ export function verifyLocalUploadToken(
   } catch {
     return null;
   }
-  if (typeof payload.k !== 'string' || typeof payload.e !== 'number' || typeof payload.s !== 'string')
+  if (
+    typeof payload.k !== 'string' ||
+    typeof payload.e !== 'number' ||
+    typeof payload.s !== 'string'
+  )
     return null;
   if (Date.now() > payload.e) return null;
   const expected = createHmac('sha256', secret)
@@ -44,6 +48,7 @@ export function verifyLocalUploadToken(
     .digest('hex');
   const expectedBuf = Buffer.from(expected, 'hex');
   const actualBuf = Buffer.from(payload.s, 'hex');
-  if (expectedBuf.length !== actualBuf.length || !timingSafeEqual(expectedBuf, actualBuf)) return null;
+  if (expectedBuf.length !== actualBuf.length || !timingSafeEqual(expectedBuf, actualBuf))
+    return null;
   return payload.k;
 }

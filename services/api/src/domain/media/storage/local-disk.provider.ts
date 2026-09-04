@@ -33,7 +33,9 @@ export class LocalDiskStorageProvider implements ObjectStorageProvider {
   constructor(config: ConfigService) {
     this.baseDir = config.get<string>('mediaLocalDir', '/data/media');
     this.secret = config.getOrThrow<string>('jwtAccessSecret');
-    this.publicUrl = config.get<string>('apiPublicUrl', 'http://localhost:4000/api/v1').replace(/\/$/, '');
+    this.publicUrl = config
+      .get<string>('apiPublicUrl', 'http://localhost:4000/api/v1')
+      .replace(/\/$/, '');
   }
 
   private objectPath(objectKey: string): string {

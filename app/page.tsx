@@ -10,7 +10,8 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 const homeForRole = (role: string) => {
   if (role === "ADMIN" || role === "SUPER_ADMIN") return "/admin/billing";
   if (role === "AGRICULTURE_EXPERT") return "/expert";
-  if (role === "GOVERNMENT_VIEWER" || role === "NGO_VIEWER") return "/government";
+  if (role === "GOVERNMENT_VIEWER" || role === "NGO_VIEWER")
+    return "/government";
   return "/dashboard";
 };
 
@@ -48,8 +49,16 @@ function HomeClient() {
     queueMicrotask(() => {
       const ref = searchParams.get("ref")?.trim();
       const rawSrc = searchParams.get("src")?.trim().toUpperCase();
-      const src = rawSrc && ACQUISITION_SOURCES.has(rawSrc) ? rawSrc : ref ? "REFERRAL" : undefined;
-      if ((ref || src) && (ref !== data.referral.code || src !== data.referral.source))
+      const src =
+        rawSrc && ACQUISITION_SOURCES.has(rawSrc)
+          ? rawSrc
+          : ref
+            ? "REFERRAL"
+            : undefined;
+      if (
+        (ref || src) &&
+        (ref !== data.referral.code || src !== data.referral.source)
+      )
         updateSection("referral", {
           code: ref ?? data.referral.code,
           source: src ?? data.referral.source,
@@ -63,8 +72,14 @@ function HomeClient() {
     return (
       <main className="grid min-h-dvh place-items-center bg-[#f8f4ea]">
         <div className="text-center">
-          <BrandLogo compact priority className="mx-auto size-16 animate-pulse drop-shadow-lg" />
-          <p className="mt-4 text-sm font-bold text-brand-dark">Opening FasalGuard AI...</p>
+          <BrandLogo
+            compact
+            priority
+            className="mx-auto size-16 animate-pulse drop-shadow-lg"
+          />
+          <p className="mt-4 text-sm font-bold text-brand-dark">
+            Opening FasalGuard AI...
+          </p>
         </div>
       </main>
     );
@@ -86,11 +101,12 @@ function HomeClient() {
           Gemini-powered crop intelligence
         </p>
         <h1 className="mt-3 text-3xl font-extrabold leading-tight text-brand-dark sm:text-5xl">
-          Know what&apos;s happening in your fields — before it costs you the harvest.
+          Know what&apos;s happening in your fields — before it costs you the
+          harvest.
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-muted sm:text-base">
-          FasalGuard AI monitors your farm with satellite data, weather risk and Gemini-powered
-          investigations, and tells you exactly what to do next.
+          FasalGuard AI monitors your farm with satellite data, weather risk and
+          Gemini-powered investigations, and tells you exactly what to do next.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
@@ -115,8 +131,10 @@ function HomeClient() {
           detail="Satellite and weather signals tracked automatically for every field."
         />
         <Feature
-          title="Gemini farm investigations"
-          detail="AI-powered analysis that explains what's happening and what to do about it."
+          tag="Live mandi rates"
+          title="Smart market intelligence"
+          detail="Compare dated crop rates across mandis and understand low, average and high prices per 40 KG."
+          href="/market-intelligence"
         />
         <Feature
           title="Early risk alerts"
@@ -127,11 +145,56 @@ function HomeClient() {
   );
 }
 
-function Feature({ title, detail }: { title: string; detail: string }) {
+function Feature({
+  title,
+  detail,
+  tag,
+  href,
+}: {
+  title: string;
+  detail: string;
+  tag?: string;
+  href?: string;
+}) {
+  const content = (
+    <>
+      {tag && (
+        <span className="mb-3 inline-flex rounded-full bg-brand-soft px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[.12em] text-brand">
+          {tag}
+        </span>
+      )}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-bold text-brand-dark">{title}</h2>
+          <p className="mt-2 text-xs leading-5 text-muted">{detail}</p>
+        </div>
+        {href && (
+          <span
+            aria-hidden="true"
+            className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-brand text-sm text-white transition-transform group-hover:translate-x-0.5"
+          >
+            →
+          </span>
+        )}
+      </div>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={`${title}: open Market Intelligence`}
+        className="group rounded-2xl border border-brand/15 bg-white p-5 text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:border-brand/35 hover:shadow-[0_16px_35px_rgba(7,95,61,.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+      >
+        {content}
+      </Link>
+    );
+  }
+
   return (
     <article className="rounded-2xl border border-brand/10 bg-white p-5 text-left shadow-sm">
-      <h2 className="text-sm font-bold text-brand-dark">{title}</h2>
-      <p className="mt-2 text-xs leading-5 text-muted">{detail}</p>
+      {content}
     </article>
   );
 }

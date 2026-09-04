@@ -4,6 +4,8 @@ export interface VisionInput {
   image: Buffer;
   contentType: string;
   category: ScanImageCategory;
+  /** Active field crop used to select the correct crop-specific model. */
+  cropName?: string | null;
 }
 export interface VisionQuality {
   acceptable: boolean;

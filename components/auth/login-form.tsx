@@ -8,14 +8,45 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 
 type FormErrors = { identifier?: string };
 
-function destination(role: string) {
+const FARMER_RETURN_PATHS = new Set([
+  "/dashboard",
+  "/farms",
+  "/fields",
+  "/scan",
+  "/satellite",
+  "/weather",
+  "/market-intelligence",
+  "/radar",
+  "/alerts",
+  "/tasks",
+  "/consultations",
+  "/assistant",
+  "/learning",
+  "/reports",
+]);
+
+function safeFarmerReturnTo(returnTo?: string): string | null {
+  if (!returnTo || !returnTo.startsWith("/") || returnTo.startsWith("//"))
+    return null;
+  try {
+    const url = new URL(returnTo, "https://fasalguard.local");
+    const allowed = [...FARMER_RETURN_PATHS].some(
+      (path) => url.pathname === path || url.pathname.startsWith(`${path}/`),
+    );
+    return allowed ? `${url.pathname}${url.search}${url.hash}` : null;
+  } catch {
+    return null;
+  }
+}
+
+function destination(role: string, returnTo?: string) {
   if (role === "AGRICULTURE_EXPERT") return "/expert";
   if (role === "GOVERNMENT_VIEWER" || role === "NGO_VIEWER")
     return "/government";
-  return "/dashboard";
+  return safeFarmerReturnTo(returnTo) ?? "/dashboard";
 }
 
-export function LoginForm() {
+export function LoginForm({ returnTo }: { returnTo?: string }) {
   const router = useRouter();
   const errorId = useId();
   const [submitting, setSubmitting] = useState(false);
@@ -35,7 +66,7 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       const { user } = await authClient.login(identifier);
-      router.replace(destination(user.role));
+      router.replace(destination(user.role, returnTo));
       router.refresh();
     } catch (error) {
       setFormError(
