@@ -46,6 +46,9 @@ export interface AppConfiguration {
   geospatialAiUrl: string;
   amisSyncEnabled: boolean;
   amisScrapeTimeoutMs: number;
+  amisBaseUrl: string;
+  amisTimeoutSeconds: number;
+  amisRequestDelaySeconds: number;
   marketCacheTtlSeconds: number;
   satelliteMonitoringIntervalHours: number;
   satelliteProviderRequestsPerMinute: number;
@@ -148,6 +151,9 @@ export default function configuration(): AppConfiguration {
     geospatialAiUrl: process.env.GEOSPATIAL_AI_URL ?? 'http://localhost:8000',
     amisSyncEnabled: process.env.AMIS_SYNC_ENABLED === 'true',
     amisScrapeTimeoutMs: Number(process.env.AMIS_SCRAPE_TIMEOUT_MS ?? 120000),
+    amisBaseUrl: process.env.AMIS_BASE_URL ?? 'http://www.amis.pk',
+    amisTimeoutSeconds: Number(process.env.AMIS_TIMEOUT_SECONDS ?? 30),
+    amisRequestDelaySeconds: Number(process.env.AMIS_REQUEST_DELAY_SECONDS ?? 1),
     marketCacheTtlSeconds: Number(process.env.MARKET_CACHE_TTL_SECONDS ?? 3600),
     satelliteMonitoringIntervalHours: Number(process.env.SATELLITE_MONITORING_INTERVAL_HOURS ?? 8),
     satelliteProviderRequestsPerMinute: Number(

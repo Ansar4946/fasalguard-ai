@@ -1,12 +1,22 @@
 import { ConfigService } from '@nestjs/config';
 import { AmisMarketPriceProvider } from '../src/domain/market/providers/amis-market-price.provider';
 
-const config = (enabled: boolean): ConfigService =>
+const fixture = `
+<html><body><table>
+  <tr><td>Dated:03-09-2026</td><td>Graph</td><td>Min</td><td>Max</td><td>FQP</td></tr>
+  <tr><td><b>1 <a href="ViewPrices.aspx">Faisalabad</a></b></td><td>Graph</td><td>11,500</td><td>12000</td><td>11750</td></tr>
+</table></body></html>`;
+
+const config = (enabled: boolean, baseUrl = 'http://www.amis.pk'): ConfigService =>
   new ConfigService({
     amisSyncEnabled: enabled,
-    amisScrapeTimeoutMs: 5000,
-    geospatialAiUrl: 'http://geospatial-ai:8000',
+    amisBaseUrl: baseUrl,
+    amisTimeoutSeconds: 5,
+    amisRequestDelaySeconds: 0,
   });
+
+const htmlResponse = (html: string): Response =>
+  new Response(html, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 
 describe('AmisMarketPriceProvider', () => {
   it('cannot be used unless an operator explicitly enables AMIS synchronization', async () => {
@@ -17,48 +27,31 @@ describe('AmisMarketPriceProvider', () => {
     });
   });
 
-  it('normalizes the internal scraper boundary without exposing upstream details', async () => {
-    const fetcher = jest.fn().mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          provider: 'AMIS',
-          fetchedAt: '2026-09-03T03:00:00.000Z',
-          records: [
-            {
-              crop: 'Wheat',
-              market: 'Lahore Mandi',
-              district: 'Lahore',
-              province: 'Punjab',
-              minimumPrice: 4000,
-              maximumPrice: 4300,
-              averagePrice: 4150,
-              quantity: 100,
-              unit: 'KG',
-              source: 'AMIS',
-              priceDate: '2026-09-03',
-              sourceIdentifier: 'AMIS:Wheat:Lahore Mandi:2026-09-03',
-              sourceUrl: 'http://www.amis.pk/ViewPrices.aspx?searchType=0&commodityId=1',
-            },
-          ],
-        }),
-    });
+  it('fetches and normalizes AMIS HTML without the Python service', async () => {
+    const fetcher = jest.fn().mockImplementation(() => Promise.resolve(htmlResponse(fixture)));
     const provider = new AmisMarketPriceProvider(config(true), fetcher);
 
-    await expect(provider.fetchCurrentPrices()).resolves.toEqual([
-      expect.objectContaining({ crop: 'Wheat', market: 'Lahore Mandi', averagePrice: 4150 }),
-    ]);
-    expect(fetcher).toHaveBeenCalledWith(
-      'http://geospatial-ai:8000/v1/market/amis/prices',
-      expect.objectContaining({ method: 'POST' }),
+    const records = await provider.fetchCurrentPrices();
+    expect(records).toHaveLength(5);
+    expect(records[0]).toEqual(
+      expect.objectContaining({ crop: 'Wheat', market: 'Faisalabad', averagePrice: 11750 }),
+    );
+    expect(fetcher).toHaveBeenCalledTimes(5);
+    expect(String(fetcher.mock.calls[0]?.[0])).toBe(
+      'http://www.amis.pk/ViewPrices.aspx?searchType=0&commodityId=1',
     );
   });
 
-  it('rejects malformed scraper responses', async () => {
-    const fetcher = jest.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ records: {} }),
+  it('rejects an unapproved AMIS origin', async () => {
+    const provider = new AmisMarketPriceProvider(config(true, 'https://example.com'), jest.fn());
+    await expect(provider.fetchCurrentPrices()).rejects.toMatchObject({
+      code: 'AMIS_INVALID_ORIGIN',
+      retryable: false,
     });
+  });
+
+  it('rejects malformed AMIS HTML', async () => {
+    const fetcher = jest.fn().mockResolvedValue(htmlResponse('<html><table></table></html>'));
     const provider = new AmisMarketPriceProvider(config(true), fetcher);
     await expect(provider.fetchCurrentPrices()).rejects.toMatchObject({
       code: 'AMIS_INVALID_RESPONSE',

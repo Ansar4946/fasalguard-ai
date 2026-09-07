@@ -23,7 +23,7 @@ describe('MarketScheduler', () => {
     const [name, data, options] = add.mock.calls[0] as [string, MarketSyncJob, { jobId: string }];
     expect(name).toBe('sync_mandi_rates');
     expect(Date.parse(data.requestedAt)).not.toBeNaN();
-    expect(options.jobId).toMatch(/^sync_mandi_rates-\d{4}-\d{2}-\d{2}$/);
+    expect(options.jobId).toMatch(/^sync_mandi_rates-\d{4}-\d{2}-\d{2}-direct-v1$/);
   });
 
   it('registers a persistent BullMQ schedule for 8 AM Pakistan time', async () => {
@@ -59,7 +59,7 @@ describe('MarketScheduler', () => {
       MarketSyncJob,
       { jobId: string },
     ];
-    expect(options).toMatchObject({ jobId: 'sync_mandi_rates-2026-09-04' });
+    expect(options).toMatchObject({ jobId: 'sync_mandi_rates-2026-09-04-direct-v1' });
   });
 
   it('waits for the regular cron when the API starts before 8 AM Karachi time', async () => {

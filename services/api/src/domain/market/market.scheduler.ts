@@ -5,6 +5,7 @@ import type { Queue } from 'bullmq';
 
 export const MARKET_QUEUE = 'market';
 export const MARKET_DAILY_SCHEDULER_ID = 'sync_mandi_rates-daily-0800-pkt';
+const MARKET_SYNC_IMPLEMENTATION = 'direct-v1';
 export interface MarketSyncJob {
   requestedAt: string;
 }
@@ -69,7 +70,9 @@ export class MarketScheduler implements OnApplicationBootstrap {
       'sync_mandi_rates',
       { requestedAt: now.toISOString() },
       {
-        jobId: `sync_mandi_rates-${karachiDate}`,
+        // The implementation suffix allows a repaired ingestion pipeline to run once even when
+        // today's older failed job is still retained by BullMQ.
+        jobId: `sync_mandi_rates-${karachiDate}-${MARKET_SYNC_IMPLEMENTATION}`,
         attempts: 4,
         backoff: { type: 'exponential', delay: 30_000 },
         removeOnComplete: 100,
