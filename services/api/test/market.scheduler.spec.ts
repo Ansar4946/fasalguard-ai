@@ -26,7 +26,7 @@ describe('MarketScheduler', () => {
     expect(options.jobId).toMatch(/^sync_mandi_rates-\d{4}-\d{2}-\d{2}-direct-v1$/);
   });
 
-  it('registers a persistent BullMQ schedule for 8 AM Pakistan time', async () => {
+  it('registers persistent morning and afternoon checks in Pakistan time', async () => {
     const upsertJobScheduler = jest.fn().mockResolvedValue(undefined);
     const queue = { upsertJobScheduler } as unknown as Queue<MarketSyncJob>;
     const scheduler = new MarketScheduler(queue, new ConfigService({ amisSyncEnabled: true }));
@@ -40,7 +40,7 @@ describe('MarketScheduler', () => {
       { name: string; opts: { attempts: number } },
     ];
     expect(schedulerId).toBe(MARKET_DAILY_SCHEDULER_ID);
-    expect(repeat).toEqual({ pattern: '0 0 8 * * *', tz: 'Asia/Karachi' });
+    expect(repeat).toEqual({ pattern: '0 0 8,14 * * *', tz: 'Asia/Karachi' });
     expect(template.name).toBe('sync_mandi_rates');
     expect(template.opts.attempts).toBe(4);
   });

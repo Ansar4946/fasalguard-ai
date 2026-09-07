@@ -30,6 +30,13 @@ describe('AMIS HTML parser', () => {
     expect(normalizeMarketName('12 MandiBahaudin')).toBe('Mandi Bahauddin');
   });
 
+  it('removes the malformed non-breaking-space marker returned by AMIS', () => {
+    const html = fixture.replace('Faisalabad</a>', '&Nbsp Faisalabad</a>');
+    expect(parseAmisCommodityPage(html, 'Wheat', 'http://www.amis.pk')[0]?.market).toBe(
+      'Faisalabad',
+    );
+  });
+
   it('rejects a page without an observation date', () => {
     expect(() => parseAmisCommodityPage('<html></html>', 'Wheat', 'http://www.amis.pk')).toThrow(
       AmisParseError,

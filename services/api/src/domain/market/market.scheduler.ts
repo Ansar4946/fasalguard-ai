@@ -31,7 +31,9 @@ export class MarketScheduler implements OnApplicationBootstrap {
     if (!this.config.get<boolean>('amisSyncEnabled', false)) return false;
     await this.queue.upsertJobScheduler(
       MARKET_DAILY_SCHEDULER_ID,
-      { pattern: '0 0 8 * * *', tz: 'Asia/Karachi' },
+      // AMIS can publish after the morning run. The afternoon check captures a delayed
+      // observation while keeping the upstream request frequency deliberately low.
+      { pattern: '0 0 8,14 * * *', tz: 'Asia/Karachi' },
       {
         name: 'sync_mandi_rates',
         data: { requestedAt: now.toISOString() },
