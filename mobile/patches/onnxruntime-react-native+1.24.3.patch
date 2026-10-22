@@ -1,0 +1,25 @@
+diff --git a/node_modules/onnxruntime-react-native/android/build.gradle b/node_modules/onnxruntime-react-native/android/build.gradle
+index 41b4359..0e42398 100644
+--- a/node_modules/onnxruntime-react-native/android/build.gradle
++++ b/node_modules/onnxruntime-react-native/android/build.gradle
+@@ -247,7 +247,8 @@ dependencies {
+     extractLibs "com.microsoft.onnxruntime:onnxruntime-android:latest.integration@aar"
+   }
+ 
+-  if (VersionNumber.parse(REACT_NATIVE_VERSION) < VersionNumber.parse("0.71")) {
++  // VersionNumber was removed in Gradle 9; the React Native major version is 0, so compare the minor.
++  if (REACT_NATIVE_MINOR_VERSION < 71) {
+     extractLibs "com.facebook.fbjni:fbjni:+:headers"
+     extractLibs "com.facebook.fbjni:fbjni:+"
+   }
+diff --git a/node_modules/onnxruntime-react-native/react-native.config.js b/node_modules/onnxruntime-react-native/react-native.config.js
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/node_modules/onnxruntime-react-native/react-native.config.js
+@@ -0,0 +1,5 @@
++// Added by patches/onnxruntime-react-native+1.24.3.patch.
++// The package ships a legacy unimodule.json, which makes expo-modules-autolinking treat it as an
++// Expo module that conflicts with its Gradle project and silently skip autolinking. An explicit
++// React Native config makes it link as a normal React Native library (OnnxruntimePackage).
++module.exports = { dependency: { platforms: { android: {} } } };

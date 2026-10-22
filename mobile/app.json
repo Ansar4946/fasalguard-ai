@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Fasal Guard",
+    "slug": "fasalguard-mobile",
+    "version": "0.1.0",
+    "platforms": ["android", "ios"],
+    "android": { "package": "pk.fasalguard.mobile", "allowBackup": false },
+    "plugins": [
+      "expo-secure-store",
+      "./plugins/with-sqlcipher-openssl",
+      "expo-notifications",
+      ["expo-sqlite", { "useSQLCipher": true }],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose crop photos for local screening.",
+          "cameraPermission": "Capture crop photos for local screening.",
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "ios": { "bundleIdentifier": "pk.fasalguard.mobile" }
+  }
+}
