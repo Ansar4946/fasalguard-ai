@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element -- blob URLs are temporary local previews. */
+/* eslint-disable @next/next/no-img-element -- data-URL thumbnails are local previews. */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -18,8 +18,68 @@ const slots: Slot[] = [
   { kind: "whole-plant", title: "Whole Plant", help: "Show the full plant and symptom spread.", required: false, category: "WHOLE_PLANT" },
   { kind: "field-view", title: "Wider Field View", help: "Show nearby plants and the affected zone.", required: false, category: "FIELD_CONTEXT" },
 ];
-const maxBytes = 10 * 1024 * 1024;
+/** Raw files up to this size are accepted; they are re-encoded on the device before upload. */
+const maxSourceBytes = 40 * 1024 * 1024;
+const maxUploadBytes = 10 * 1024 * 1024;
+/** Matches the API's IMAGE_DIMENSIONS_TOO_SMALL check (crop-scan.processor.ts). */
+const minEdgePixels = 320;
+const maxEdgePixels = 2048;
+const thumbnailEdgePixels = 320;
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+type UploadStage = "optimising" | "uploading" | "verifying" | "attaching";
+const stageLabel: Record<UploadStage, string> = {
+  optimising: "Optimising photo…",
+  uploading: "Uploading…",
+  verifying: "Verifying upload…",
+  attaching: "Adding to scan…",
+};
+
+class PhotoError extends Error {}
+
+function decode(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new PhotoError("This photo could not be read. Try another image."));
+    };
+    image.src = url;
+  });
+}
+
+function draw(image: HTMLImageElement, maxEdge: number): HTMLCanvasElement {
+  const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(image.naturalWidth * scale);
+  canvas.height = Math.round(image.naturalHeight * scale);
+  canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+/**
+ * Phone cameras produce 4–12 MB photos that are slow on rural connections. Re-encoding to a
+ * 2048px JPEG keeps far more detail than the vision model uses while cutting upload time.
+ */
+async function preparePhoto(file: File): Promise<{ file: File; thumbnail: string }> {
+  const image = await decode(file);
+  if (Math.min(image.naturalWidth, image.naturalHeight) < minEdgePixels)
+    throw new PhotoError(
+      `This photo is too small (${image.naturalWidth}×${image.naturalHeight}). Use one at least ${minEdgePixels}px on each side.`,
+    );
+  const thumbnail = draw(image, thumbnailEdgePixels).toDataURL("image/jpeg", 0.7);
+  const needsResize = Math.max(image.naturalWidth, image.naturalHeight) > maxEdgePixels;
+  if (!needsResize && file.size <= maxUploadBytes) return { file, thumbnail };
+  const blob = await new Promise<Blob | null>((resolve) => draw(image, maxEdgePixels).toBlob(resolve, "image/jpeg", 0.88));
+  if (!blob || blob.size > maxUploadBytes) throw new PhotoError("This photo is too large to upload. Try another image.");
+  const name = `${file.name.replace(/\.[^.]+$/, "")}.jpg`;
+  return { file: new File([blob], name, { type: "image/jpeg" }), thumbnail };
+}
 
 async function sha256Hex(file: File): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
@@ -27,8 +87,9 @@ async function sha256Hex(file: File): Promise<string> {
 }
 
 /** Real presign → PUT → complete against the actual media API — no mock, no local-only preview. */
-async function uploadReal(file: File): Promise<string> {
+async function uploadReal(file: File, onStage: (stage: UploadStage) => void): Promise<string> {
   const checksum = await sha256Hex(file);
+  onStage("uploading");
   const presignRes = await fetch("/api/uploads/presign", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -38,6 +99,7 @@ async function uploadReal(file: File): Promise<string> {
   const { media, upload } = (await presignRes.json()) as { media: { id: string }; upload: { url: string; headers: Record<string, string> } };
   const putRes = await fetch(upload.url, { method: "PUT", headers: upload.headers, body: file });
   if (!putRes.ok) throw new Error("The photo could not be uploaded.");
+  onStage("verifying");
   const completeRes = await fetch("/api/uploads/complete", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -58,6 +120,7 @@ export function ImageUpload({
 }) {
   const [errors, setErrors] = useState<Partial<Record<SlotKind, string>>>({});
   const [cameraSlot, setCameraSlot] = useState<SlotKind | null>(null);
+  const [stages, setStages] = useState<Partial<Record<SlotKind, UploadStage>>>({});
   const imagesRef = useRef(images);
   useEffect(() => {
     imagesRef.current = images;
@@ -72,28 +135,39 @@ export function ImageUpload({
     if (!file) return;
     let error = "";
     if (!allowed.has(file.type)) error = "Choose a JPEG, PNG, or WebP image.";
-    else if (file.size > maxBytes) error = "Image must be 10 MB or smaller.";
+    else if (file.size > maxSourceBytes) error = "This photo is too large. Choose one under 40 MB.";
     if (error) {
       setErrors((current) => ({ ...current, [kind]: error }));
       return;
     }
-    const previous = imagesRef.current.find((image) => image.id === kind);
-    if (previous?.previewUrl.startsWith("blob:")) URL.revokeObjectURL(previous.previewUrl);
+    setErrors((current) => ({ ...current, [kind]: undefined }));
+    setStages((current) => ({ ...current, [kind]: "optimising" }));
+    let prepared: { file: File; thumbnail: string };
+    try {
+      prepared = await preparePhoto(file);
+    } catch (cause) {
+      setStages((current) => ({ ...current, [kind]: undefined }));
+      setErrors((current) => ({
+        ...current,
+        [kind]: cause instanceof PhotoError ? cause.message : "This photo could not be prepared.",
+      }));
+      return;
+    }
     const category = slots.find((s) => s.kind === kind)!.category;
     const placeholder: ScanImage = {
       id: kind,
       name: file.name,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl: prepared.thumbnail,
       category,
       mediaId: null,
       uploadStatus: "uploading",
     };
     commit([...imagesRef.current.filter((image) => image.id !== kind), placeholder]);
-    setErrors((current) => ({ ...current, [kind]: undefined }));
 
     try {
-      const mediaId = await uploadReal(file);
+      const mediaId = await uploadReal(prepared.file, (stage) => setStages((current) => ({ ...current, [kind]: stage })));
       const uploaded: ScanImage = { ...placeholder, mediaId, uploadStatus: "done" };
+      setStages((current) => ({ ...current, [kind]: "attaching" }));
       await onUploaded(uploaded);
       commit(imagesRef.current.map((image) => (image.id === kind ? uploaded : image)));
     } catch (cause) {
@@ -104,12 +178,12 @@ export function ImageUpload({
         ),
       );
       setErrors((current) => ({ ...current, [kind]: message }));
+    } finally {
+      setStages((current) => ({ ...current, [kind]: undefined }));
     }
   }
 
   function remove(kind: SlotKind): void {
-    const image = imagesRef.current.find((item) => item.id === kind);
-    if (image?.previewUrl.startsWith("blob:")) URL.revokeObjectURL(image.previewUrl);
     commit(imagesRef.current.filter((item) => item.id !== kind));
     setErrors((current) => ({ ...current, [kind]: undefined }));
   }
@@ -123,6 +197,7 @@ export function ImageUpload({
             slot={slot}
             image={images.find((image) => image.id === slot.kind)}
             error={errors[slot.kind]}
+            stage={stages[slot.kind]}
             onFile={(file) => void add(slot.kind, file)}
             onRemove={() => remove(slot.kind)}
             onOpenCamera={() => setCameraSlot(slot.kind)}
@@ -147,6 +222,7 @@ function ImageSlot({
   slot,
   image,
   error,
+  stage,
   onFile,
   onRemove,
   onOpenCamera,
@@ -154,13 +230,37 @@ function ImageSlot({
   slot: Slot;
   image?: ScanImage;
   error?: string;
+  stage?: UploadStage;
   onFile: (file?: File) => void;
   onRemove: () => void;
   onOpenCamera: () => void;
 }) {
   const deviceRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const busy = Boolean(stage);
   return (
-    <article className={`flex min-h-[330px] flex-col overflow-hidden rounded-2xl border bg-white shadow-sm ${error ? "border-danger" : "border-brand/10"}`}>
+    <article
+      onDragOver={(event) => {
+        if (busy) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setDragging(false);
+        if (!busy) onFile(event.dataTransfer.files?.[0]);
+      }}
+      className={`flex min-h-[330px] flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition duration-200 ${
+        dragging
+          ? "scale-[1.01] border-2 border-dashed border-brand bg-brand-soft/40"
+          : error
+            ? "border-danger"
+            : image?.uploadStatus === "done"
+              ? "border-brand/40"
+              : "border-brand/10"
+      }`}
+    >
       <header className="flex min-h-12 items-center justify-between border-b border-brand/5 px-3">
         <h2 className="text-[11px] font-extrabold">{slot.title}</h2>
         <span className={`size-4 rounded-full border-2 ${slot.required ? "border-brand bg-brand" : "border-border"}`}>
@@ -170,10 +270,15 @@ function ImageSlot({
       {image ? (
         <>
           <div className="relative flex-1 bg-surface-soft">
-            <img src={image.previewUrl} alt={`${slot.title} preview`} className="absolute inset-0 size-full object-cover" />
-            {image.uploadStatus === "uploading" && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                <span className="size-6 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-label="Uploading" />
+            {image.previewUrl ? (
+              <img src={image.previewUrl} alt={`${slot.title} preview`} className="fg-fade-in absolute inset-0 size-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 grid place-items-center p-3 text-center text-[10px] font-bold text-muted">{image.name}</div>
+            )}
+            {(image.uploadStatus === "uploading" || busy) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/45" role="status">
+                <span className="size-6 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />
+                <span className="text-[10px] font-bold text-white">{stage ? stageLabel[stage] : "Uploading…"}</span>
               </div>
             )}
             {image.uploadStatus === "done" && (
@@ -186,13 +291,15 @@ function ImageSlot({
           <div className="flex gap-2 p-3">
             <button
               type="button"
+              disabled={busy}
               onClick={() => deviceRef.current?.click()}
-              className="min-h-9 flex-1 rounded-lg border border-brand text-[10px] font-bold text-brand"
+              className="min-h-9 flex-1 rounded-lg border border-brand text-[10px] font-bold text-brand disabled:opacity-40"
             >
-              {image.uploadStatus === "failed" ? "Retry" : "Replace"}
+              {image.uploadStatus === "failed" ? "Choose again" : "Replace"}
             </button>
             <button
               type="button"
+              disabled={busy}
               onClick={onRemove}
               aria-label={`Remove ${slot.title}`}
               className="grid size-9 place-items-center rounded-lg border border-danger text-danger"
@@ -202,15 +309,21 @@ function ImageSlot({
           </div>
         </>
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center p-4 text-center">
-          <span className="grid size-12 place-items-center rounded-full bg-brand-soft text-brand">
+        <div className="relative flex flex-1 flex-col items-center justify-center p-4 text-center">
+          {busy && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-white/85" role="status">
+              <span className="size-6 animate-spin rounded-full border-2 border-brand/30 border-t-brand" aria-hidden="true" />
+              <span className="text-[10px] font-bold text-brand">{stage ? stageLabel[stage] : ""}</span>
+            </div>
+          )}
+          <span className={`grid size-12 place-items-center rounded-full bg-brand-soft text-brand ${dragging ? "animate-bounce" : ""}`}>
             <UploadIcon />
           </span>
-          <p className="mt-4 text-xs font-extrabold">Drag and drop or Click to upload</p>
+          <p className="mt-4 text-xs font-extrabold">{dragging ? "Drop the photo here" : "Drag a photo here, or choose below"}</p>
           <p className="mt-2 text-[9px] leading-4 text-muted">
             {slot.help}
             <br />
-            JPEG, PNG or WebP · max 10 MB
+            JPEG, PNG or WebP · large photos are optimised automatically
           </p>
           <div className="mt-5 grid w-full gap-2">
             <button

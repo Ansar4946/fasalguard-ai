@@ -141,7 +141,7 @@ export function FarmDetails() {
 
   return (
     <main className="relative min-h-svh overflow-x-clip bg-[#f8f4ea] px-3 py-4 min-[400px]:px-4 sm:px-6 sm:py-6 lg:py-8">
-      <div className="relative mx-auto w-full max-w-5xl 2xl:max-w-6xl">
+      <div className="fg-rise relative mx-auto w-full max-w-5xl 2xl:max-w-6xl">
         <header>
           <div className="flex items-center justify-between">
             <Link
@@ -151,10 +151,11 @@ export function FarmDetails() {
               <BrandLogo className="h-auto w-36" />
             </Link>
             <Link
-              href="/dashboard"
+              href="/"
+              title="Your answers stay saved on this device"
               className="min-h-9 content-center rounded-lg px-3 text-[10px] font-semibold text-muted hover:bg-white"
             >
-              Save &amp; Exit
+              Save &amp; finish later
             </Link>
           </div>
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#dce8f3]">
@@ -184,9 +185,9 @@ export function FarmDetails() {
               id="experience-heading"
             />
             <div className="mt-5">
-              <FieldLabel htmlFor="experience">Years of experience</FieldLabel>
+              <FieldLabel htmlFor="experienceYears">Years of experience</FieldLabel>
               <select
-                id="experience"
+                id="experienceYears"
                 value={draft.experienceYears}
                 onChange={(event) =>
                   update("experienceYears", event.target.value)

@@ -59,7 +59,7 @@ async function poll(
 
 export default function AnalysisPage() {
   const router = useRouter();
-  const { session, hydrated } = useScanSession();
+  const { session, hydrated, updateSession } = useScanSession();
   const [scan, setScan] = useState<CropScan | null>(null);
   const [status, setStatus] = useState<
     "processing" | "offline" | "failed" | "complete"
@@ -69,7 +69,7 @@ export default function AnalysisPage() {
   const started = useRef(false);
   const pollAttempts = useRef({ count: 0 });
 
-  const runAnalysis = useCallback(async (): Promise<void> => {
+  const runAnalysis = useCallback(async (force = false): Promise<void> => {
     const current = ++runId.current;
     setError(undefined);
     pollAttempts.current = { count: 0 };
@@ -83,6 +83,25 @@ export default function AnalysisPage() {
       return;
     }
     setStatus("processing");
+    // Revisiting this page (back button, reload, reconnect) must not queue another analysis:
+    // only start one when the scan has not been analysed or is being retried after follow-up.
+    const existing = await fetch(`/api/crop-scans/${session.backendScanId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<CropScan>) : null))
+      .catch(() => null);
+    if (current !== runId.current) return;
+    if (existing) setScan(existing);
+    const alreadyRunning = existing && (existing.status === "ANALYSING" || existing.status === "IMAGE_VALIDATION");
+    const alreadyDone = existing && terminalStatuses.has(existing.status) && (!force || existing.status !== "NEEDS_FOLLOW_UP");
+    if (alreadyRunning || alreadyDone) {
+      await poll(session.backendScanId, current, {
+        isCurrent: (token) => token === runId.current,
+        attempts: pollAttempts.current,
+        setScan,
+        setStatus,
+        setError,
+      });
+      return;
+    }
     const res = await fetch(
       `/api/crop-scans/${session.backendScanId}/analyse`,
       { method: "POST" },
@@ -108,7 +127,7 @@ export default function AnalysisPage() {
   useEffect(() => {
     if (!hydrated || started.current) return;
     started.current = true;
-    void runAnalysis();
+    void runAnalysis(false);
   }, [hydrated, runAnalysis]);
 
   useEffect(() => {
@@ -116,7 +135,7 @@ export default function AnalysisPage() {
       runId.current += 1;
       setStatus("offline");
     };
-    const online = () => void runAnalysis();
+    const online = () => void runAnalysis(false);
     window.addEventListener("offline", offline);
     window.addEventListener("online", online);
     return () => {
@@ -159,6 +178,18 @@ export default function AnalysisPage() {
         : 30;
   const needsFollowUp =
     status === "complete" && scan?.status === "NEEDS_FOLLOW_UP";
+  const readyForResults = status === "complete" && !needsFollowUp;
+  const leaf =
+    session.images.find((image) => image.id === "leaf-closeup") ?? session.images[0];
+
+  // Advance on its own once screening finishes — the farmer shouldn't have to hunt for a button.
+  useEffect(() => {
+    if (!readyForResults) return;
+    updateSession({ step: "results", progress: 100 });
+    const timer = window.setTimeout(() => router.push("/scan/results"), 1200);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readyForResults]);
   const qualityFailure = Boolean(
     scan?.failureCode &&
     /TOO_DARK|OVEREXPOSED|BLURRY|IMAGE_DIMENSIONS|CORRUPT|IMAGE_QUALITY/.test(
@@ -196,21 +227,30 @@ export default function AnalysisPage() {
                 router.push("/scan/upload");
                 return;
               }
-              void runAnalysis();
+              void runAnalysis(true);
             }}
           />
           <aside className="space-y-3">
             <section className="relative grid min-h-[310px] place-items-center overflow-hidden rounded-2xl bg-brand-dark p-6 text-center text-white shadow-sm">
               <div className="absolute inset-0 opacity-10 [background-image:radial-gradient(circle_at_center,white_1px,transparent_1px)] [background-size:18px_18px]" />
               <div className="relative">
-                <span className="mx-auto grid size-20 place-items-center rounded-full border border-white/30 text-4xl">
-                  ◉
-                </span>
+                <div className="relative mx-auto size-36 overflow-hidden rounded-2xl border border-white/25 bg-black/20">
+                  {leaf?.previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- local data-URL thumbnail
+                    <img src={leaf.previewUrl} alt="Leaf photo being analysed" className="size-full object-cover" />
+                  ) : (
+                    <span className="grid size-full place-items-center text-4xl">◉</span>
+                  )}
+                  {status === "processing" && <span className="fg-scan-line" aria-hidden="true" />}
+                  {readyForResults && (
+                    <span className="fg-pop absolute inset-0 grid place-items-center bg-brand/70 text-4xl font-extrabold">✓</span>
+                  )}
+                </div>
                 <p className="mt-5 text-[10px] font-extrabold uppercase tracking-[.2em] text-white/75">
-                  AI screening in progress
+                  {readyForResults ? "Screening complete" : status === "processing" ? "AI screening in progress" : "Screening paused"}
                 </p>
-                <p className="mt-2 text-[9px] text-brand-soft">
-                  {scan?.status ?? "Starting…"}
+                <p className="mt-2 text-[11px] text-brand-soft" aria-live="polite">
+                  {readyForResults ? "Opening your results…" : friendlyStatus(scan?.status)}
                 </p>
               </div>
               <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-white/10 bg-black/30 p-3">
@@ -267,7 +307,7 @@ export default function AnalysisPage() {
             ) : (
               <button
                 type="button"
-                onClick={() => void runAnalysis()}
+                onClick={() => void runAnalysis(true)}
                 className="mt-4 inline-flex min-h-10 items-center rounded-xl bg-brand px-5 text-xs font-bold text-white"
               >
                 Retry screening
@@ -286,7 +326,7 @@ export default function AnalysisPage() {
             Real AI screening — completes as soon as the model responds.
           </p>
           <button
-            disabled={status !== "complete" || needsFollowUp}
+            disabled={!readyForResults}
             onClick={() => router.push("/scan/results")}
             className="min-h-10 rounded-full bg-brand px-6 text-xs font-bold text-white disabled:bg-border disabled:text-muted"
           >
@@ -296,4 +336,21 @@ export default function AnalysisPage() {
       </main>
     </div>
   );
+}
+
+function friendlyStatus(status: CropScan["status"] | undefined): string {
+  switch (status) {
+    case undefined:
+    case "CREATED":
+    case "UPLOADING":
+      return "Sending your photos…";
+    case "IMAGE_VALIDATION":
+      return "Checking the photos are clear enough…";
+    case "ANALYSING":
+      return "Comparing your leaf with known crop conditions…";
+    case "NEEDS_FOLLOW_UP":
+      return "We need a little more from you";
+    default:
+      return "Finishing up…";
+  }
 }

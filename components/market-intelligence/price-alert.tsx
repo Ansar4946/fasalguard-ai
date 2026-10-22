@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { formatMarketPrice } from "@/features/market-intelligence/formatters";
-import { fixtureMarketService } from "@/features/market-intelligence/fixture-repository";
 
 export function PriceAlert({
   crop,
@@ -22,13 +21,6 @@ export function PriceAlert({
       setMessage("Enter a valid target price greater than zero.");
       return;
     }
-    await fixtureMarketService.createPriceAlert({
-      crop,
-      location: "Punjab, Pakistan",
-      targetPrice: value,
-      quantity,
-      unit: "KG",
-    });
     setMessage(
       `Preview only: an alert for ${formatMarketPrice(value)} was not saved. Backend alert delivery is not connected.`,
     );
@@ -50,7 +42,7 @@ export function PriceAlert({
           className="text-[10px] font-bold text-muted"
           htmlFor="target-market-price"
         >
-          Notify me when the demo price reaches
+          Preview a target price
         </label>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <div className="flex min-h-12 flex-1 items-center rounded-xl border border-brand/15 bg-surface-soft focus-within:ring-2 focus-within:ring-brand/25">

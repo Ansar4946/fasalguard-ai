@@ -10,10 +10,10 @@ export function MarketComparison({
   return (
     <article className="card p-4 sm:p-6">
       <p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-success">
-        Compare nearby
+        Compare reporting markets
       </p>
       <h2 className="mt-1 text-lg font-extrabold text-brand-dark">
-        Nearby mandi comparison
+        Same-date mandi comparison
       </h2>
       {ranked.length === 0 ? (
         <p className="mt-5 rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted">

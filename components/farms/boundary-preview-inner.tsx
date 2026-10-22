@@ -2,7 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Polygon, TileLayer } from "react-leaflet";
-import { fromGeoJsonPolygon, type GeoJsonPolygon } from "@/lib/geo/polygon";
+import { fromGeoJsonPolygon, polygonRings, type GeoJsonPolygon } from "@/lib/geo/polygon";
 
 export default function BoundaryPreviewInner({ boundary }: { boundary: GeoJsonPolygon }) {
   const points = fromGeoJsonPolygon(boundary);
@@ -25,7 +25,7 @@ export default function BoundaryPreviewInner({ boundary }: { boundary: GeoJsonPo
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Polygon positions={points} pathOptions={{ color: "#166534", fillOpacity: 0.2 }} />
+      <Polygon positions={polygonRings(boundary)} pathOptions={{ color: "#166534", fillOpacity: 0.2 }} />
     </MapContainer>
   );
 }

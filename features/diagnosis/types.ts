@@ -4,6 +4,7 @@ export type ScanImageCategory = "LEAF_FRONT" | "LEAF_BACK" | "WHOLE_PLANT" | "FI
 export interface ScanImage {
   id: string;
   name: string;
+  /** Small persisted data-URL thumbnail (survives reloads, unlike blob: URLs). */
   previewUrl: string;
   category: ScanImageCategory;
   mediaId: string | null;
@@ -17,6 +18,8 @@ export interface ScanSession {
   images: ScanImage[];
   step: ScanStep;
   progress: number;
+  /** Farmer's answers on the symptoms step, keyed by observation question. */
+  observations: Record<string, string>;
   updatedAt: string;
 }
 
@@ -32,6 +35,7 @@ export interface DiagnosisAlternative {
 export interface CropScan {
   id: string;
   fieldId: string | null;
+  fieldName: string | null;
   status: CropScanStatus;
   failureCode: string | null;
   createdAt: string;
@@ -42,4 +46,14 @@ export interface CropScan {
   isFirmDiagnosis: boolean | null;
   disclaimer: string | null;
   alternatives: DiagnosisAlternative[];
+}
+
+export type SeverityLevel = "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
+
+/** Subset of the deterministic severity assessment shown to farmers. */
+export interface SeverityAssessment {
+  severity: SeverityLevel;
+  calculatedScore: number;
+  expertEscalation: boolean;
+  escalationReasons: string[];
 }

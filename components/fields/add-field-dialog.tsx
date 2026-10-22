@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BoundaryPicker } from "@/components/farms/boundary-picker";
 import { toGeoJsonPolygon } from "@/lib/geo/polygon";
+import { growthStages, loadCrops, type CropOption } from "@/features/farms/crops";
 import type { FieldSummary } from "./types";
 
 interface Props {
@@ -22,8 +23,19 @@ export function AddFieldDialog({ farmId, farmName, open, onClose, onCreated }: P
   const titleId = useId();
   const [name, setName] = useState("");
   const [points, setPoints] = useState<[number, number][]>([]);
+  const [crops, setCrops] = useState<CropOption[] | null>(null);
+  const [cropId, setCropId] = useState("");
+  const [growthStage, setGrowthStage] = useState("");
+  const [sowingDate, setSowingDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open || crops) return;
+    let active = true;
+    void loadCrops().then((list) => { if (active) setCrops(list); });
+    return () => { active = false; };
+  }, [open, crops]);
 
   useEffect(() => {
     if (!open) return;
@@ -42,6 +54,9 @@ export function AddFieldDialog({ farmId, farmName, open, onClose, onCreated }: P
   function handleClose() {
     setName("");
     setPoints([]);
+    setCropId("");
+    setGrowthStage("");
+    setSowingDate("");
     setError("");
     setSubmitting(false);
     onClose();
@@ -63,7 +78,14 @@ export function AddFieldDialog({ farmId, farmName, open, onClose, onCreated }: P
       const response = await fetch(`/api/farms/${farmId}/fields`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), boundary: toGeoJsonPolygon(points) }),
+        body: JSON.stringify({
+          name: name.trim(),
+          boundary: toGeoJsonPolygon(points),
+          // The crop cycle drives crop-aware weather, risk and severity for this field.
+          currentCropCycle: cropId
+            ? { cropId, status: "active", growthStage: growthStage || undefined, sowingDate: sowingDate || undefined }
+            : undefined,
+        }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -134,6 +156,34 @@ export function AddFieldDialog({ farmId, farmName, open, onClose, onCreated }: P
                   <input id="field-farm" value={farmName} readOnly aria-readonly="true" className={`${inputClass} bg-surface-soft`} />
                 </label>
               </div>
+            </fieldset>
+
+            <fieldset>
+              <legend className="mb-4 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-wider text-brand">
+                <span className="size-2 rounded-full bg-brand" />
+                Current Crop
+              </legend>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <label className="block text-[11px] font-bold text-foreground" htmlFor="field-crop">
+                  Crop
+                  <select id="field-crop" value={cropId} onChange={(event) => setCropId(event.target.value)} className={inputClass} disabled={crops === null}>
+                    <option value="">{crops === null ? "Loading crops…" : "No crop yet"}</option>
+                    {crops?.map((crop) => <option key={crop.id} value={crop.id}>{crop.name}</option>)}
+                  </select>
+                </label>
+                <label className="block text-[11px] font-bold text-foreground" htmlFor="field-stage">
+                  Growth stage
+                  <select id="field-stage" value={growthStage} onChange={(event) => setGrowthStage(event.target.value)} className={inputClass} disabled={!cropId}>
+                    <option value="">Not sure</option>
+                    {growthStages.map((stage) => <option key={stage}>{stage}</option>)}
+                  </select>
+                </label>
+                <label className="block text-[11px] font-bold text-foreground" htmlFor="field-sowing">
+                  Sowing date
+                  <input id="field-sowing" type="date" value={sowingDate} max={new Date().toISOString().slice(0, 10)} onChange={(event) => setSowingDate(event.target.value)} className={inputClass} disabled={!cropId} />
+                </label>
+              </div>
+              <small className="mt-2 block text-[9px] text-muted">Adding the crop unlocks crop-specific weather risks and better scan results.</small>
             </fieldset>
 
             <fieldset>

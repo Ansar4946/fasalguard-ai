@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { OnboardingStepper } from "@/components/onboarding/onboarding-stepper";
 import { useOnboarding } from "@/features/onboarding/onboarding-provider";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import { toE164 } from "@/features/onboarding/phone";
 
 type PersonalDraft = {
   fullName: string;
@@ -19,9 +20,9 @@ function validate(values: PersonalDraft): FieldErrors {
   const errors: FieldErrors = {};
   if (values.fullName.trim().length < 2)
     errors.fullName = "Enter your full name.";
-  const phoneDigits = values.phone.replace(/\D/g, "");
-  if (phoneDigits.length < 10 || phoneDigits.length > 12)
-    errors.phone = "Enter a valid mobile number (10–12 digits).";
+  // Validate exactly what registration will send, so the account step can't fail on format.
+  if (!/^\+[1-9]\d{9,14}$/.test(toE164(values.phone)))
+    errors.phone = "Enter a valid mobile number, e.g. 0300 1234567.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
     errors.email =
       "Enter a valid email address so we can confirm your account.";
@@ -78,7 +79,7 @@ export function PersonalInformation() {
         aria-hidden="true"
         className="absolute -bottom-32 -right-28 size-80 rounded-full bg-brand-soft/25 blur-3xl"
       />
-      <div className="relative w-full max-w-[760px] 2xl:max-w-[840px]">
+      <div className="fg-rise relative w-full max-w-[760px] 2xl:max-w-[840px]">
         <header className="mb-4 text-center sm:mb-5">
           <BrandLogo priority className="mx-auto h-auto w-56" />
           <p className="mx-auto mt-1 max-w-md text-[11px] leading-5 text-muted sm:text-xs">
@@ -148,7 +149,7 @@ export function PersonalInformation() {
                   }
                   aria-invalid={Boolean(errors.phone)}
                   aria-describedby={errors.phone ? "phone-error" : undefined}
-                  placeholder="+92 3XX XXXXXXX"
+                  placeholder="0300 1234567"
                   className="min-w-0 flex-1 bg-transparent py-3 pr-3 text-xs outline-none"
                 />
               </FormField>
@@ -210,6 +211,12 @@ export function PersonalInformation() {
               </Link>
             </div>
           </form>
+          <p className="mt-5 text-center text-xs text-muted">
+            Already have an account?{" "}
+            <Link href="/login" className="font-bold text-brand hover:underline">
+              Sign in
+            </Link>
+          </p>
         </section>
 
         <p className="mx-auto mt-5 max-w-md text-center text-[9px] leading-4 text-muted">

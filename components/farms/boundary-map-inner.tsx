@@ -8,6 +8,7 @@ interface BoundaryMapInnerProps {
   center: [number, number];
   points: [number, number][];
   onAddPoint: (point: [number, number]) => void;
+  holes?: [number, number][][];
 }
 
 function ClickCapture({ onAdd }: { onAdd: (point: [number, number]) => void }) {
@@ -52,7 +53,7 @@ function SizeInvalidator() {
   return null;
 }
 
-export default function BoundaryMapInner({ center, points, onAddPoint }: BoundaryMapInnerProps) {
+export default function BoundaryMapInner({ center, points, onAddPoint, holes = [] }: BoundaryMapInnerProps) {
   return (
     <MapContainer
       center={center}
@@ -86,7 +87,7 @@ export default function BoundaryMapInner({ center, points, onAddPoint }: Boundar
         />
       ))}
       {points.length >= 3 && (
-        <Polygon positions={points} pathOptions={{ color: "#166534", fillOpacity: 0.18 }} />
+        <Polygon positions={[points, ...holes]} pathOptions={{ color: "#166534", fillOpacity: 0.18 }} />
       )}
     </MapContainer>
   );

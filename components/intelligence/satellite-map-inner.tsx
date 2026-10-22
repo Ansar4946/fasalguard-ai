@@ -2,7 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { CircleMarker, MapContainer, Polygon, Popup, TileLayer } from "react-leaflet";
-import { fromGeoJsonPolygon, type GeoJsonPolygon } from "@/lib/geo/polygon";
+import { fromGeoJsonPolygon, polygonRings, type GeoJsonPolygon } from "@/lib/geo/polygon";
 
 export interface StressZoneMapItem {
   id: string;
@@ -42,7 +42,7 @@ export default function SatelliteMapInner({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Polygon positions={points} pathOptions={{ color: "#075f3d", fillOpacity: 0.05, weight: 2 }} />
+      <Polygon positions={polygonRings(boundary)} pathOptions={{ color: "#075f3d", fillOpacity: 0.05, weight: 2 }} />
       {zones.map((zone) => {
         const zonePoints = fromGeoJsonPolygon(zone.geometry);
         if (zonePoints.length < 3) return null;
@@ -55,7 +55,7 @@ export default function SatelliteMapInner({
         return (
           <div key={zone.id}>
             <Polygon
-              positions={zonePoints}
+              positions={polygonRings(zone.geometry)}
               pathOptions={{ color, fillOpacity: selected ? 0.45 : 0.25, weight: selected ? 3 : 1.5 }}
               eventHandlers={{ click: () => onSelectZone(zone.id) }}
             />

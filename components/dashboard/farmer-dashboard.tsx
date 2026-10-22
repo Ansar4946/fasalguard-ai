@@ -1,17 +1,260 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { Icon } from "@/components/ui/icon";
+import { DashboardTasks } from "./dashboard-tasks";
+import { DashboardWeather, DashboardWeatherSkeleton } from "./dashboard-weather";
+import { OutbreakRadarMap } from "./outbreak-radar-map";
+import type { DashboardAlert, DashboardData, DashboardField, DashboardScan, RiskLevel } from "@/features/dashboard/types";
 
-const mapUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuCNcsIcrH4aQ_JfQgsqCZKg8V8gVJozmA5-d6k3y2AhD8D4QLLOs3zt99DKqOZtBYhWbcecXGPC1eYLa10IItNWMTmj7WOk6JBZrO4giVtDii3IQ9Hv1uaBV1NgBbp91X4FpfQP372diZfjHJeMuyUhZaA409cWq1Vxppjxs4nnH6tu_a2NboCu_svdSrXEj3F6N8414yN4XvP0ZNFno3-uJpLyMwEG4XSAT-8JuaSITkp6ApewvYy6";
-const scanOne="https://lh3.googleusercontent.com/aida-public/AB6AXuCUwUPeD9jGWf34No-mjTuJM3NSOEQ1f6sHOU5LLfEJICXcIwXqbsfm6E9WXI8qxQL8nLhQTh-9gqwW4o2SPFiJ9MyCEJzN6pw9FUA-Z0zTMScJI0fwY35EOrEeHcpn1EaYDK4k8tcnzi09ls5b4BctoAy_mvsiQocFWVh4YcwLn2P0Pot_o6amWaRKX7gW25tiiDyaBFOlonmNHsNg2XX-mO1UWMj6h4e1TJEuMLXKEIwu6NJapOcu";
-const scanTwo="https://lh3.googleusercontent.com/aida-public/AB6AXuA6jBsxHHRosgc5-46qll8COcaTaFsHQxKocej1mxQKA6cUCYc3L-my5mxtn6W68xrVorf1qOmWnrReZucX-8EVcSKREZJe26HGk5Sgmf1IECe0GDxSPNQB0dUgJlDWgNRS3eJ1y3LfU5k3FmiYAtZU4VEdykiuMU6ctNz1iVBB9HESAEcmfUiRidOY73suToALpx5EScO7lrR_LB_Xl3y5eWpeBxYGgH4JXXNZWm_IOZTMCOAAp1Op";
+const riskLabel: Record<RiskLevel, string> = {
+  VERY_LOW: "Very low",
+  LOW: "Low",
+  MODERATE: "Moderate",
+  HIGH: "High",
+  CRITICAL: "Critical",
+};
 
-export function FarmerDashboard(){return <div className="mx-auto max-w-[1180px] p-4 md:p-6 xl:p-7"><header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-[26px] font-extrabold leading-tight text-brand-dark">Good morning, Ahmad</h1><p className="mt-1 text-xs text-muted">Here is the latest health status of your farms.</p></div><div className="flex gap-2"><Link href="/farms" className="inline-flex min-h-10 items-center rounded-xl border border-brand px-4 text-xs font-extrabold text-brand">Add field</Link><Link href="/scan" className="inline-flex min-h-10 items-center rounded-xl bg-brand px-4 text-xs font-extrabold text-white">Scan crop</Link></div></header>
- <section className="grid grid-cols-2 gap-3 md:grid-cols-5"><Summary label="Active farms" value="2"/><Summary label="Active fields" value="5"/><Summary label="Avg. health" value="78%" ring/><Summary label="Nearby alerts" value="2" danger/><Summary label="Pending tasks" value="4"/></section>
- <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(245px,.82fr)]"><div className="space-y-4"><section className="rounded-2xl border border-border bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><h2 className="text-sm font-extrabold">Field Health Overview</h2><Link href="/fields" className="text-[11px] font-bold text-brand">View all →</Link></div><div className="mt-4 hidden grid-cols-[1.2fr_.8fr_.8fr_.8fr_auto] gap-3 border-b border-border pb-2 text-[9px] font-extrabold uppercase tracking-wide text-muted sm:grid"><span>Field name</span><span>Crop</span><span>Health score</span><span>Risk</span><span>Action</span></div><div>{[{field:"North Field",crop:"Cotton",score:82,risk:"Low",color:"bg-success"},{field:"Canal Field",crop:"Wheat",score:61,risk:"Moderate",color:"bg-warning"},{field:"South Field",crop:"Cotton",score:43,risk:"High",color:"bg-danger"}].map(item=><div key={item.field} className="grid grid-cols-[1fr_auto] gap-3 border-b border-border py-3 text-xs last:border-0 sm:grid-cols-[1.2fr_.8fr_.8fr_.8fr_auto]"><div><strong>{item.field}</strong><p className="text-[10px] text-muted">Last scan recently</p></div><span className="hidden sm:block">{item.crop}</span><div className="hidden items-center gap-2 sm:flex"><span className="h-1.5 w-16 rounded bg-border"><span className={`block h-1.5 rounded ${item.color}`} style={{width:`${item.score}%`}}/></span><strong>{item.score}%</strong></div><span className="hidden sm:block">{item.risk}</span><Link href="/fields" className="font-bold text-brand">View</Link></div>)}</div></section>
- <section className="rounded-2xl bg-[#a96300] p-5 text-white shadow-sm"><div className="flex gap-4"><div className="grid size-10 shrink-0 place-items-center rounded-full bg-white/15 text-xl">!</div><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-100">Crop-aware weather alert</p><h2 className="mt-1 text-base font-extrabold">High humidity may increase cotton risk</h2><p className="mt-1 max-w-xl text-xs leading-5 text-white/80">Humidity may remain above 80% for 36 hours. Inspect younger leaves in North Field and avoid unnecessary irrigation.</p><div className="mt-4 flex flex-wrap gap-2"><Link href="/weather" className="rounded-lg bg-white/15 px-3 py-2 text-[11px] font-bold">View weather guidance</Link><Link href="/satellite" className="rounded-lg bg-white/15 px-3 py-2 text-[11px] font-bold">Check satellite zones</Link></div></div></div></section>
- <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm"><div className="flex items-center justify-between p-4"><h2 className="text-sm font-extrabold">Farm Outbreak Radar</h2><div className="flex gap-3 text-[10px]"><span>● Safe</span><span className="text-warning">● Warning</span></div></div><div className="relative h-[370px] bg-cover bg-center" style={{backgroundImage:`url(${mapUrl})`}}><span className="absolute left-[49%] top-[53%] grid size-11 place-items-center rounded-full border-4 border-white bg-brand text-xs font-extrabold text-white shadow-xl">GF</span><span className="absolute left-[70%] top-[30%] size-5 rounded-full border-4 border-white bg-danger shadow"/><span className="absolute left-[22%] top-[46%] size-4 rounded-full border-4 border-white bg-info shadow"/><div className="absolute bottom-3 left-3 rounded-lg bg-white/90 px-3 py-2 text-[10px] font-bold shadow">Green Valley Farm · approximate location</div></div></section></div>
- <aside className="space-y-4"><section className="rounded-2xl border border-border bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><h2 className="text-sm font-extrabold">Today’s Tasks</h2><span className="grid size-6 place-items-center rounded-full bg-brand text-xs text-white">4</span></div><div className="mt-4 space-y-4">{["Inspect young cotton plants","Upload follow-up image","Review expert message","Check irrigation status"].map((task,index)=><label key={task} className="flex gap-3 text-xs leading-5"><input type="checkbox" className="mt-0.5 size-4 accent-brand" defaultChecked={index===3}/><span>{task}<small className="block text-[9px] text-muted">{index<2?"Due today":"This week"}</small></span></label>)}</div></section>
- <section className="rounded-2xl border border-border bg-white p-5 shadow-sm"><h2 className="text-sm font-extrabold">Recent AI Scans</h2><div className="mt-4 space-y-3"><Scan image={scanOne} title="Leaf Curl" field="North Field" status="Review"/><Scan image={scanTwo} title="Healthy" field="Canal Field" status="Good"/></div><Link href="/scan/results" className="mt-4 block text-center text-[11px] font-bold text-brand">View all scans</Link></section>
- <section className="rounded-2xl border border-border bg-white p-5 shadow-sm"><h2 className="text-sm font-extrabold">7-Day Risk Forecast</h2><div className="mt-5 flex h-36 items-end justify-between gap-2">{[{d:"Mon",v:35,c:"bg-success"},{d:"Tue",v:48,c:"bg-success"},{d:"Wed",v:62,c:"bg-info"},{d:"Thu",v:78,c:"bg-warning"},{d:"Fri",v:92,c:"bg-danger"},{d:"Sat",v:83,c:"bg-danger"}].map(x=><div key={x.d} className="flex flex-1 flex-col items-center justify-end gap-2"><span className={`w-2.5 rounded-full ${x.c}`} style={{height:`${x.v}px`}}/><span className="text-[9px] font-bold text-muted">{x.d}</span></div>)}</div><div className="mt-4 grid grid-cols-3 border-t border-border pt-3 text-center"><Small label="Humidity" value="72%"/><Small label="Rain" value="20%"/><Small label="Risk" value="High"/></div></section></aside></div></div>}
-function Summary({label,value,ring,danger}:{label:string;value:string;ring?:boolean;danger?:boolean}){return <div className={`rounded-2xl border p-4 shadow-sm ${danger?"border-red-100 bg-red-50":"border-border bg-white"}`}><p className="text-[10px] font-bold text-muted">{label}</p>{ring?<div className="mt-2 grid size-14 place-items-center rounded-full border-[6px] border-brand-soft border-t-brand text-sm font-extrabold">{value}</div>:<p className={`mt-4 text-2xl font-extrabold ${danger?"text-danger":"text-brand-dark"}`}>{value}</p>}</div>}
-function Scan({image,title,field,status}:{image:string;title:string;field:string;status:string}){return <div className="flex gap-3 rounded-xl bg-surface-soft p-2"><div className="size-14 shrink-0 rounded-lg bg-cover bg-center" style={{backgroundImage:`url(${image})`}} role="img" aria-label={`${title} crop scan`}/><div className="min-w-0 flex-1"><div className="flex justify-between"><strong className="text-xs">{title}</strong><span className="rounded bg-brand-soft px-1.5 py-0.5 text-[8px] font-bold text-brand">{status}</span></div><p className="mt-1 text-[10px] text-muted">{field}</p><p className="mt-1 text-[9px] text-muted">AI screening result</p></div></div>}
-function Small({label,value}:{label:string;value:string}){return <div><p className="text-[8px] uppercase text-muted">{label}</p><strong className="text-[10px]">{value}</strong></div>}
+const riskTone: Record<RiskLevel, string> = {
+  VERY_LOW: "text-success",
+  LOW: "text-success",
+  MODERATE: "text-warning",
+  HIGH: "text-danger",
+  CRITICAL: "text-danger",
+};
+
+const alertHref: Record<DashboardAlert["category"], string> = {
+  WEATHER: "/weather",
+  SATELLITE: "/satellite",
+  OUTBREAK: "/radar",
+  DIAGNOSIS: "/scan",
+  EXPERT: "/consultations",
+};
+
+const scanStatusLabel: Record<string, string> = {
+  UPLOADING: "Processing",
+  IMAGE_VALIDATION: "Processing",
+  ANALYSING: "Processing",
+  NEEDS_FOLLOW_UP: "Needs follow-up",
+  DIAGNOSED: "Screened",
+  EXPERT_REVIEW: "Expert review",
+  VERIFIED: "Verified",
+  RESOLVED: "Resolved",
+};
+
+export function FarmerDashboard({ data }: { data: DashboardData }) {
+  const { summary, fields } = data;
+  const firstName = data.farmer?.fullName.trim().split(/\s+/)[0];
+  const weatherField = fields[0] ? { id: fields[0].id, name: `${fields[0].name} · ${fields[0].farmName}` } : null;
+  const topAlert = data.alerts[0];
+
+  return (
+    <div className="mx-auto max-w-[1180px] p-4 md:p-6 xl:p-7">
+      <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-[26px] font-extrabold leading-tight text-brand-dark">
+            {firstName ? `Welcome back, ${firstName}` : "Welcome back"}
+          </h1>
+          <p className="mt-1 text-xs text-muted">Here is the latest health status of your farms.</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href={summary.farmCount ? "/fields" : "/farms/new"} className="inline-flex min-h-10 items-center rounded-xl border border-brand px-4 text-xs font-extrabold text-brand">
+            {summary.farmCount ? "Add field" : "Add farm"}
+          </Link>
+          <Link href="/scan" className="inline-flex min-h-10 items-center rounded-xl bg-brand px-4 text-xs font-extrabold text-white">Scan crop</Link>
+        </div>
+      </header>
+
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <Summary label="Active farms" value={String(summary.farmCount)} />
+        <Summary label="Active fields" value={String(summary.fieldCount)} />
+        <Summary label="Avg. health" value={summary.averageHealthScore === null ? "–" : `${summary.averageHealthScore}%`} ring />
+        <Summary label="Nearby outbreaks" value={String(summary.nearbyOutbreakCount)} danger={summary.nearbyOutbreakCount > 0} />
+        <Summary label="Pending tasks" value={String(summary.pendingTaskCount)} />
+      </section>
+
+      {summary.farmCount === 0 && <GetStarted />}
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(245px,.82fr)]">
+        <div className="space-y-4">
+          <FieldHealthOverview fields={fields} />
+          {topAlert && <AlertBanner alert={topAlert} more={summary.unreadAlertCount - 1} />}
+          <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+            <div className="flex items-center justify-between p-4">
+              <div>
+                <h2 className="text-sm font-extrabold">Farm Outbreak Radar</h2>
+                <p className="text-[10px] text-muted">Community-reported outbreaks within {data.outbreakRadiusKm} km of your fields</p>
+              </div>
+              <div className="flex gap-3 text-[10px]">
+                <span className="text-brand">● Your farms</span>
+                <span className="text-danger">● Outbreak area</span>
+              </div>
+            </div>
+            {data.farms.length ? (
+              <OutbreakRadarMap farms={data.farms} outbreaks={data.nearbyOutbreaks} radiusKm={data.outbreakRadiusKm} />
+            ) : (
+              <p className="px-4 pb-5 text-xs text-muted">Add a farm boundary to monitor outbreaks around it.</p>
+            )}
+            {data.nearbyOutbreaks.length > 0 && (
+              <ul className="divide-y divide-border border-t border-border">
+                {data.nearbyOutbreaks.slice(0, 3).map((outbreak) => (
+                  <li key={outbreak.id} className="flex items-center justify-between px-4 py-3 text-xs">
+                    <span><strong>{outbreak.conditionFamily}</strong> <span className="text-muted">· {outbreak.crop}</span></span>
+                    <span className="text-[10px] font-bold text-muted">{outbreak.distanceKm} km · {titleCase(outbreak.status)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+
+        <aside className="space-y-4">
+          <DashboardTasks key={data.generatedAt} tasks={data.tasks} pendingCount={summary.pendingTaskCount} />
+          <RecentScans scans={data.recentScans} />
+          <Suspense fallback={<DashboardWeatherSkeleton />}>
+            <DashboardWeather field={weatherField} />
+          </Suspense>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function FieldHealthOverview({ fields }: { fields: DashboardField[] }) {
+  return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-extrabold">Field Health Overview</h2>
+        <Link href="/fields" className="text-[11px] font-bold text-brand">View all →</Link>
+      </div>
+      {fields.length === 0 ? (
+        <p className="mt-4 text-xs text-muted">No fields yet. Add fields to your farm to start satellite and weather monitoring.</p>
+      ) : (
+        <>
+          <div className="mt-4 hidden grid-cols-[1.2fr_.8fr_.8fr_.8fr_auto] gap-3 border-b border-border pb-2 text-[9px] font-extrabold uppercase tracking-wide text-muted sm:grid">
+            <span>Field name</span><span>Crop</span><span>Health score</span><span>Risk</span><span>Action</span>
+          </div>
+          <div>
+            {fields.slice(0, 6).map((field) => (
+              <div key={field.id} className="grid grid-cols-[1fr_auto] gap-3 border-b border-border py-3 text-xs last:border-0 sm:grid-cols-[1.2fr_.8fr_.8fr_.8fr_auto]">
+                <div>
+                  <strong>{field.name}</strong>
+                  <p className="text-[10px] text-muted">{field.farmName} · {field.lastScanAt ? `Last scan ${relativeTime(field.lastScanAt)}` : "No scans yet"}</p>
+                </div>
+                <span className="hidden sm:block">{field.cropName ?? <span className="text-muted">No crop set</span>}</span>
+                <HealthScore score={field.healthScore} />
+                <span className={`hidden font-bold sm:block ${field.riskLevel ? riskTone[field.riskLevel] : "font-normal text-muted"}`}>
+                  {field.riskLevel ? riskLabel[field.riskLevel] : "Not assessed"}
+                </span>
+                <Link href={`/farms/${field.farmId}/fields`} className="font-bold text-brand">View</Link>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function HealthScore({ score }: { score: number | null }) {
+  if (score === null) return <span className="hidden text-muted sm:block">Awaiting satellite</span>;
+  const rounded = Math.round(score);
+  const color = rounded >= 70 ? "bg-success" : rounded >= 50 ? "bg-warning" : "bg-danger";
+  return (
+    <div className="hidden items-center gap-2 sm:flex">
+      <span className="h-1.5 w-16 rounded bg-border"><span className={`block h-1.5 rounded ${color}`} style={{ width: `${rounded}%` }} /></span>
+      <strong>{rounded}%</strong>
+    </div>
+  );
+}
+
+function AlertBanner({ alert, more }: { alert: DashboardAlert; more: number }) {
+  return (
+    <section className="rounded-2xl bg-[#a96300] p-5 text-white shadow-sm">
+      <div className="flex gap-4">
+        <div className="grid size-10 shrink-0 place-items-center rounded-full bg-white/15 text-xl">!</div>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-100">{titleCase(alert.category)} alert · {relativeTime(alert.createdAt)}</p>
+          <h2 className="mt-1 text-base font-extrabold">{alert.title}</h2>
+          <p className="mt-1 max-w-xl text-xs leading-5 text-white/80">{alert.body}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href={alertHref[alert.category]} className="rounded-lg bg-white/15 px-3 py-2 text-[11px] font-bold">View details</Link>
+            {more > 0 && <Link href="/alerts" className="rounded-lg bg-white/15 px-3 py-2 text-[11px] font-bold">{more} more unread</Link>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RecentScans({ scans }: { scans: DashboardScan[] }) {
+  return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-extrabold">Recent AI Scans</h2>
+      {scans.length === 0 ? (
+        <p className="mt-4 text-xs leading-5 text-muted">No crop scans yet. Photograph a leaf to screen it for disease.</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {scans.map((scan) => (
+            <li key={scan.id}>
+              <Link href={`/scan/results?id=${scan.id}`} className="flex gap-3 rounded-xl bg-surface-soft p-2 transition hover:bg-brand-soft/60 active:scale-[.99]">
+              <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"><Icon name="scan" /></span>
+              <div className="min-w-0 flex-1">
+                <div className="flex justify-between gap-2">
+                  <strong className="truncate text-xs">{scan.screenedCondition ? titleCase(scan.screenedCondition) : "Awaiting result"}</strong>
+                  <span className="shrink-0 rounded bg-brand-soft px-1.5 py-0.5 text-[8px] font-bold text-brand">{scanStatusLabel[scan.status] ?? titleCase(scan.status)}</span>
+                </div>
+                <p className="mt-1 text-[10px] text-muted">{scan.fieldName ?? "No field"} · {relativeTime(scan.createdAt)}</p>
+                <p className="mt-1 text-[9px] text-muted">
+                  AI screening{typeof scan.confidence === "number" ? ` · ${Math.round(scan.confidence * 100)}% confidence` : ""} — not a confirmed diagnosis
+                </p>
+              </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link href="/scan" className="mt-4 block text-center text-[11px] font-bold text-brand">Start a new scan</Link>
+    </section>
+  );
+}
+
+function GetStarted() {
+  return (
+    <section className="mt-4 flex flex-col items-start gap-3 rounded-2xl border border-dashed border-brand/30 bg-brand-soft/40 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 className="text-sm font-extrabold text-brand-dark">Set up your first farm</h2>
+        <p className="mt-1 text-xs text-muted">Draw your farm boundary to unlock satellite health, weather and outbreak monitoring.</p>
+      </div>
+      <Link href="/farms/new" className="inline-flex min-h-10 items-center rounded-xl bg-brand px-4 text-xs font-extrabold text-white">Add farm</Link>
+    </section>
+  );
+}
+
+function Summary({ label, value, ring, danger }: { label: string; value: string; ring?: boolean; danger?: boolean }) {
+  return (
+    <div className={`rounded-2xl border p-4 shadow-sm ${danger ? "border-red-100 bg-red-50" : "border-border bg-white"}`}>
+      <p className="text-[10px] font-bold text-muted">{label}</p>
+      {ring ? (
+        <div className="mt-2 grid size-14 place-items-center rounded-full border-[6px] border-brand-soft border-t-brand text-sm font-extrabold">{value}</div>
+      ) : (
+        <p className={`mt-4 text-2xl font-extrabold ${danger ? "text-danger" : "text-brand-dark"}`}>{value}</p>
+      )}
+    </div>
+  );
+}
+
+function titleCase(value: string): string {
+  const words = value.replace(/[_-]+/g, " ").trim().toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function relativeTime(iso: string): string {
+  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}

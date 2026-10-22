@@ -6,7 +6,7 @@ import { FormEvent, useId, useState } from "react";
 import { authClient, AuthClientError } from "@/features/auth/auth-client";
 import { BrandLogo } from "@/components/brand/brand-logo";
 
-type FormErrors = { identifier?: string };
+type FormErrors = { identifier?: string; password?: string };
 
 const FARMER_RETURN_PATHS = new Set([
   "/dashboard",
@@ -57,7 +57,9 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const identifier = String(data.get("identifier") ?? "").trim();
+    const password = String(data.get("password") ?? "");
     const nextErrors: FormErrors = {};
+    if (!password) nextErrors.password = "Enter your password.";
     if (identifier.length < 5)
       nextErrors.identifier = "Enter a valid phone number or email address.";
     setErrors(nextErrors);
@@ -65,7 +67,7 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
     setFormError(undefined);
     setSubmitting(true);
     try {
-      const { user } = await authClient.login(identifier);
+      const { user } = await authClient.login(identifier, password);
       router.replace(destination(user.role, returnTo));
       router.refresh();
     } catch (error) {
@@ -125,6 +127,30 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
             className="min-w-0 flex-1 bg-transparent py-3.5 pr-4 text-sm text-foreground outline-none placeholder:text-muted/70 focus:outline-none focus-visible:outline-none"
             onChange={() =>
               setErrors((current) => ({ ...current, identifier: undefined }))
+            }
+          />
+        </Field>
+
+        <Field
+          id="password"
+          label="Password"
+          error={errors.password}
+          errorId={`${errorId}-password`}
+        >
+          <FieldIcon type="person" />
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={
+              errors.password ? `${errorId}-password` : undefined
+            }
+            placeholder="Enter your password"
+            className="min-w-0 flex-1 bg-transparent py-3.5 pr-4 text-sm text-foreground outline-none placeholder:text-muted/70 focus:outline-none focus-visible:outline-none"
+            onChange={() =>
+              setErrors((current) => ({ ...current, password: undefined }))
             }
           />
         </Field>

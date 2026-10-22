@@ -21,7 +21,8 @@ export default function UploadScanImagesPage() {
     scanIdRef.current = session.backendScanId;
   }, [session.backendScanId]);
   const hasCloseup = session.images.some((image) => image.id === "leaf-closeup" && image.uploadStatus === "done");
-  const canContinue = hydrated && Boolean(session.fieldId) && hasCloseup && !preparingScan;
+  const uploading = session.images.some((image) => image.uploadStatus === "uploading");
+  const canContinue = hydrated && Boolean(session.fieldId) && hasCloseup && !uploading && !preparingScan;
   const remaining = Math.max(0, 3 - session.images.length);
 
   async function ensureScan(): Promise<string> {
@@ -120,7 +121,13 @@ export default function UploadScanImagesPage() {
         <footer className="mt-5 flex flex-col gap-3 border-t border-brand/10 pt-4 sm:flex-row sm:items-center">
           <Link href="/scan" className="inline-flex min-h-10 items-center text-xs font-extrabold text-brand">← Back to Select Field</Link>
           <p className="text-center text-[10px] italic text-muted sm:ml-auto" aria-live="polite">
-            {hasCloseup ? `${remaining} recommended image${remaining === 1 ? "" : "s"} remaining` : "A close-up leaf photo is required to continue"}
+            {uploading
+              ? "Finishing your uploads…"
+              : !hasCloseup
+                ? "A close-up leaf photo is required to continue"
+                : remaining > 0
+                  ? `Optional: add ${remaining} more photo${remaining === 1 ? "" : "s"} for a more reliable result`
+                  : "All photos added — ready to continue"}
           </p>
           <button
             type="button"
@@ -128,7 +135,7 @@ export default function UploadScanImagesPage() {
             onClick={() => void continueToSymptoms()}
             className="min-h-10 rounded-full bg-brand px-7 text-xs font-extrabold text-white disabled:bg-[#d3d9cf] disabled:text-muted"
           >
-            {preparingScan ? "Preparing scan…" : "Continue →"}
+            {preparingScan ? "Preparing scan…" : uploading ? "Uploading…" : "Continue →"}
           </button>
         </footer>
         {scanError && <p role="alert" className="mt-3 text-right text-xs font-bold text-danger">{scanError}</p>}

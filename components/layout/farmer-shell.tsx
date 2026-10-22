@@ -1,5 +1,6 @@
 "use client";
 
+import { NotificationBell } from "@/components/layout/notification-bell";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -24,10 +25,12 @@ const navigation: NavItem[] = [
     icon: "satellite" as const,
   },
   { href: "/weather", label: "Weather Intelligence", icon: "weather" as const },
+  { href: "/irrigation", label: "Irrigation & Water", icon: "weather" as const },
   { href: "/market-intelligence", label: "Market Intelligence", icon: "market" as const },
   { href: "/radar", label: "Outbreak Radar", icon: "radar" as const },
   { href: "/alerts", label: "Alerts", icon: "bell" as const },
   { href: "/tasks", label: "Tasks", icon: "task" as const },
+  { href: "/ussd-demo", label: "USSD Expenses", icon: "market" as const },
   { href: "/consultations", label: "Expert Support", icon: "expert" as const },
   { href: "/assistant", label: "AI Assistant", icon: "expert" as const },
   { href: "/learning", label: "Learning Centre", icon: "learn" as const },
@@ -219,16 +222,7 @@ export function FarmerShell({ children }: { children: React.ReactNode }) {
           >
             EN / اردو
           </button>
-          <Link
-            href="/alerts"
-            aria-label="View notifications"
-            className="relative grid size-10 place-items-center rounded-lg hover:bg-surface-soft"
-          >
-            <Icon name="bell" />
-            <span className="absolute right-2 top-2 size-2 rounded-full bg-danger">
-              <span className="sr-only">2 unread notifications</span>
-            </span>
-          </Link>
+          <NotificationBell icon={<Icon name="bell" />} />
           <div
             className="grid size-9 place-items-center rounded-full bg-brand-soft text-xs font-extrabold text-brand-dark"
             aria-label="Signed in as Ahmad"

@@ -17,6 +17,12 @@ export interface MarketPrice {
   observedAt: string;
   source: "AMIS" | "DEMO_FIXTURE" | "PAR_API";
   freshness: MarketDataStatus;
+  priceDate?: string;
+  ingestedAt?: string;
+  sourceUrl?: string;
+  sourceIdentifier?: string;
+  sourceQuantityKg?: number;
+  ageDays?: number;
 }
 
 export interface PricePoint {
@@ -38,7 +44,9 @@ export interface MarketInsight {
 
 export interface MarketIntelligenceSnapshot {
   current: MarketPrice;
-  weeklyChangePercent: number;
+  weeklyChangePercent: number | null;
+  weeklyComparisonMarkets?: number;
+  historyTruncated?: boolean;
   history: Record<MarketRange, PricePoint[]>;
   nearbyMarkets: MarketComparisonItem[];
   insight: MarketInsight;

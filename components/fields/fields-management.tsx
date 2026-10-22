@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { AddFieldDialog } from "./add-field-dialog";
+import { BoundaryWorkspace } from "./boundary-workspace";
 import type { FarmSummary, FieldSummary } from "./types";
 
 const HECTARES_TO_ACRES = 2.47105;
@@ -93,6 +94,13 @@ export function FieldsManagement({
         )}
       </section>
 
+      <BoundaryWorkspace farmId={farm.id} onFieldsChanged={(items) => {
+        setFields((current) => {
+          const merged = new Map(current.map((field) => [field.id, field]));
+          for (const item of items) merged.set(item.id, { ...merged.get(item.id), ...item });
+          return [...merged.values()];
+        });
+      }} />
       <AddFieldDialog
         farmId={farm.id}
         farmName={farm.name}

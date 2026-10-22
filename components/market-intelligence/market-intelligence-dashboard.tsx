@@ -60,6 +60,13 @@ export function MarketIntelligenceDashboard() {
     };
   }, [crop, location, reload]);
 
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === "visible") setReload(value => value + 1); };
+    const timer = window.setInterval(refresh, 60000);
+    window.addEventListener("focus", refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", refresh); };
+  }, []);
+
   return (
     <div className="min-h-[calc(100dvh-4rem)] bg-[#f8f5ec]">
       <div className="mx-auto w-full max-w-7xl px-3 pb-28 pt-5 min-[380px]:px-4 sm:px-6 sm:pb-8 sm:pt-8 xl:px-8">
@@ -88,7 +95,7 @@ export function MarketIntelligenceDashboard() {
             !
           </span>
           <p className="min-w-0">
-            <strong>Live AMIS data:</strong> these are published mandi
+            <strong>Published AMIS data:</strong> these are published mandi
             observations, not guaranteed sale offers. Verify crop grade,
             commission and the current rate with the market before selling.
           </p>

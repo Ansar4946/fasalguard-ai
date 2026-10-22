@@ -1,12 +1,17 @@
 import { FarmerDashboard } from "@/components/dashboard/farmer-dashboard";
 import { ReferralCard } from "@/components/dashboard/referral-card";
+import { authenticatedJson } from "@/lib/auth/server-session";
+import type { DashboardData } from "@/features/dashboard/types";
 
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: Promise<{ onboarding?: string; email?: string; farmError?: string }>;
 }) {
-  const params = await searchParams;
+  const [params, { response, body }] = await Promise.all([
+    searchParams,
+    authenticatedJson<DashboardData>("/dashboard"),
+  ]);
   return (
     <>
       {params.onboarding === "complete" && (
@@ -28,7 +33,18 @@ export default async function DashboardPage({
           My Farms.
         </div>
       )}
-      <FarmerDashboard />
+      {response.ok && body.summary ? (
+        <FarmerDashboard data={body} />
+      ) : (
+        <div className="mx-auto max-w-[1180px] p-4 md:p-6 xl:p-7">
+          <p
+            role="alert"
+            className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-xs font-semibold text-danger"
+          >
+            Could not load your dashboard right now. Try refreshing the page.
+          </p>
+        </div>
+      )}
       <ReferralCard />
     </>
   );

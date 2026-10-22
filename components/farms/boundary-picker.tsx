@@ -29,6 +29,7 @@ interface ResolvedLocation {
 }
 
 interface BoundaryPickerProps {
+  holes?: [number, number][][];
   points: [number, number][];
   onChange: (points: [number, number][]) => void;
   center?: [number, number];
@@ -46,6 +47,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<ResolvedLocatio
 }
 
 export function BoundaryPicker({
+  holes = [],
   points,
   onChange,
   center = DEFAULT_CENTER,
@@ -69,7 +71,8 @@ export function BoundaryPicker({
   return (
     <div className="space-y-2">
       <LocationSearch onSelect={(result) => moveTo(result.lat, result.lng)} onUseCurrentLocation={moveTo} />
-      <BoundaryMapInner center={mapCenter} points={points} onAddPoint={addPoint} />
+      <BoundaryMapInner center={mapCenter} points={points} onAddPoint={addPoint} holes={holes} />
+      {holes.length > 0 && <p className="text-xs text-muted">{holes.length} interior ring(s) preserved. Exterior edits must continue to contain these holes.</p>}
       <div className="flex items-center justify-between gap-3 text-[10px]">
         <p className="text-muted">
           Search for your farm&apos;s location, then tap the map to place each corner of the boundary, in order.{" "}

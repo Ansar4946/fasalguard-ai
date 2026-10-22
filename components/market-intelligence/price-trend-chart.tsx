@@ -7,7 +7,7 @@ import { formatMarketPrice } from "@/features/market-intelligence/formatters";
 const ranges: Array<{ value: MarketRange; label: string }> = [
   { value: "7D", label: "7 days" },
   { value: "30D", label: "30 days" },
-  { value: "SEASON", label: "Season" },
+  { value: "SEASON", label: "Available history" },
 ];
 
 export function PriceTrendChart({
@@ -30,8 +30,8 @@ export function PriceTrendChart({
   const max = Math.max(...values);
   const span = Math.max(1, max - min);
   const coordinates = points
-    .map((item, index) => {
-      const x = points.length === 1 ? 50 : (index / (points.length - 1)) * 100;
+    .map((item) => {
+      const x = points.length === 1 ? 50 : ((Date.parse(item.observedAt) - Date.parse(points[0].observedAt)) / Math.max(1, Date.parse(points[points.length - 1].observedAt) - Date.parse(points[0].observedAt))) * 100;
       const y = 88 - ((item.price - min) / span) * 68;
       return `${x},${y}`;
     })
