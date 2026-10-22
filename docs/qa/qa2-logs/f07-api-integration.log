@@ -1,0 +1,8 @@
+PASS test/market-workflow.integration-spec.ts (33.24 s)
+PASS test/market.integration-spec.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        34.675 s
+Ran all test suites.

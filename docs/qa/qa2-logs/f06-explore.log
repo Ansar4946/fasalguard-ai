@@ -1,0 +1,21 @@
+✔ manifest: 28 malformed variants are all rejected with MODEL_MANIFEST_INVALID (4.6352ms)
+✔ preprocessing: wrong length / missing buffer fail with a defined error, math is exact at extremes (3.1603ms)
+✔ output: NaN, Infinity, wrong length, bad probabilities all fail closed; huge logits stay finite (4.6555ms)
+✔ output: exact tie reports the first class with score 1/n (documented here: caller must apply a confidence floor) (0.4ms)
+✔ no random or filename-derived prediction path exists in inference/database/sync sources (2.1124ms)
+✔ store: duplicate clientId, non-file image uri, missing owner are refused; account isolation holds (4.7382ms)
+✔ store: outbox is capped at 20 per sync batch and history at 100 (no unbounded payload) (15.0413ms)
+✔ store: untrusted prediction fields are persisted verbatim (server must validate); NaN score serialises to null (1.6013ms)
+✔ sync: refuses http://, blank token, and a null/undefined session without any fetch (2.2346ms)
+✔ sync: server 500 / malformed JSON / ACK missing results retain every pending capture (76.8429ms)
+✔ session contract: bad uuid, short token, oversized fields list, blank field name rejected (1.6878ms)
+✔ photo crypto: wrong owner/capture/key, bit-flip, truncation, oversize, bad key/nonce length all fail; roundtrip ok (15.078ms)
+﹣ real model + device inference (0.8169ms) # BLOCKED_EXTERNAL: no cleared ONNX model weights (bundled TFLite files are corrupt, PyTorch license 'other'), no Android/iOS device; no labelled Pakistan crop images
+ℹ tests 13
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 476.2132

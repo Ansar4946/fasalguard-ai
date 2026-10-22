@@ -3,10 +3,10 @@
 ## Runtime architecture
 
 ```text
-Nest scheduler (08:00 Asia/Karachi)
+Nest scheduler (08:00 and14:00 Asia/Karachi)
   -> BullMQ `market` queue in existing Redis
   -> existing `worker-1` / `worker` process
-  -> internal FastAPI AMIS adapter
+  -> direct TypeScript AMIS provider (the Python adapter is legacy)
   -> TypeORM transaction into existing PostgreSQL
   -> versioned Redis read-cache invalidation
   -> authenticated NestJS API
@@ -26,7 +26,7 @@ Automated access is **off by default**. Obtain written permission and confirm ac
 frequency before setting `AMIS_SYNC_ENABLED=true`. No fixture fallback exists in the ingestion path:
 disabled or failed scraping never becomes apparently live data.
 
-The Python adapter uses a fixed AMIS host allowlist, input limits, response-size and content-type
+The active TypeScript provider uses a fixed AMIS host allowlist, input limits, response-size and content-type
 checks, timeouts, bounded retries, backoff, no redirects, and a configurable request delay.
 
 ## Storage and idempotency
@@ -69,3 +69,6 @@ from the normalized displayed market name; migrate to an approved market referen
 
 The Market Intelligence frontend now uses authenticated Next.js proxy routes for these endpoints.
 It displays AMIS provenance and observation dates, and never falls back silently to fixture prices.
+
+
+F07 provenance/freshness, actual validation results and release blockers: [F07 evidence](features/F07.md). Source remains PKR/100 kg; the dashboard explicitly displays PKR/40 kg. No price forecasts or persisted alerts are available. Administrative districts are unverified, so API observations expose district:null; district filters fail explicitly.

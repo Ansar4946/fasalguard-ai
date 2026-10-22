@@ -1,0 +1,23 @@
+  console.log
+    ◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+FAIL test/outbreak-geospatial.integration-spec.ts (5.807 s)
+  Privacy-safe PostGIS outbreak foundation
+    √ uses geography distance and exposes a regional polygon rather than the exact point (61 ms)
+    × prevents duplicate farmer verification at database level (15 ms)
+
+  ● Privacy-safe PostGIS outbreak foundation › prevents duplicate farmer verification at database level
+
+    QueryFailedError: null value in column "referral_code" of relation "farmer_profiles" violates not-null constraint
+
+      at PostgresQueryRunner.query (src/driver/postgres/PostgresQueryRunner.ts:325:19)
+      at Object.<anonymous> (test/outbreak-geospatial.integration-spec.ts:36:22)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 passed, 2 total
+Snapshots:   0 total
+Time:        6.093 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

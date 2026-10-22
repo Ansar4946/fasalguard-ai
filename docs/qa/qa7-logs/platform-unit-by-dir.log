@@ -1,0 +1,26 @@
+## unit test_vision.py
+.........................                                                [100%]
+25 passed in 0.71s
+## unit test_quality.py
+..........                                                               [100%]
+10 passed in 6.95s
+## unit test_policy_auth.py
+FAILED tests/test_policy_auth.py::test_valid_access_token_decodes - app.error...
+1 failed, 16 passed in 1.08s
+## unit test_production.py
+.............                                                            [100%]
+13 passed in 3.02s
+## unit satellite
+...................................                                      [100%]
+35 passed, 7 deselected in 4.34s
+## unit weather
+..........................................                               [100%]
+42 passed, 9 deselected in 8.39s
+## unit irrigation
+........................ssssss..........                                 [100%]
+34 passed, 6 skipped, 7 deselected in 8.95s
+## unit geometry
+.........................                                                [100%]
+25 passed, 13 deselected in 6.01s
+.................                                                        [100%]
+17 passed in 1.83s

@@ -1,0 +1,46 @@
+{
+  "phase": "data",
+  "at": "2026-10-17T04:57:09.056Z",
+  "results": [
+    {
+      "name": "[phone] \"Warnings for you\" card appears on open with the unread count and top 3 titles",
+      "status": "PASS"
+    },
+    {
+      "name": "[phone] \"Read my warnings\" speaks only after a click, using the browser voice",
+      "status": "PASS",
+      "detail": {
+        "spoken": "You have 4 unread warnings. Latest: QA9 FIXTURE Heavy rain expected tomorrow; QA9 FIXTURE Leaf blight reported near your area; QA9 FIXTURE Irrigation task due today."
+      }
+    },
+    {
+      "name": "[phone] typed English \"which farms do I have\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT You have 1 farm: Golden rice (1 field). From your account Your farms Listen"
+      }
+    },
+    {
+      "name": "[phone] typed English \"how much did I spend this month\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT Your confirmed expenses this month: PKR 8,262.00 in 4 entries. From your account Your confirmed expenses Listen"
+      }
+    },
+    {
+      "name": "[phone] typed English \"do I have any warnings\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT You have 4 unread notifications. By type: Outbreak 1; System 1; Task 1; Weather 1. Latest: \"QA9 FIXTURE Heavy rain expected tomorrow\"; \"QA9 FIXTURE Le"
+      }
+    },
+    {
+      "name": "[phone] fields, crop seasons, category and latest expenses",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] a second farmer sees none of the demo farmer data in answers or the card",
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "results": [
+    {
+      "id": "SETUP register known-password user (API /auth/register)",
+      "status": "PASS",
+      "detail": "status 201, role FARMER"
+    },
+    {
+      "id": "SETUP farm + field created",
+      "status": "PASS",
+      "detail": "farm 201, field 201"
+    },
+    {
+      "id": "RL-1 API 429 (per-user limit exhausted) must not be treated as logout: BFF /api/auth/me keeps cookies",
+      "status": "FAIL",
+      "detail": "{\"api429s\":42,\"bffMeStatus\":401,\"cookiesAfterBffMe\":[],\"proxyStatus\":307,\"proxyLocation\":\"/login?returnTo=%2Fdashboard\"}"
+    },
+    {
+      "id": "OUT-0 signed in before outage",
+      "status": "PASS",
+      "detail": "url /dashboard"
+    },
+    {
+      "id": "OUT-1a proxy (no JS) during outage: redirect target and cookie handling",
+      "status": "PASS",
+      "detail": "{\"status\":307,\"location\":\"/login?reason=session-unavailable\",\"setCookie\":[]}"
+    },
+    {
+      "id": "OUT-1b BFF GET /api/auth/me during outage must not clear session (expect 503, cookies kept)",
+      "status": "FAIL",
+      "detail": "{\"status\":401,\"setCookie\":[\"fg_access=<cleared>\",\"fg_refresh=<cleared>\"],\"cookiesAfter\":[]}"
+    },
+    {
+      "id": "OUT-1 cookies retained while Postgres is down (no logout)",
+      "status": "FAIL",
+      "detail": "API /auth/me during outage -> 503; nav [[\"/dashboard\",\"/login?reason=session-unavailable\",200],[\"/farms\",\"/login?returnTo=%2Ffarms\",200],[\"/assistant\",\"/login?returnTo=%2Fassistant\",200]]"
+    },
+    {
+      "id": "OUT-2 authenticated page navigation stays on the page (503-type handling, not redirect to /login)",
+      "status": "FAIL",
+      "detail": "redirected to /login?reason=session-unavailable"
+    },
+    {
+      "id": "OUT-3 after Postgres restart, /dashboard loads with the same cookies (no re-login)",
+      "status": "FAIL",
+      "detail": "api me ok=true, url /login?returnTo=%2Fdashboard, status 200"
+    }
+  ],
+  "out": {
+    "csp": {},
+    "notes": [],
+    "rateLimit": {
+      "api429s": 42,
+      "bffMeStatus": 401,
+      "cookiesAfterBffMe": [],
+      "proxyStatus": 307,
+      "proxyLocation": "/login?returnTo=%2Fdashboard"
+    },
+    "proxyRaw": {
+      "status": 307,
+      "location": "/login?reason=session-unavailable",
+      "setCookie": []
+    },
+    "bffMe": {
+      "status": 401,
+      "setCookie": [
+        "fg_access=<cleared>",
+        "fg_refresh=<cleared>"
+      ],
+      "cookiesAfter": []
+    },
+    "apiMeDuringOutage": {
+      "status": 503,
+      "body": "{\"error\":{\"code\":\"SESSION_STORE_UNAVAILABLE\",\"message\":\"Authentication is temporarily unavailable. Please retry.\"},\"meta\":{\"requestId\":\"17c7fe2d-eb2f-4754-abe6-910f60c06e73\",\"timestamp\":\"2026-10-16T09"
+    },
+    "outageNav": [
+      {
+        "to": "/dashboard",
+        "finalUrl": "/login?reason=session-unavailable",
+        "status": 200,
+        "cookies": [],
+        "body": "FasalGuard AI AGRICULTURAL INTELLIGENCE PROTECT EVERY FIELD Detect crop threats before disease spreads. AI crop screening, expert verificati"
+      },
+      {
+        "to": "/farms",
+        "finalUrl": "/login?returnTo=%2Ffarms",
+        "status": 200,
+        "cookies": [],
+        "body": "FasalGuard AI AGRICULTURAL INTELLIGENCE PROTECT EVERY FIELD Detect crop threats before disease spreads. AI crop screening, expert verificati"
+      },
+      {
+        "to": "/assistant",
+        "finalUrl": "/login?returnTo=%2Fassistant",
+        "status": 200,
+        "cookies": [],
+        "body": "FasalGuard AI AGRICULTURAL INTELLIGENCE PROTECT EVERY FIELD Detect crop threats before disease spreads. AI crop screening, expert verificati"
+      }
+    ],
+    "recoveryAfterSec": "recovered"
+  }
+}

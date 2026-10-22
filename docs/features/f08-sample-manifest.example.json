@@ -1,0 +1,13 @@
+{
+  "samples": [
+    {
+      "id": "replace-with-private-sample-id",
+      "file": "relative-private-audio.wav",
+      "language": "ur",
+      "reference": "human verified transcript",
+      "cropTerms": ["cotton"],
+      "noiseCondition": "recorded label",
+      "consentOrLicense": "documented consent or dataset license reference"
+    }
+  ]
+}

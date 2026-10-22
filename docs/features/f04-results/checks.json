@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-14",
+  "timezone": "Asia/Karachi",
+  "sliceStatus": "RUN_PASS",
+  "productionStatus": "BLOCKED_EXTERNAL",
+  "pythonPassed": 163,
+  "pythonSkippedNativeWapor": 6,
+  "integrationPassed": 9,
+  "frontendUnitPassed": 6,
+  "apiPassed": 202,
+  "apiSuites": 52,
+  "browserStatus": "RUN_PASS",
+  "browserDatabaseTimestampMatch": true,
+  "independentReview": "RUN_PASS approved; production not certified",
+  "productionBlockers": [
+    "Commercial provider authentication/subscription verification",
+    "Locally approved and validated crop-weather rules",
+    "Staging/deployment/load/retention operational signoff"
+  ],
+  "checks": {
+    "python-lint": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "python-lint.log"
+    },
+    "python-unit": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "python-unit.log"
+    },
+    "python-integration": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "python-integration.log"
+    },
+    "frontend-unit": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "frontend-unit.log"
+    },
+    "api-typecheck": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "api-typecheck.log"
+    },
+    "api-tests": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "api-tests.log"
+    },
+    "api-build": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "api-build.log"
+    },
+    "api-lint": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "api-lint.log"
+    },
+    "web-typecheck": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "web-typecheck.log"
+    },
+    "web-lint": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "web-lint.log"
+    },
+    "web-build": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "web-build.log"
+    },
+    "migration-up": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "migration-up.log"
+    },
+    "migration-down": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "migration-down.log"
+    },
+    "migration-up-again": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "migration-up-again.log"
+    },
+    "runtime-migration": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "runtime-migration.log"
+    },
+    "compose-config": {
+      "status": "RUN_PASS",
+      "exitCode": 0,
+      "log": "compose-config.log"
+    }
+  }
+}

@@ -1,0 +1,3 @@
+Command: docker compose --env-file <synthetic-test-settings> -f compose.platform.yml config --quiet
+No services launched. No production environment file used.
+exit=0

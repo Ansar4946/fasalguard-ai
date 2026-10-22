@@ -1,0 +1,4 @@
+COMMAND: node node_modules/eslint/bin/eslint.js features/market-intelligence components/market-intelligence app/api/market
+CWD: .
+
+EXIT: 0 ERROR: none

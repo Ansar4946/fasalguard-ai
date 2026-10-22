@@ -1,0 +1,39 @@
+✔ parses notifications strictly and treats a malformed list as an error, not empty (34.1764ms)
+✔ unread count and preferences are validated (0.9437ms)
+✔ delivery wording never claims more than was recorded (0.6685ms)
+✔ API calls send the bearer token over HTTPS only and map failures distinctly (7.2921ms)
+✔ mark read, read all and saving a preference use the right requests (2.9747ms)
+✔ push token registration validates its input before any request (1.8682ms)
+✔ real SQLite persists history/outbox across database restart and isolates accounts (106.2489ms)
+✔ simulated offline transport, expired auth, conflict and server outage retain pending history (6.5207ms)
+✔ ACK is validated in full before any SQLite record is marked synced (4.3611ms)
+✔ sync refuses plaintext transport and missing identity (0.8784ms)
+✔ pull metadata and cursor commit together, account cursors remain isolated (4.0875ms)
+✔ conflicting pull keeps local payload and cursor, including earlier records in the page (140.2347ms)
+✔ preprocessing reads RGB pixels into the documented NCHW tensor (15.0975ms)
+✔ invalid manifest, output shape and nonfinite model scores fail closed (2.4855ms)
+✔ cached sessions reject malformed field/season/crop identities and names (1.5495ms)
+✔ retained photo encryption authenticates bytes, account and capture identity (15.6186ms)
+✔ registers this phone and remembers the server token id (39.2654ms)
+✔ asks for permission only when it is not already granted, and stops if refused (1.0333ms)
+✔ a build without Firebase configuration reports TOKEN_UNAVAILABLE and registers nothing (2.8663ms)
+✔ only Android and iOS phones can register (1.1085ms)
+✔ server errors are reported and nothing is remembered locally (2.161ms)
+✔ turning push off removes the server token, then forgets it; repeating is safe (3.3956ms)
+✔ a server that no longer knows the token (404) counts as removed; other failures keep it for retry (51.7926ms)
+✔ token rotation re-registers only when push is on (10.7549ms)
+✔ every outcome has farmer-readable wording, and the no-Firebase case is stated plainly (2.4384ms)
+✔ only an HTTPS server address is accepted (3.2737ms)
+✔ parses screens and receipts like the web simulator (5.9484ms)
+✔ receipt verification needs the exact id and matching amount, farm, category (8.8924ms)
+✔ malformed ledger bodies are errors, never an empty ledger (5.9579ms)
+✔ server failures map to distinct errors and the bearer token is sent (3.3281ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1143.1471
+exit=0

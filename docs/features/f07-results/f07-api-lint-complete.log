@@ -1,0 +1,4 @@
+COMMAND: node node_modules/eslint/bin/eslint.js src/domain/market test/market-data-policy.spec.ts test/amis-html.parser.spec.ts test/amis-market-price.provider.spec.ts test/market-workflow.integration-spec.ts test/market.integration-spec.ts
+CWD: services/api
+
+EXIT: 0 ERROR: none

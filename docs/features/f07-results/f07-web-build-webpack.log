@@ -1,0 +1,8 @@
+COMMAND: node node_modules/next/dist/bin/next build --webpack
+CWD: .
+▲ Next.js 16.2.12 (webpack)
+- Environments: .env
+
+  Creating an optimized production build ...
+
+EXIT: null ERROR: ETIMEDOUT

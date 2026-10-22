@@ -1,0 +1,28 @@
+## integration satellite
+ERROR tests/satellite/test_integration.py::test_api_commit_outbox_empty_scene_and_idempotency
+ERROR tests/satellite/test_integration.py::test_actual_revoked_session_and_field_isolation
+ERROR tests/satellite/test_integration.py::test_broker_outage_keeps_committed_job
+ERROR tests/satellite/test_integration.py::test_provider_failure_after_retry_exhaustion_is_not_prediction
+ERROR tests/satellite/test_integration.py::test_field_lock_excludes_concurrent_scene_selection
+ERROR tests/satellite/test_integration.py::test_successful_publication_dedup_reprocessing_and_other_user_denial
+ERROR tests/satellite/test_integration.py::test_two_scheduler_ticks_preserve_entitlements
+35 deselected, 7 errors in 6.70s
+## integration weather
+.........                                                                [100%]
+9 passed, 42 deselected in 9.18s
+## integration irrigation
+.......                                                                  [100%]
+7 passed, 40 deselected in 9.98s
+## integration geometry
+
+tests/geometry/test_cross_service.py:30: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"field_id": "929391dc-f98a-4777-8271-eb0e116b8537", "version": 2, "source": "MAP_DRAWN", "event": "field_boundary_updated", "method": "PATCH", "request_id": "cfb2fda5a864439eb2ce277c9067bc0b", "path": "/api/v1/fields/929391dc-f98a-4777-8271-eb0e116b8537/boundary", "level": "info", "timestamp": "2026-10-16T08:37:38.201809Z"}
+{"status": 200, "request_id": "cfb2fda5a864439eb2ce277c9067bc0b", "path": "/api/v1/fields/929391dc-f98a-4777-8271-eb0e116b8537/boundary", "method": "PATCH", "event": "http_request", "level": "info", "timestamp": "2026-10-16T08:37:38.220062Z"}
+=========================== short test summary info ============================
+FAILED tests/geometry/test_cross_service.py::test_cross_service_boundary_writes_conflict_and_metadata_edit_preserves_holes
+1 failed, 12 passed, 25 deselected in 9.59s
+.......                                                                  [100%]
+7 passed, 35 deselected in 9.06s
+.                                                                        [100%]
+1 passed in 7.13s

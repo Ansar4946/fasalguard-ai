@@ -1,0 +1,6 @@
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\components\fields\boundary-workspace.tsx
+  50:48  warning  The ref value 'gpsSequence.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'gpsSequence.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+✖ 1 problem (0 errors, 1 warning)
+

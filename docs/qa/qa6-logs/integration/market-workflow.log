@@ -1,0 +1,15 @@
+PASS test/market-workflow.integration-spec.ts (8.527 s)
+  F07 actual PostgreSQL and authenticated API workflow
+    √ concurrent identical retries persist one observation (218 ms)
+    √ a sync that parses zero records fails and is logged as a failure, never as success (35 ms)
+    √ conflicts are explicit and leave the original persisted quote unchanged (40 ms)
+    √ an invalid second record rolls back the entire batch (31 ms)
+    √ unauthenticated, disallowed and revoked sessions cannot read prices (109 ms)
+    √ bad limits reject and unknown crops have a truthful empty response (39 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        8.731 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

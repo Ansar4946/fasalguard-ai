@@ -1,0 +1,3 @@
+{"status":"RUN_PASS","workflow":"captured genuine AMIS observations→actual worker→isolated PostgreSQL","received":76,"inserted":0,"records":11,"credentialsLogged":false}
+
+EXIT: 0

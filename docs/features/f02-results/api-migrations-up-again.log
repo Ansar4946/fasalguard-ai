@@ -1,0 +1,35 @@
+
+> @fasalguard/api@0.1.0 migration:run
+> typeorm-ts-node-commonjs -d src/infrastructure/database/data-source.ts migration:run
+
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+query: SELECT version()
+query: SELECT * FROM current_schema()
+query: CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+query: CREATE EXTENSION IF NOT EXISTS "postgis"
+query: SELECT * FROM "information_schema"."tables" WHERE "table_schema" = 'public' AND "table_name" = 'typeorm_migrations'
+query: SELECT * FROM "typeorm_migrations" "typeorm_migrations" ORDER BY "id" DESC
+36 migrations are already loaded in the database.
+37 migrations were found in the source code.
+SmsNotifications1755000036000 is the last executed migration. It was executed on Tue Aug 12 2025 12:00:36 GMT+0000 (Coordinated Universal Time).
+1 migrations are new migrations must be executed.
+query: START TRANSACTION
+query: DROP INDEX uq_satellite_scene_field;
+      CREATE UNIQUE INDEX uq_satellite_scene_field ON satellite_captures(field_id,provider,provider_scene_id)
+      WHERE provider_scene_id IS NOT NULL AND provider <> 'EARTHSEARCH_STAC';
+      CREATE UNIQUE INDEX uq_satellite_platform_scene ON satellite_captures
+      (field_id,provider,provider_scene_id,(raw_metadata->>'geometryHash'),(raw_metadata->>'processingVersion'))
+      WHERE provider='EARTHSEARCH_STAC' AND provider_scene_id IS NOT NULL AND processing_status='COMPLETED';
+query: CREATE TABLE satellite_task_outbox (
+      capture_id uuid PRIMARY KEY REFERENCES satellite_captures(id) ON DELETE CASCADE,
+      user_id uuid NOT NULL REFERENCES users(id),
+      next_dispatch_at timestamptz NOT NULL DEFAULT now(),
+      dispatch_count integer NOT NULL DEFAULT 0,
+      completed_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now()
+    ); CREATE INDEX idx_satellite_outbox_due ON satellite_task_outbox(next_dispatch_at) WHERE completed_at IS NULL;
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000037000,"SatellitePlatformOutbox1755000037000"]
+Migration SatellitePlatformOutbox1755000037000 has been executed successfully.
+query: COMMIT
+
+exit=0

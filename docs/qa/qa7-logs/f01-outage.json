@@ -1,0 +1,30 @@
+[
+ {
+  "id": "F01-40",
+  "name": "provider unreachable (connection refused): bounded retries -> NEEDS_FOLLOW_UP VISION_PROVIDER_UNAVAILABLE, no prediction/diagnosis, ai_runs FAILED",
+  "status": "PASS",
+  "detail": "after 8286 ms; failure=VISION_PROVIDER_UNAVAILABLE; ai_runs FAILED rows=1",
+  "ms": 8983
+ },
+ {
+  "id": "F01-41",
+  "name": "recovery: after provider returns, re-analyse the same scan -> DIAGNOSED with exactly one prediction (retry is idempotent; no duplicate)",
+  "status": "PASS",
+  "detail": "analyse http=500; final=DIAGNOSED/SCREENING_COMPLETE; rows={\"p\":1,\"d\":1}",
+  "ms": 4170
+ },
+ {
+  "id": "F01-42",
+  "name": "provider timeout (blackhole address): VISION_PROVIDER_TIMEOUT within bounded time, no prediction",
+  "status": "PASS",
+  "detail": "VISION_PROVIDER_TIMEOUT after 22616 ms",
+  "ms": 23457
+ },
+ {
+  "id": "F01-43",
+  "name": "worker killed mid-analysis (docker kill) then restarted: scan must reach a terminal state within 4 minutes (no permanently stuck ANALYSING)",
+  "status": "FAIL",
+  "detail": "scan still 'ANALYSING' 4 min after the worker crash (state at kill: ANALYSING); broker queue=0 unacked=3; Celery redis visibility timeout default is 1 hour and there is no database lease/recovery",
+  "ms": 250470
+ }
+]

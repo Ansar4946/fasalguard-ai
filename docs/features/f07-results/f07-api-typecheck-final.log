@@ -1,0 +1,4 @@
+COMMAND: node node_modules/typescript/bin/tsc --noEmit
+CWD: services/api
+
+EXIT: 0 SIGNAL: null

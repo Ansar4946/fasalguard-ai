@@ -1,0 +1,729 @@
+
+> @fasalguard/api@0.1.0 migration:run
+> typeorm-ts-node-commonjs -d src/infrastructure/database/data-source.ts migration:run
+
+◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
+query: SELECT version()
+query: SELECT * FROM current_schema()
+query: CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+query: CREATE EXTENSION IF NOT EXISTS "postgis"
+query: SELECT * FROM "information_schema"."tables" WHERE "table_schema" = 'public' AND "table_name" = 'typeorm_migrations'
+query: CREATE TABLE "typeorm_migrations" ("id" SERIAL NOT NULL, "timestamp" bigint NOT NULL, "name" character varying NOT NULL, CONSTRAINT "PK_bb2f075707dd300ba86d0208923" PRIMARY KEY ("id"))
+query: SELECT * FROM "typeorm_migrations" "typeorm_migrations" ORDER BY "id" DESC
+0 migrations are already loaded in the database.
+37 migrations were found in the source code.
+37 migrations are new migrations must be executed.
+query: START TRANSACTION
+query: CREATE EXTENSION IF NOT EXISTS postgis
+query: CREATE TABLE users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email varchar(320), phone varchar(32), password_hash varchar(255), role varchar(24) NOT NULL, status varchar(24) NOT NULL DEFAULT 'pending', last_login_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), deleted_at timestamptz, version integer NOT NULL DEFAULT 1, CONSTRAINT ck_users_contact CHECK (email IS NOT NULL OR phone IS NOT NULL))
+query: CREATE UNIQUE INDEX uq_users_email_active ON users (lower(email)) WHERE deleted_at IS NULL AND email IS NOT NULL
+query: CREATE UNIQUE INDEX uq_users_phone_active ON users (phone) WHERE deleted_at IS NULL AND phone IS NOT NULL
+query: CREATE TABLE farmer_profiles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE, full_name varchar(160) NOT NULL, preferred_language varchar(16) NOT NULL DEFAULT 'en', province varchar(120), district varchar(120), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1)
+query: CREATE TABLE expert_profiles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE, full_name varchar(160) NOT NULL, specialization varchar(160) NOT NULL, license_number varchar(120), verification_status varchar(24) NOT NULL DEFAULT 'pending', created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1)
+query: CREATE TABLE consents (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, type varchar(64) NOT NULL, policy_version varchar(32) NOT NULL, granted boolean NOT NULL, recorded_at timestamptz NOT NULL, revoked_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_consents_user_type ON consents(user_id,type)
+query: CREATE TABLE devices (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, device_identifier varchar(180) NOT NULL, platform varchar(16) NOT NULL, push_token varchar(512), last_seen_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), deleted_at timestamptz, version integer NOT NULL DEFAULT 1)
+query: CREATE UNIQUE INDEX uq_devices_push_token_active ON devices(push_token) WHERE deleted_at IS NULL AND push_token IS NOT NULL
+query: CREATE TABLE crops (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), slug varchar(80) NOT NULL UNIQUE, name varchar(120) NOT NULL, scientific_name varchar(160), is_active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1)
+query: CREATE TABLE crop_varieties (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), crop_id uuid NOT NULL REFERENCES crops(id) ON DELETE RESTRICT, name varchar(160) NOT NULL, code varchar(80), is_active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1, CONSTRAINT uq_crop_varieties_crop_name UNIQUE(crop_id,name))
+query: CREATE TABLE farms (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmer_profiles(id) ON DELETE RESTRICT, name varchar(160) NOT NULL, province varchar(120), district varchar(120), status varchar(24) NOT NULL DEFAULT 'active', boundary geometry(Polygon,4326) NOT NULL, centroid geometry(Point,4326) NOT NULL, area_hectares double precision NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), deleted_at timestamptz, version integer NOT NULL DEFAULT 1, CONSTRAINT ck_farms_boundary_valid CHECK (ST_IsValid(boundary)), CONSTRAINT ck_farms_boundary_coordinates CHECK (ST_XMin(boundary)>=-180 AND ST_XMax(boundary)<=180 AND ST_YMin(boundary)>=-90 AND ST_YMax(boundary)<=90), CONSTRAINT ck_farms_centroid_coordinates CHECK (ST_X(centroid) BETWEEN -180 AND 180 AND ST_Y(centroid) BETWEEN -90 AND 90), CONSTRAINT ck_farms_area_positive CHECK (area_hectares>0))
+query: CREATE INDEX idx_farms_boundary_gist ON farms USING GIST(boundary)
+query: CREATE INDEX idx_farms_centroid_gist ON farms USING GIST(centroid)
+query: CREATE TABLE fields (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farm_id uuid NOT NULL REFERENCES farms(id) ON DELETE RESTRICT, name varchar(160) NOT NULL, status varchar(24) NOT NULL DEFAULT 'active', boundary geometry(Polygon,4326) NOT NULL, centroid geometry(Point,4326) NOT NULL, area_hectares double precision NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), deleted_at timestamptz, version integer NOT NULL DEFAULT 1, CONSTRAINT ck_fields_boundary_valid CHECK (ST_IsValid(boundary)), CONSTRAINT ck_fields_boundary_coordinates CHECK (ST_XMin(boundary)>=-180 AND ST_XMax(boundary)<=180 AND ST_YMin(boundary)>=-90 AND ST_YMax(boundary)<=90), CONSTRAINT ck_fields_centroid_coordinates CHECK (ST_X(centroid) BETWEEN -180 AND 180 AND ST_Y(centroid) BETWEEN -90 AND 90), CONSTRAINT ck_fields_area_positive CHECK (area_hectares>0))
+query: CREATE UNIQUE INDEX uq_fields_farm_name_active ON fields(farm_id,name) WHERE deleted_at IS NULL
+query: CREATE INDEX idx_fields_boundary_gist ON fields USING GIST(boundary)
+query: CREATE INDEX idx_fields_centroid_gist ON fields USING GIST(centroid)
+query: CREATE TABLE crop_cycles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id) ON DELETE RESTRICT, crop_id uuid NOT NULL REFERENCES crops(id) ON DELETE RESTRICT, crop_variety_id uuid REFERENCES crop_varieties(id) ON DELETE RESTRICT, status varchar(24) NOT NULL DEFAULT 'planned', sowing_date date, expected_harvest_date date, actual_harvest_date date, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), deleted_at timestamptz, version integer NOT NULL DEFAULT 1, CONSTRAINT ck_crop_cycle_dates CHECK (expected_harvest_date IS NULL OR sowing_date IS NULL OR expected_harvest_date>=sowing_date))
+query: CREATE INDEX idx_crop_cycles_field_status ON crop_cycles(field_id,status)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000000000,"InitialGeospatialSchema1755000000000"]
+Migration InitialGeospatialSchema1755000000000 has been executed successfully.
+query: INSERT INTO crops(slug,name,scientific_name) VALUES($1,$2,$3) ON CONFLICT(slug) DO NOTHING -- PARAMETERS: ["cotton","Cotton","Gossypium spp."]
+query: INSERT INTO crops(slug,name,scientific_name) VALUES($1,$2,$3) ON CONFLICT(slug) DO NOTHING -- PARAMETERS: ["wheat","Wheat","Triticum aestivum"]
+query: INSERT INTO crops(slug,name,scientific_name) VALUES($1,$2,$3) ON CONFLICT(slug) DO NOTHING -- PARAMETERS: ["rice","Rice","Oryza sativa"]
+query: INSERT INTO crops(slug,name,scientific_name) VALUES($1,$2,$3) ON CONFLICT(slug) DO NOTHING -- PARAMETERS: ["maize","Maize","Zea mays"]
+query: INSERT INTO crops(slug,name,scientific_name) VALUES($1,$2,$3) ON CONFLICT(slug) DO NOTHING -- PARAMETERS: ["sugarcane","Sugarcane","Saccharum officinarum"]
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000001000,"SeedReferenceCrops1755000001000"]
+Migration SeedReferenceCrops1755000001000 has been executed successfully.
+query: UPDATE users SET role=CASE role WHEN 'farmer' THEN 'FARMER' WHEN 'expert' THEN 'AGRICULTURE_EXPERT' WHEN 'government' THEN 'GOVERNMENT_VIEWER' WHEN 'admin' THEN 'ADMIN' ELSE role END
+query: UPDATE consents SET type=upper(type)
+query: ALTER TABLE users ADD CONSTRAINT ck_users_role CHECK(role IN ('FARMER','AGRICULTURE_EXPERT','FIELD_WORKER','NGO_VIEWER','GOVERNMENT_VIEWER','ADMIN','SUPER_ADMIN'))
+query: ALTER TABLE users ADD CONSTRAINT ck_users_status CHECK(status IN ('pending','active','suspended'))
+query: ALTER TABLE consents ADD CONSTRAINT ck_consents_type CHECK(type IN ('LOCATION_PROCESSING','ANONYMOUS_COMMUNITY_REPORTING','AI_IMAGE_ANALYSIS','NOTIFICATIONS','RESEARCH_DATA_USE','PRIVACY_POLICY','TERMS_OF_SERVICE'))
+query: CREATE TABLE auth_sessions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, device_id uuid REFERENCES devices(id) ON DELETE SET NULL, refresh_token_hash char(64) NOT NULL UNIQUE, token_family uuid NOT NULL, user_agent varchar(512), ip_address inet, last_used_at timestamptz NOT NULL, expires_at timestamptz NOT NULL, revoked_at timestamptz, revoke_reason varchar(64), replaced_by_session_id uuid, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1)
+query: CREATE UNIQUE INDEX uq_devices_user_identifier_active ON devices(user_id,device_identifier) WHERE deleted_at IS NULL
+query: CREATE INDEX idx_auth_sessions_user_active ON auth_sessions(user_id,expires_at) WHERE revoked_at IS NULL
+query: CREATE INDEX idx_auth_sessions_family ON auth_sessions(token_family)
+query: CREATE INDEX idx_auth_sessions_expiry ON auth_sessions(expires_at)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000002000,"AuthSessionsConsentRbac1755000002000"]
+Migration AuthSessionsConsentRbac1755000002000 has been executed successfully.
+query: ALTER TABLE farms ADD COLUMN tehsil varchar(120)
+query: ALTER TABLE farms ADD COLUMN soil_type varchar(120)
+query: ALTER TABLE farms ADD COLUMN irrigation_type varchar(120)
+query: ALTER TABLE farms ADD COLUMN water_source varchar(120)
+query: ALTER TABLE crop_cycles ADD COLUMN growth_stage varchar(80)
+query: CREATE UNIQUE INDEX uq_crop_cycles_field_current ON crop_cycles(field_id) WHERE deleted_at IS NULL AND status IN ('planned','active')
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000003000,"FarmManagement1755000003000"]
+Migration FarmManagement1755000003000 has been executed successfully.
+query: CREATE TABLE media_assets (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT, object_key varchar(512) NOT NULL UNIQUE, original_filename varchar(180) NOT NULL, content_type varchar(120) NOT NULL, size_bytes bigint NOT NULL, checksum varchar(128), purpose varchar(40) NOT NULL, status varchar(24) NOT NULL DEFAULT 'pending', metadata jsonb NOT NULL DEFAULT '{}'::jsonb, completed_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1, CONSTRAINT ck_media_size CHECK(size_bytes>0), CONSTRAINT ck_media_purpose CHECK(purpose IN ('crop-scan','field-inspection','expert-review','voice-note','satellite','report')), CONSTRAINT ck_media_status CHECK(status IN ('pending','ready','failed')))
+query: CREATE INDEX idx_media_assets_owner_status ON media_assets(owner_id,status)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000004000,"PrivateMediaAssets1755000004000"]
+Migration PrivateMediaAssets1755000004000 has been executed successfully.
+query: CREATE TABLE satellite_captures (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), field_id uuid NOT NULL REFERENCES fields(id) ON DELETE CASCADE, provider varchar(32) NOT NULL, provider_scene_id varchar(255), satellite varchar(64), acquisition_date timestamptz, processed_date timestamptz, cloud_coverage double precision, usable_pixel_percentage double precision, data_quality varchar(16) NOT NULL DEFAULT 'UNKNOWN', processing_status varchar(32) NOT NULL DEFAULT 'QUEUED', raw_metadata jsonb NOT NULL DEFAULT '{}'::jsonb, requested_from timestamptz NOT NULL, requested_to timestamptz NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1, CONSTRAINT chk_satellite_status CHECK(processing_status IN ('QUEUED','SEARCHING_SCENE','PROCESSING','ANALYSING','COMPLETED','NO_VALID_SCENE','CLOUD_BLOCKED','FAILED')), CONSTRAINT chk_cloud_coverage CHECK(cloud_coverage IS NULL OR cloud_coverage BETWEEN 0 AND 100));
+query: CREATE INDEX idx_satellite_captures_field_acquisition ON satellite_captures(field_id, acquisition_date DESC);
+query: CREATE UNIQUE INDEX uq_satellite_scene_field ON satellite_captures(field_id,provider,provider_scene_id) WHERE provider_scene_id IS NOT NULL;
+query: CREATE TABLE satellite_layers (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), capture_id uuid NOT NULL REFERENCES satellite_captures(id) ON DELETE CASCADE, type varchar(40) NOT NULL, media_asset_id uuid REFERENCES media_assets(id) ON DELETE SET NULL, metadata jsonb NOT NULL DEFAULT '{}'::jsonb, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1);
+query: CREATE TABLE satellite_statistics (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), capture_id uuid NOT NULL REFERENCES satellite_captures(id) ON DELETE CASCADE, index varchar(40) NOT NULL, statistics jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1);
+query: CREATE TABLE satellite_stress_zones (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), capture_id uuid NOT NULL REFERENCES satellite_captures(id) ON DELETE CASCADE, geometry geometry(Polygon,4326) NOT NULL, severity varchar(16) NOT NULL, score double precision NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1); CREATE INDEX idx_satellite_stress_zones_geometry_gist ON satellite_stress_zones USING gist(geometry);
+query: CREATE TABLE field_health_scores (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), field_id uuid NOT NULL REFERENCES fields(id) ON DELETE CASCADE, capture_id uuid REFERENCES satellite_captures(id) ON DELETE SET NULL, score double precision NOT NULL CHECK(score BETWEEN 0 AND 100), components jsonb NOT NULL DEFAULT '{}'::jsonb, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1); CREATE INDEX idx_field_health_scores_field_created ON field_health_scores(field_id,created_at DESC);
+query: CREATE TABLE integration_usage (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), provider varchar(40) NOT NULL, operation varchar(32) NOT NULL, request_id varchar(128), status_code integer, duration_ms integer NOT NULL, quota_units double precision, success boolean NOT NULL, error_code varchar(80), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1); CREATE INDEX idx_integration_usage_provider_created ON integration_usage(provider,created_at DESC);
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000005000,"SatelliteCatalog1755000005000"]
+Migration SatelliteCatalog1755000005000 has been executed successfully.
+query: ALTER TABLE satellite_stress_zones ADD COLUMN label varchar(40) NOT NULL DEFAULT 'UNKNOWN_STRESS', ADD COLUMN area_hectares double precision NOT NULL DEFAULT 0, ADD COLUMN evidence jsonb NOT NULL DEFAULT '{}'::jsonb; ALTER TABLE satellite_stress_zones ADD CONSTRAINT chk_stress_label CHECK(label IN ('VEGETATION_DECLINE','POSSIBLE_WATER_STRESS','POSSIBLE_EXCESS_MOISTURE','UNEVEN_GROWTH','UNKNOWN_STRESS')); CREATE UNIQUE INDEX uq_satellite_layers_capture_type ON satellite_layers(capture_id,type); CREATE UNIQUE INDEX uq_satellite_statistics_capture_index ON satellite_statistics(capture_id,index); CREATE UNIQUE INDEX uq_field_health_scores_capture ON field_health_scores(capture_id) WHERE capture_id IS NOT NULL;
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000006000,"SatelliteProcessingPipeline1755000006000"]
+Migration SatelliteProcessingPipeline1755000006000 has been executed successfully.
+query: ALTER TABLE fields ADD COLUMN last_satellite_check_at timestamptz, ADD COLUMN last_successful_capture_at timestamptz, ADD COLUMN next_satellite_check_at timestamptz NOT NULL DEFAULT now(), ADD COLUMN satellite_check_failure_count integer NOT NULL DEFAULT 0 CHECK(satellite_check_failure_count>=0); CREATE INDEX idx_fields_next_satellite_check ON fields(next_satellite_check_at) WHERE deleted_at IS NULL AND status='active'; ALTER TABLE integration_usage ADD COLUMN request_count integer NOT NULL DEFAULT 1 CHECK(request_count>0);
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000007000,"AutomaticSatelliteMonitoring1755000007000"]
+Migration AutomaticSatelliteMonitoring1755000007000 has been executed successfully.
+query: CREATE TABLE weather_snapshots (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id) ON DELETE CASCADE, provider varchar(32) NOT NULL, observed_at timestamptz NOT NULL, cache_bucket timestamptz NOT NULL, values jsonb NOT NULL, raw_metadata jsonb NOT NULL DEFAULT '{}', created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1, CONSTRAINT uq_weather_snapshot_bucket UNIQUE(field_id,provider,cache_bucket))
+query: CREATE TABLE weather_forecasts (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id) ON DELETE CASCADE, provider varchar(32) NOT NULL, generated_at timestamptz NOT NULL, valid_from timestamptz NOT NULL, valid_to timestamptz NOT NULL, cache_bucket timestamptz NOT NULL, points jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1, CONSTRAINT uq_weather_forecast_bucket UNIQUE(field_id,provider,cache_bucket))
+query: CREATE TABLE crop_weather_rules (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), crop_id uuid NOT NULL REFERENCES crops(id) ON DELETE RESTRICT, category varchar(48) NOT NULL, suitability varchar(24) NOT NULL, priority integer NOT NULL DEFAULT 0, conditions jsonb NOT NULL, message text NOT NULL, source text NOT NULL, source_url text, validation_status varchar(32) NOT NULL, approved_by_expert_id uuid REFERENCES expert_profiles(id) ON DELETE RESTRICT, approved_at timestamptz, active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1, CONSTRAINT ck_weather_rule_approval CHECK ((validation_status='EXPERT_APPROVED' AND approved_by_expert_id IS NOT NULL AND approved_at IS NOT NULL) OR (validation_status<>'EXPERT_APPROVED' AND approved_by_expert_id IS NULL AND approved_at IS NULL)))
+query: CREATE INDEX idx_crop_weather_rules_crop_active ON crop_weather_rules(crop_id,active)
+query: CREATE TABLE weather_risk_assessments (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id) ON DELETE CASCADE, crop_cycle_id uuid REFERENCES crop_cycles(id) ON DELETE SET NULL, assessed_at timestamptz NOT NULL, overall_suitability varchar(24), risks jsonb NOT NULL, validation_summary jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_weather_assessment_field_time ON weather_risk_assessments(field_id,assessed_at DESC)
+query: INSERT INTO crop_weather_rules(crop_id,category,suitability,priority,conditions,message,source,validation_status) SELECT id,'HIGH_HUMIDITY','CAUTION',40,'{"all":[{"variable":"relativeHumidityPercent","operator":"gte","value":85}]}'::jsonb,'Demo signal: sustained high humidity may warrant field observation.','DEMO ONLY — illustrative threshold; not an agronomic source or recommendation.','DEMO_UNVERIFIED' FROM crops WHERE lower(name)='cotton'
+query: INSERT INTO crop_weather_rules(crop_id,category,suitability,priority,conditions,message,source,validation_status) SELECT id,'STRONG_WIND','HARMFUL',80,'{"any":[{"variable":"windGustKph","operator":"gte","value":45},{"variable":"windSpeedKph","operator":"gte","value":30}]}'::jsonb,'Demo signal: wind conditions may make field operations unsafe.','DEMO ONLY — illustrative threshold; not an agronomic source or recommendation.','DEMO_UNVERIFIED' FROM crops WHERE lower(name)='cotton'
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000008000,"WeatherIntelligence1755000008000"]
+Migration WeatherIntelligence1755000008000 has been executed successfully.
+query: CREATE TABLE crop_scans(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),owner_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,field_id uuid REFERENCES fields(id) ON DELETE SET NULL,status varchar(32) NOT NULL DEFAULT 'CREATED',confidence_policy jsonb NOT NULL,failure_code varchar(80),created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_crop_scans_owner_created ON crop_scans(owner_id,created_at DESC)
+query: CREATE TABLE scan_images(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_id uuid NOT NULL REFERENCES crop_scans(id) ON DELETE CASCADE,media_asset_id uuid NOT NULL REFERENCES media_assets(id) ON DELETE RESTRICT,category varchar(32) NOT NULL,width_pixels integer,height_pixels integer,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT uq_scan_image_media UNIQUE(scan_id,media_asset_id))
+query: CREATE TABLE image_quality_results(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_image_id uuid NOT NULL UNIQUE REFERENCES scan_images(id) ON DELETE CASCADE,acceptable boolean NOT NULL,issues jsonb NOT NULL,provider_metadata jsonb NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE TABLE model_versions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),provider varchar(40) NOT NULL,model_id varchar(160) NOT NULL,model_version varchar(80) NOT NULL,deployed_at timestamptz,metadata jsonb NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT uq_model_provider_version UNIQUE(provider,model_id,model_version))
+query: CREATE TABLE model_predictions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_id uuid NOT NULL REFERENCES crop_scans(id) ON DELETE CASCADE,model_version_id uuid NOT NULL REFERENCES model_versions(id) ON DELETE RESTRICT,predicted_condition varchar(200) NOT NULL,confidence double precision NOT NULL CHECK(confidence>=0 AND confidence<=1),inference_timestamp timestamptz NOT NULL,raw_provider_response jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_predictions_scan ON model_predictions(scan_id,inference_timestamp DESC)
+query: CREATE TABLE diagnoses(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_id uuid NOT NULL UNIQUE REFERENCES crop_scans(id) ON DELETE CASCADE,screened_condition varchar(200),confidence double precision CHECK(confidence>=0 AND confidence<=1),disposition varchar(40) NOT NULL,is_firm_diagnosis boolean NOT NULL DEFAULT false CHECK(is_firm_diagnosis=false),disclaimer text NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE TABLE diagnosis_alternatives(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),diagnosis_id uuid NOT NULL REFERENCES diagnoses(id) ON DELETE CASCADE,rank integer NOT NULL CHECK(rank>0),condition varchar(200) NOT NULL,confidence double precision NOT NULL CHECK(confidence>=0 AND confidence<=1),created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT uq_diagnosis_alternative_rank UNIQUE(diagnosis_id,rank))
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000009000,"CropImageScreening1755000009000"]
+Migration CropImageScreening1755000009000 has been executed successfully.
+query: CREATE TABLE follow_up_questions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_id uuid NOT NULL REFERENCES crop_scans(id) ON DELETE CASCADE,library_key varchar(80) NOT NULL,question_text text NOT NULL,display_order integer NOT NULL,context jsonb NOT NULL DEFAULT '{}',prompt_version varchar(40) NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT uq_follow_up_scan_library UNIQUE(scan_id,library_key))
+query: CREATE INDEX idx_follow_up_questions_scan_order ON follow_up_questions(scan_id,display_order)
+query: CREATE TABLE follow_up_answers(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),question_id uuid NOT NULL UNIQUE REFERENCES follow_up_questions(id) ON DELETE CASCADE,farmer_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,answer_text text NOT NULL CHECK(length(answer_text)<=2000),answered_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE TABLE ai_interactions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_id uuid REFERENCES crop_scans(id) ON DELETE SET NULL,user_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,purpose varchar(40) NOT NULL,provider varchar(40) NOT NULL,model_id varchar(160) NOT NULL,model_version varchar(80) NOT NULL,prompt_version varchar(40) NOT NULL,input_data jsonb NOT NULL,output_data jsonb NOT NULL,raw_provider_response jsonb NOT NULL,status varchar(24) NOT NULL,failure_code varchar(80),created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_ai_interactions_scan_created ON ai_interactions(scan_id,created_at DESC)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000010000,"IntelligentFollowUp1755000010000"]
+Migration IntelligentFollowUp1755000010000 has been executed successfully.
+query: CREATE TABLE severity_rulesets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),key varchar(80) NOT NULL,engine_version varchar(40) NOT NULL,status varchar(32) NOT NULL,weights jsonb NOT NULL,thresholds jsonb NOT NULL,source text NOT NULL,active boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT uq_severity_ruleset_version UNIQUE(key,engine_version))
+query: CREATE TABLE severity_assessments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_id uuid NOT NULL REFERENCES crop_scans(id) ON DELETE CASCADE,ruleset_id uuid NOT NULL REFERENCES severity_rulesets(id) ON DELETE RESTRICT,severity varchar(16) NOT NULL CHECK(severity IN('LOW','MODERATE','HIGH','CRITICAL')),calculated_score double precision NOT NULL CHECK(calculated_score>=0 AND calculated_score<=100),factors jsonb NOT NULL,weights_used jsonb NOT NULL,evidence_references jsonb NOT NULL,engine_version varchar(40) NOT NULL,explanation jsonb NOT NULL,expert_escalation boolean NOT NULL,escalation_reasons jsonb NOT NULL,generated_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_severity_assessment_scan_generated ON severity_assessments(scan_id,generated_at DESC)
+query: INSERT INTO severity_rulesets(key,engine_version,status,weights,thresholds,source) VALUES('DEMO_RULESET','demo-severity-v1.0.0','DEMO_UNVERIFIED','{"imageConfidenceRisk":20,"visualExtent":15,"fieldAffected":20,"spreadRate":15,"historyTrend":10,"satelliteDecline":8,"nearbyReports":5,"weatherRisk":7}','{"moderate":30,"high":55,"critical":80}','DEMO ONLY — illustrative weights and cutoffs; not agronomist-approved and not suitable for production decisions.')
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000011000,"DeterministicSeverity1755000011000"]
+Migration DeterministicSeverity1755000011000 has been executed successfully.
+query: CREATE TABLE knowledge_articles(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),title varchar(220) NOT NULL,content text NOT NULL,language_code varchar(16) NOT NULL DEFAULT 'en',status varchar(24) NOT NULL DEFAULT 'DRAFT',author_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE TABLE guideline_sources(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),title varchar(220) NOT NULL,citation text NOT NULL,url text,published_at date,created_by uuid REFERENCES users(id) ON DELETE SET NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE TABLE treatment_guidelines(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),crop_id uuid NOT NULL REFERENCES crops(id) ON DELETE RESTRICT,crop_variety_id uuid REFERENCES crop_varieties(id) ON DELETE RESTRICT,condition varchar(200) NOT NULL,region varchar(160),growth_stage varchar(100),severity varchar(16),immediate_actions jsonb NOT NULL,preventive_actions jsonb NOT NULL,monitoring_actions jsonb NOT NULL,expert_escalation_criteria jsonb NOT NULL,chemical_guidance jsonb,chemical_guidance_approved boolean NOT NULL DEFAULT false,source_id uuid NOT NULL REFERENCES guideline_sources(id) ON DELETE RESTRICT,author_id uuid REFERENCES users(id) ON DELETE SET NULL,reviewer_id uuid REFERENCES users(id) ON DELETE SET NULL,approved_at timestamptz,review_due_at timestamptz,guideline_version integer NOT NULL DEFAULT 1,status varchar(24) NOT NULL DEFAULT 'DRAFT',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_guideline_status CHECK(status IN('DRAFT','UNDER_REVIEW','APPROVED','RETIRED')),CONSTRAINT ck_guideline_approval CHECK((status='APPROVED' AND approved_at IS NOT NULL AND (reviewer_id IS NOT NULL OR author_id IS NULL)) OR status<>'APPROVED'),CONSTRAINT ck_chemical_approval CHECK(chemical_guidance_approved=false OR (status='APPROVED' AND chemical_guidance IS NOT NULL)))
+query: CREATE INDEX idx_guidelines_lookup ON treatment_guidelines(crop_id,condition,status)
+query: CREATE TABLE guideline_approvals(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),guideline_id uuid NOT NULL REFERENCES treatment_guidelines(id) ON DELETE RESTRICT,actor_id uuid REFERENCES users(id) ON DELETE SET NULL,actor_type varchar(32) NOT NULL,from_status varchar(24) NOT NULL,to_status varchar(24) NOT NULL,notes text,chemical_guidance_approved boolean NOT NULL DEFAULT false,guideline_snapshot jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_guideline_approval_history ON guideline_approvals(guideline_id,created_at)
+query: CREATE FUNCTION prevent_approval_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'guideline approval history is immutable'; END $$
+query: CREATE TRIGGER trg_guideline_approval_immutable BEFORE UPDATE OR DELETE ON guideline_approvals FOR EACH ROW EXECUTE FUNCTION prevent_approval_mutation()
+query: CREATE TABLE action_plans(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_id uuid NOT NULL REFERENCES crop_scans(id) ON DELETE CASCADE,guideline_id uuid NOT NULL REFERENCES treatment_guidelines(id) ON DELETE RESTRICT,guideline_version integer NOT NULL,created_for_user_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,severity varchar(16) NOT NULL,status varchar(24) NOT NULL DEFAULT 'ACTIVE',generated_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_action_plan_scan_created ON action_plans(scan_id,created_at DESC)
+query: CREATE TABLE action_plan_steps(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),action_plan_id uuid NOT NULL REFERENCES action_plans(id) ON DELETE CASCADE,type varchar(32) NOT NULL,instruction text NOT NULL,display_order integer NOT NULL,source_guideline_id uuid NOT NULL REFERENCES treatment_guidelines(id) ON DELETE RESTRICT,source_field varchar(48) NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: CREATE INDEX idx_action_plan_steps_order ON action_plan_steps(action_plan_id,display_order)
+query: SELECT id FROM crops WHERE name='Cotton' LIMIT 1
+query: INSERT INTO guideline_sources(title,citation)VALUES('FasalGuard Hackathon Safe Generic Guidance','System seed containing only non-chemical observation and escalation actions.')RETURNING id
+query: INSERT INTO treatment_guidelines(crop_id,condition,immediate_actions,preventive_actions,monitoring_actions,expert_escalation_criteria,source_id,approved_at,review_due_at,guideline_version,status)VALUES($1,'GENERIC_CROP_HEALTH_CONCERN','["Inspect nearby plants","Photograph the affected area"]','["Maintain field hygiene"]','["Monitor spread"]','["Request expert review"]',$2,now(),now()+interval '90 days',1,'APPROVED')RETURNING * -- PARAMETERS: ["38e54bee-1125-4135-a310-a694ccb87906","61d6ca6f-3547-49ac-a318-64932e12ae46"]
+query: INSERT INTO guideline_approvals(guideline_id,actor_id,actor_type,from_status,to_status,notes,chemical_guidance_approved,guideline_snapshot)VALUES($1,NULL,'SYSTEM_SEED','DRAFT','APPROVED','Hackathon safe generic guidance only',false,$2) -- PARAMETERS: ["05b66740-7ec7-4fae-90a8-8c19745f2373","{\"id\":\"05b66740-7ec7-4fae-90a8-8c19745f2373\",\"crop_id\":\"38e54bee-1125-4135-a310-a694ccb87906\",\"crop_variety_id\":null,\"condition\":\"GENERIC_CROP_HEALTH_CONCERN\",\"region\":null,\"growth_stage\":null,\"severity\":null,\"immediate_actions\":[\"Inspect nearby plants\",\"Photograph the affected area\"],\"preventive_actions\":[\"Maintain field hygiene\"],\"monitoring_actions\":[\"Monitor spread\"],\"expert_escalation_criteria\":[\"Request expert review\"],\"chemical_guidance\":null,\"chemical_guidance_approved\":false,\"source_id\":\"61d6ca6f-3547-49ac-a318-64932e12ae46\",\"author_id\":null,\"reviewer_id\":null,\"approved_at\":\"2026-10-14T02:23:13.999Z\",\"review_due_at\":\"2027-01-12T02:23:13.999Z\",\"guideline_version\":1,\"status\":\"APPROVED\",\"created_at\":\"2026-10-14T02:23:13.999Z\",\"updated_at\":\"2026-10-14T02:23:13.999Z\",\"version\":1}"]
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000012000,"ExpertKnowledgeActionPlans1755000012000"]
+Migration ExpertKnowledgeActionPlans1755000012000 has been executed successfully.
+query: CREATE TABLE expert_reviews(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),scan_id uuid NOT NULL UNIQUE REFERENCES crop_scans(id) ON DELETE CASCADE,status varchar(32) NOT NULL DEFAULT 'PENDING',decision varchar(24),confirmed_condition varchar(200),decision_notes text,recommendation text,recommendation_guideline_id uuid REFERENCES treatment_guidelines(id) ON DELETE RESTRICT,resolved_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_expert_review_status CHECK(status IN('PENDING','ASSIGNED','IN_REVIEW','MORE_INFO_REQUESTED','CONFIRMED','REJECTED','RECOMMENDATION_PROVIDED','RESOLVED')),CONSTRAINT ck_expert_review_decision CHECK(decision IS NULL OR decision IN('CONFIRMED','REJECTED')))
+query: CREATE TABLE expert_assignments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),review_id uuid NOT NULL REFERENCES expert_reviews(id) ON DELETE CASCADE,expert_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,assigned_by uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,assigned_at timestamptz NOT NULL DEFAULT now(),unassigned_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1); CREATE UNIQUE INDEX uq_expert_assignment_active ON expert_assignments(review_id) WHERE unassigned_at IS NULL; CREATE INDEX idx_expert_assignment_expert ON expert_assignments(expert_id,assigned_at DESC)
+query: CREATE TABLE consultations(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),farmer_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,expert_id uuid REFERENCES users(id) ON DELETE RESTRICT,scan_id uuid REFERENCES crop_scans(id) ON DELETE SET NULL,subject varchar(220) NOT NULL,status varchar(24) NOT NULL DEFAULT 'OPEN',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_consultation_status CHECK(status IN('OPEN','WAITING_FARMER','WAITING_EXPERT','CLOSED'))); CREATE INDEX idx_consultations_farmer_created ON consultations(farmer_id,created_at DESC); CREATE INDEX idx_consultations_expert_created ON consultations(expert_id,created_at DESC)
+query: CREATE TABLE consultation_messages(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),consultation_id uuid NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,sender_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,type varchar(16) NOT NULL,text text,media_asset_id uuid REFERENCES media_assets(id) ON DELETE RESTRICT,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_consultation_message_type CHECK(type IN('TEXT','IMAGE','VOICE_NOTE')),CONSTRAINT ck_consultation_message_content CHECK((type='TEXT' AND text IS NOT NULL AND media_asset_id IS NULL) OR (type IN('IMAGE','VOICE_NOTE') AND media_asset_id IS NOT NULL))); CREATE INDEX idx_consultation_messages_time ON consultation_messages(consultation_id,created_at)
+query: CREATE TABLE case_status_history(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),review_id uuid NOT NULL REFERENCES expert_reviews(id) ON DELETE RESTRICT,actor_id uuid REFERENCES users(id) ON DELETE SET NULL,from_status varchar(32),to_status varchar(32) NOT NULL,reason text,metadata jsonb NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1); CREATE INDEX idx_case_status_history_review_time ON case_status_history(review_id,created_at)
+query: CREATE FUNCTION prevent_case_history_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'case status history is immutable'; END $$; CREATE TRIGGER trg_case_history_immutable BEFORE UPDATE OR DELETE ON case_status_history FOR EACH ROW EXECUTE FUNCTION prevent_case_history_mutation()
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000013000,"ExpertReviewConsultation1755000013000"]
+Migration ExpertReviewConsultation1755000013000 has been executed successfully.
+query: CREATE TABLE outbreak_settings(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),distance_radius_meters integer NOT NULL CHECK(distance_radius_meters BETWEEN 100 AND 100000),time_window_hours integer NOT NULL CHECK(time_window_hours BETWEEN 1 AND 2160),minimum_report_count integer NOT NULL CHECK(minimum_report_count BETWEEN 2 AND 1000),expert_confirmation_required boolean NOT NULL,public_grid_degrees double precision NOT NULL CHECK(public_grid_degrees BETWEEN 0.01 AND 2),validation_status varchar(32) NOT NULL,active boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1); CREATE UNIQUE INDEX uq_outbreak_settings_active ON outbreak_settings(active) WHERE active=true
+query: INSERT INTO outbreak_settings(distance_radius_meters,time_window_hours,minimum_report_count,expert_confirmation_required,public_grid_degrees,validation_status)VALUES(10000,168,3,false,0.05,'DEMO_CONFIGURABLE')
+query: CREATE TABLE community_reports(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),reporter_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,field_id uuid REFERENCES fields(id) ON DELETE SET NULL,scan_id uuid REFERENCES crop_scans(id) ON DELETE SET NULL,source varchar(32) NOT NULL,crop_id uuid NOT NULL REFERENCES crops(id) ON DELETE RESTRICT,condition_family varchar(160) NOT NULL,private_location geometry(Point,4326) NOT NULL,public_area geometry(Polygon,4326) NOT NULL,expert_confirmed boolean NOT NULL DEFAULT false,reported_at timestamptz NOT NULL DEFAULT now(),abuse_status varchar(24) NOT NULL DEFAULT 'ACCEPTED',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_community_source CHECK(source IN('CROP_SCAN','FARMER_MANUAL','EXPERT_CONFIRMED')),CONSTRAINT ck_community_abuse CHECK(abuse_status IN('ACCEPTED','FLAGGED','REJECTED'))); CREATE INDEX idx_community_report_private_gist ON community_reports USING gist(private_location); CREATE INDEX idx_community_report_match ON community_reports(crop_id,condition_family,reported_at DESC); CREATE UNIQUE INDEX uq_community_scan_report ON community_reports(scan_id) WHERE scan_id IS NOT NULL
+query: CREATE TABLE community_verifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),report_id uuid NOT NULL REFERENCES community_reports(id) ON DELETE CASCADE,verifier_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,answer varchar(24) NOT NULL,media_asset_id uuid REFERENCES media_assets(id) ON DELETE RESTRICT,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT uq_community_verification_vote UNIQUE(report_id,verifier_id),CONSTRAINT ck_community_answer CHECK(answer IN('YES','NO','NOT_SURE','PHOTO_SUBMITTED')),CONSTRAINT ck_verification_photo CHECK((answer='PHOTO_SUBMITTED' AND media_asset_id IS NOT NULL) OR (answer<>'PHOTO_SUBMITTED' AND media_asset_id IS NULL)))
+query: CREATE TABLE outbreak_clusters(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),crop_id uuid NOT NULL REFERENCES crops(id) ON DELETE RESTRICT,condition_family varchar(160) NOT NULL,status varchar(24) NOT NULL,private_centroid geometry(Point,4326) NOT NULL,public_area geometry(Polygon,4326) NOT NULL,first_reported_at timestamptz NOT NULL,last_reported_at timestamptz NOT NULL,settings_id uuid NOT NULL REFERENCES outbreak_settings(id) ON DELETE RESTRICT,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_outbreak_status CHECK(status IN('MONITORING','SUSPECTED','EXPERT_REVIEW','CONFIRMED','DECLINING','RESOLVED'))); CREATE INDEX idx_outbreak_cluster_private_gist ON outbreak_clusters USING gist(private_centroid); CREATE INDEX idx_outbreak_cluster_match ON outbreak_clusters(crop_id,condition_family,status)
+query: CREATE TABLE outbreak_members(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),cluster_id uuid NOT NULL REFERENCES outbreak_clusters(id) ON DELETE CASCADE,report_id uuid NOT NULL REFERENCES community_reports(id) ON DELETE RESTRICT,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT uq_outbreak_member UNIQUE(cluster_id,report_id))
+query: CREATE TABLE regional_advisories(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),cluster_id uuid NOT NULL REFERENCES outbreak_clusters(id) ON DELETE CASCADE,title varchar(220) NOT NULL,message text NOT NULL,language varchar(16) NOT NULL DEFAULT 'en',published_at timestamptz,published_by uuid REFERENCES users(id) ON DELETE SET NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000014000,"CommunityOutbreaks1755000014000"]
+Migration CommunityOutbreaks1755000014000 has been executed successfully.
+query: CREATE TABLE field_risk_rulesets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ruleset_version varchar(40) NOT NULL UNIQUE,weights jsonb NOT NULL,thresholds jsonb NOT NULL,validity_hours integer NOT NULL CHECK(validity_hours BETWEEN 1 AND 72),validation_status varchar(32) NOT NULL,description text NOT NULL,active boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1); CREATE UNIQUE INDEX uq_field_risk_active ON field_risk_rulesets(active) WHERE active=true
+query: INSERT INTO field_risk_rulesets(ruleset_version,weights,thresholds,validity_hours,validation_status,description)VALUES('EXPLAINABLE_DEMO_V1','{"weatherRisk":0.25,"nearbyReports":0.2,"confirmedOutbreak":0.2,"satelliteDecline":0.2,"fieldHistory":0.15}','{"low":20,"moderate":40,"high":60,"critical":80}',6,'DEMO_UNVERIFIED','Explainable inspection-priority ruleset. Not a disease forecasting model and not expert approved.')
+query: CREATE TABLE field_risk_assessments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),field_id uuid NOT NULL REFERENCES fields(id) ON DELETE CASCADE,crop_cycle_id uuid REFERENCES crop_cycles(id) ON DELETE SET NULL,score double precision NOT NULL CHECK(score BETWEEN 0 AND 100),level varchar(16) NOT NULL,evidence jsonb NOT NULL,factors jsonb NOT NULL,ruleset_version varchar(40) NOT NULL,trigger_source varchar(32) NOT NULL,valid_until timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_field_risk_level CHECK(level IN('VERY_LOW','LOW','MODERATE','HIGH','CRITICAL')),CONSTRAINT ck_field_risk_trigger CHECK(trigger_source IN('API_REQUEST','WEATHER_UPDATE','SATELLITE_UPDATE','OUTBREAK_UPDATE','FARMER_SCAN'))); CREATE INDEX idx_field_risk_field_created ON field_risk_assessments(field_id,created_at DESC); CREATE INDEX idx_field_risk_valid ON field_risk_assessments(field_id,valid_until DESC)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000015000,"FieldRiskEngine1755000015000"]
+Migration FieldRiskEngine1755000015000 has been executed successfully.
+query: CREATE TABLE farmer_tasks(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,field_id uuid REFERENCES fields(id) ON DELETE SET NULL,title varchar(160) NOT NULL,description text,source varchar(24) NOT NULL,status varchar(16) NOT NULL DEFAULT 'PENDING',due_at timestamptz,completed_at timestamptz,source_reference varchar(100),created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),deleted_at timestamptz,version integer NOT NULL DEFAULT 1,CONSTRAINT ck_task_source CHECK(source IN('MANUAL','AI_ACTION_PLAN','SATELLITE','WEATHER','EXPERT','OUTBREAK')),CONSTRAINT ck_task_status CHECK(status IN('PENDING','COMPLETED','CANCELLED')));CREATE INDEX idx_farmer_tasks_user_status_due ON farmer_tasks(user_id,status,due_at)
+query: CREATE TABLE notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,category varchar(20) NOT NULL,title varchar(160) NOT NULL,body text NOT NULL,data jsonb NOT NULL DEFAULT '{}',read_at timestamptz,deduplication_key varchar(180),confirmed_evidence boolean NOT NULL DEFAULT false,ai_confidence double precision,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_notification_category CHECK(category IN('SATELLITE','WEATHER','DIAGNOSIS','EXPERT','OUTBREAK','TASK','SYSTEM')),CONSTRAINT ck_notification_confidence CHECK(ai_confidence IS NULL OR ai_confidence BETWEEN 0 AND 1));CREATE UNIQUE INDEX uq_notifications_user_dedup ON notifications(user_id,deduplication_key) WHERE deduplication_key IS NOT NULL;CREATE INDEX idx_notifications_user_created ON notifications(user_id,created_at DESC)
+query: CREATE TABLE device_tokens(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,device_id uuid REFERENCES devices(id) ON DELETE SET NULL,token_value text NOT NULL,token_hash char(64) NOT NULL UNIQUE,platform varchar(16) NOT NULL,active boolean NOT NULL DEFAULT true,last_seen_at timestamptz NOT NULL,invalidated_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),deleted_at timestamptz,version integer NOT NULL DEFAULT 1,CONSTRAINT ck_push_platform CHECK(platform IN('ANDROID','IOS','WEB')));CREATE INDEX idx_device_tokens_user_active ON device_tokens(user_id,active)
+query: CREATE TABLE notification_preferences(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,category varchar(20) NOT NULL,push_enabled boolean NOT NULL DEFAULT true,quiet_hours_start time,quiet_hours_end time,timezone varchar(64) NOT NULL DEFAULT 'Asia/Karachi',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,UNIQUE(user_id,category),CONSTRAINT ck_notification_preference_category CHECK(category IN('SATELLITE','WEATHER','DIAGNOSIS','EXPERT','OUTBREAK','TASK','SYSTEM')))
+query: CREATE TABLE notification_deliveries(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),notification_id uuid NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,device_token_id uuid NOT NULL REFERENCES device_tokens(id) ON DELETE CASCADE,status varchar(20) NOT NULL DEFAULT 'SCHEDULED',provider_message_id varchar(255),attempt_count integer NOT NULL DEFAULT 0,scheduled_at timestamptz NOT NULL,sent_at timestamptz,delivered_at timestamptz,last_error_code varchar(100),created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,UNIQUE(notification_id,device_token_id),CONSTRAINT ck_delivery_status CHECK(status IN('SCHEDULED','SENT','DELIVERED','FAILED','INVALID_TOKEN')));CREATE INDEX idx_notification_deliveries_status ON notification_deliveries(status,scheduled_at)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000016000,"TasksNotifications1755000016000"]
+Migration TasksNotifications1755000016000 has been executed successfully.
+query: CREATE UNIQUE INDEX uq_farmer_tasks_generated_source ON farmer_tasks(user_id,source,source_reference) WHERE source_reference IS NOT NULL AND deleted_at IS NULL
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000016001,"GeneratedTaskDeduplication1755000016001"]
+Migration GeneratedTaskDeduplication1755000016001 has been executed successfully.
+query: CREATE TABLE assistant_conversations(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,farm_id uuid REFERENCES farms(id) ON DELETE SET NULL,field_id uuid REFERENCES fields(id) ON DELETE SET NULL,title varchar(160) NOT NULL,status varchar(16) NOT NULL DEFAULT 'ACTIVE',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_assistant_conversation_status CHECK(status IN('ACTIVE','ARCHIVED')));CREATE INDEX idx_assistant_conversations_user_updated ON assistant_conversations(user_id,updated_at DESC)
+query: CREATE TABLE assistant_messages(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),conversation_id uuid NOT NULL REFERENCES assistant_conversations(id) ON DELETE CASCADE,role varchar(16) NOT NULL,content text NOT NULL,media_asset_id uuid REFERENCES media_assets(id) ON DELETE SET NULL,proposals jsonb NOT NULL DEFAULT '[]',provider varchar(80),model_id varchar(100),model_version varchar(100),prompt_version varchar(40),input_tokens integer,output_tokens integer,latency_ms integer,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_assistant_message_role CHECK(role IN('USER','ASSISTANT')),CONSTRAINT ck_assistant_usage CHECK((input_tokens IS NULL OR input_tokens>=0)AND(output_tokens IS NULL OR output_tokens>=0)AND(latency_ms IS NULL OR latency_ms>=0)));CREATE INDEX idx_assistant_messages_conversation_created ON assistant_messages(conversation_id,created_at)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000017000,"VoiceAssistant1755000017000"]
+Migration VoiceAssistant1755000017000 has been executed successfully.
+query: CREATE TABLE mutation_receipts(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id)ON DELETE CASCADE,device_id uuid NOT NULL REFERENCES devices(id)ON DELETE CASCADE,client_mutation_id uuid NOT NULL,type varchar(32)NOT NULL,status varchar(16)NOT NULL,request_hash char(64)NOT NULL,result jsonb,conflict jsonb,error_code varchar(80),attempt_count integer NOT NULL DEFAULT 1,applied_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,UNIQUE(user_id,device_id,client_mutation_id),CONSTRAINT ck_mutation_receipt_type CHECK(type IN('FIELD_INSPECTION','FOLLOW_UP_ANSWERS','CROP_SCAN_METADATA','TASK_COMPLETION','VOICE_NOTE_METADATA','COMMUNITY_REPORT')),CONSTRAINT ck_mutation_receipt_status CHECK(status IN('PROCESSING','APPLIED','CONFLICT','FAILED')));CREATE INDEX idx_mutation_receipts_user_created ON mutation_receipts(user_id,created_at DESC)
+query: CREATE TABLE field_inspections(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id)ON DELETE CASCADE,field_id uuid NOT NULL REFERENCES fields(id)ON DELETE CASCADE,notes text NOT NULL,observed_at timestamptz NOT NULL,media_asset_ids uuid[]NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1);CREATE INDEX idx_field_inspections_user_observed ON field_inspections(user_id,observed_at DESC)
+query: CREATE TABLE voice_note_metadata(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id)ON DELETE CASCADE,media_asset_id uuid NOT NULL UNIQUE REFERENCES media_assets(id)ON DELETE CASCADE,duration_seconds integer,language varchar(16),recorded_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_voice_duration CHECK(duration_seconds IS NULL OR duration_seconds BETWEEN 1 AND 3600))
+query: CREATE TABLE sync_changes(sequence bigserial PRIMARY KEY,user_id uuid NOT NULL REFERENCES users(id)ON DELETE CASCADE,resource_type varchar(40)NOT NULL,resource_id uuid NOT NULL,operation varchar(16)NOT NULL,data jsonb NOT NULL,changed_at timestamptz NOT NULL DEFAULT now());CREATE INDEX idx_sync_changes_user_cursor ON sync_changes(user_id,sequence)
+query: CREATE FUNCTION record_sync_change()RETURNS trigger LANGUAGE plpgsql AS $$DECLARE uid uuid;rtype text;safe jsonb;BEGIN CASE TG_TABLE_NAME WHEN 'farmer_tasks'THEN uid:=NEW.user_id;rtype:='TASK';safe:=jsonb_build_object('id',NEW.id,'fieldId',NEW.field_id,'title',NEW.title,'status',NEW.status,'dueAt',NEW.due_at,'version',NEW.version);WHEN 'field_inspections'THEN uid:=NEW.user_id;rtype:='FIELD_INSPECTION';safe:=jsonb_build_object('id',NEW.id,'fieldId',NEW.field_id,'notes',NEW.notes,'observedAt',NEW.observed_at,'mediaAssetIds',NEW.media_asset_ids,'version',NEW.version);WHEN 'voice_note_metadata'THEN uid:=NEW.user_id;rtype:='VOICE_NOTE';safe:=jsonb_build_object('id',NEW.id,'mediaAssetId',NEW.media_asset_id,'durationSeconds',NEW.duration_seconds,'language',NEW.language,'recordedAt',NEW.recorded_at,'version',NEW.version);WHEN 'crop_scans'THEN uid:=NEW.owner_id;rtype:='CROP_SCAN';safe:=jsonb_build_object('id',NEW.id,'fieldId',NEW.field_id,'status',NEW.status,'version',NEW.version);WHEN 'follow_up_answers'THEN uid:=NEW.farmer_id;rtype:='FOLLOW_UP_ANSWER';safe:=jsonb_build_object('id',NEW.id,'questionId',NEW.question_id,'answer',NEW.answer_text,'answeredAt',NEW.answered_at,'version',NEW.version);WHEN 'community_reports'THEN uid:=NEW.reporter_id;rtype:='COMMUNITY_REPORT';safe:=jsonb_build_object('id',NEW.id,'fieldId',NEW.field_id,'cropId',NEW.crop_id,'conditionFamily',NEW.condition_family,'source',NEW.source,'reportedAt',NEW.reported_at,'locationPrivacy','REGIONAL_ONLY');WHEN 'notifications'THEN uid:=NEW.user_id;rtype:='NOTIFICATION';safe:=jsonb_build_object('id',NEW.id,'category',NEW.category,'title',NEW.title,'body',NEW.body,'data',NEW.data,'readAt',NEW.read_at,'version',NEW.version);ELSE RETURN NEW;END CASE;INSERT INTO sync_changes(user_id,resource_type,resource_id,operation,data,changed_at)VALUES(uid,rtype,NEW.id,CASE WHEN TG_OP='INSERT'THEN'CREATED'ELSE'UPDATED'END,safe,now());RETURN NEW;END$$;CREATE TRIGGER sync_tasks AFTER INSERT OR UPDATE ON farmer_tasks FOR EACH ROW EXECUTE FUNCTION record_sync_change();CREATE TRIGGER sync_inspections AFTER INSERT OR UPDATE ON field_inspections FOR EACH ROW EXECUTE FUNCTION record_sync_change();CREATE TRIGGER sync_voice_notes AFTER INSERT OR UPDATE ON voice_note_metadata FOR EACH ROW EXECUTE FUNCTION record_sync_change();CREATE TRIGGER sync_crop_scans AFTER INSERT OR UPDATE ON crop_scans FOR EACH ROW EXECUTE FUNCTION record_sync_change();CREATE TRIGGER sync_follow_up_answers AFTER INSERT OR UPDATE ON follow_up_answers FOR EACH ROW EXECUTE FUNCTION record_sync_change();CREATE TRIGGER sync_community_reports AFTER INSERT OR UPDATE ON community_reports FOR EACH ROW EXECUTE FUNCTION record_sync_change();CREATE TRIGGER sync_notifications AFTER INSERT OR UPDATE ON notifications FOR EACH ROW EXECUTE FUNCTION record_sync_change()
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000018000,"OfflineSync1755000018000"]
+Migration OfflineSync1755000018000 has been executed successfully.
+query: CREATE TABLE generated_reports(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,type varchar(32) NOT NULL,status varchar(16) NOT NULL DEFAULT 'QUEUED',resource_id uuid,parameters jsonb NOT NULL DEFAULT '{}',object_key varchar(512),content_type varchar(80),size_bytes bigint,failure_code varchar(80),deduplication_key varchar(180) NOT NULL,request_hash char(64) NOT NULL,completed_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_generated_report_type CHECK(type IN('SATELLITE_HEALTH','DIAGNOSIS','EXPERT_REVIEW','FIELD_HEALTH','WEATHER_SUITABILITY','WEEKLY_ACTION_PLAN','OUTBREAK_SUMMARY')),CONSTRAINT ck_generated_report_status CHECK(status IN('QUEUED','GENERATING','COMPLETED','FAILED')),CONSTRAINT uq_generated_reports_dedup UNIQUE(owner_id,deduplication_key));CREATE INDEX idx_generated_reports_owner_created ON generated_reports(owner_id,created_at DESC)
+query: CREATE TABLE analytics_events(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),event_type varchar(40) NOT NULL,actor_id uuid REFERENCES users(id) ON DELETE SET NULL,subject_type varchar(40) NOT NULL,subject_id uuid,dimensions jsonb NOT NULL DEFAULT '{}',source_key varchar(180) NOT NULL UNIQUE,occurred_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,CONSTRAINT ck_analytics_event_type CHECK(event_type IN('ALERT_GENERATED','FARMER_ALERTED')));CREATE INDEX idx_analytics_events_type_time ON analytics_events(event_type,occurred_at DESC)
+query: CREATE FUNCTION record_notification_analytics() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN INSERT INTO analytics_events(event_type,actor_id,subject_type,subject_id,source_key,occurred_at) VALUES('ALERT_GENERATED',NEW.user_id,'NOTIFICATION',NEW.id,'notification:'||NEW.id,NEW.created_at) ON CONFLICT(source_key) DO NOTHING;RETURN NEW;END $$;CREATE TRIGGER trg_notification_analytics AFTER INSERT ON notifications FOR EACH ROW EXECUTE FUNCTION record_notification_analytics()
+query: CREATE FUNCTION record_delivery_analytics() RETURNS trigger LANGUAGE plpgsql AS $$ DECLARE uid uuid;BEGIN IF NEW.status IN('SENT','DELIVERED') AND (TG_OP='INSERT' OR OLD.status IS DISTINCT FROM NEW.status) THEN SELECT user_id INTO uid FROM notifications WHERE id=NEW.notification_id;INSERT INTO analytics_events(event_type,actor_id,subject_type,subject_id,source_key,occurred_at) VALUES('FARMER_ALERTED',uid,'NOTIFICATION_DELIVERY',NEW.id,'delivery:'||NEW.id,COALESCE(NEW.delivered_at,NEW.sent_at,now())) ON CONFLICT(source_key) DO NOTHING;END IF;RETURN NEW;END $$;CREATE TRIGGER trg_delivery_analytics AFTER INSERT OR UPDATE OF status ON notification_deliveries FOR EACH ROW EXECUTE FUNCTION record_delivery_analytics()
+query: INSERT INTO analytics_events(event_type,actor_id,subject_type,subject_id,source_key,occurred_at) SELECT 'ALERT_GENERATED',user_id,'NOTIFICATION',id,'notification:'||id,created_at FROM notifications ON CONFLICT(source_key) DO NOTHING;INSERT INTO analytics_events(event_type,actor_id,subject_type,subject_id,source_key,occurred_at) SELECT 'FARMER_ALERTED',n.user_id,'NOTIFICATION_DELIVERY',d.id,'delivery:'||d.id,COALESCE(d.delivered_at,d.sent_at,d.updated_at) FROM notification_deliveries d JOIN notifications n ON n.id=d.notification_id WHERE d.status IN('SENT','DELIVERED') ON CONFLICT(source_key) DO NOTHING
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000019000,"ReportsImpactAnalytics1755000019000"]
+Migration ReportsImpactAnalytics1755000019000 has been executed successfully.
+query: 
+      ALTER TABLE weather_snapshots ADD COLUMN source_identifier varchar(255), ADD COLUMN observation_status varchar(24) NOT NULL DEFAULT 'RECORDED';
+      UPDATE weather_snapshots SET source_identifier=provider || ':' || id::text WHERE source_identifier IS NULL;
+      ALTER TABLE weather_snapshots ALTER COLUMN source_identifier SET NOT NULL;
+      ALTER TABLE weather_forecasts ADD COLUMN source_identifier varchar(255), ADD COLUMN observation_status varchar(24) NOT NULL DEFAULT 'RECORDED';
+      UPDATE weather_forecasts SET source_identifier=provider || ':' || id::text WHERE source_identifier IS NULL;
+      ALTER TABLE weather_forecasts ALTER COLUMN source_identifier SET NOT NULL;
+      CREATE INDEX idx_weather_snapshots_field_observed ON weather_snapshots(field_id,observed_at DESC);
+      CREATE INDEX idx_weather_forecasts_field_generated ON weather_forecasts(field_id,generated_at DESC);
+      CREATE INDEX idx_satellite_statistics_capture_index ON satellite_statistics(capture_id,index);
+      CREATE INDEX idx_crop_scans_field_created ON crop_scans(field_id,created_at DESC) WHERE field_id IS NOT NULL;
+      CREATE INDEX idx_field_inspections_field_observed ON field_inspections(field_id,observed_at DESC);
+
+      CREATE TABLE farm_incidents(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        farm_id uuid NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
+        field_id uuid REFERENCES fields(id) ON DELETE SET NULL,
+        crop_cycle_id uuid REFERENCES crop_cycles(id) ON DELETE SET NULL,
+        type varchar(100) NOT NULL,
+        state varchar(24) NOT NULL,
+        severity varchar(16),
+        confidence double precision,
+        title varchar(200) NOT NULL,
+        source varchar(64) NOT NULL,
+        source_identifier varchar(255) NOT NULL,
+        evidence_references jsonb NOT NULL DEFAULT '[]'::jsonb,
+        detected_at timestamptz NOT NULL,
+        resolved_at timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_farm_incident_state CHECK(state IN('DETECTED','INVESTIGATING','ACTION_REQUIRED','MONITORING','RECOVERING','RESOLVED','ESCALATED','DISMISSED')),
+        CONSTRAINT ck_farm_incident_confidence CHECK(confidence IS NULL OR confidence BETWEEN 0 AND 1),
+        CONSTRAINT ck_farm_incident_resolution CHECK((state IN('RESOLVED','DISMISSED'))=(resolved_at IS NOT NULL)),
+        CONSTRAINT uq_farm_incident_source UNIQUE(source,source_identifier)
+      );
+      CREATE INDEX idx_farm_incidents_farm_state_detected ON farm_incidents(farm_id,state,detected_at DESC);
+      CREATE INDEX idx_farm_incidents_field_detected ON farm_incidents(field_id,detected_at DESC) WHERE field_id IS NOT NULL;
+
+      CREATE TABLE farm_interventions(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        farm_id uuid NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
+        field_id uuid REFERENCES fields(id) ON DELETE SET NULL,
+        incident_id uuid REFERENCES farm_incidents(id) ON DELETE SET NULL,
+        action_plan_id uuid REFERENCES action_plans(id) ON DELETE SET NULL,
+        task_id uuid REFERENCES farmer_tasks(id) ON DELETE SET NULL,
+        type varchar(100) NOT NULL,
+        status varchar(24) NOT NULL,
+        performed_at timestamptz NOT NULL,
+        recorded_by uuid REFERENCES users(id) ON DELETE SET NULL,
+        notes text,
+        evidence_references jsonb NOT NULL DEFAULT '[]'::jsonb,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_farm_intervention_status CHECK(status IN('PLANNED','IN_PROGRESS','COMPLETED','CANCELLED'))
+      );
+      CREATE INDEX idx_farm_interventions_farm_performed ON farm_interventions(farm_id,performed_at DESC);
+      CREATE INDEX idx_farm_interventions_incident_status ON farm_interventions(incident_id,status) WHERE incident_id IS NOT NULL;
+
+      CREATE TABLE farm_verifications(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        farm_id uuid NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
+        field_id uuid REFERENCES fields(id) ON DELETE SET NULL,
+        incident_id uuid NOT NULL REFERENCES farm_incidents(id) ON DELETE CASCADE,
+        crop_scan_id uuid REFERENCES crop_scans(id) ON DELETE SET NULL,
+        satellite_capture_id uuid REFERENCES satellite_captures(id) ON DELETE SET NULL,
+        field_inspection_id uuid REFERENCES field_inspections(id) ON DELETE SET NULL,
+        status varchar(24) NOT NULL,
+        outcome text,
+        observed_at timestamptz NOT NULL,
+        evidence_references jsonb NOT NULL DEFAULT '[]'::jsonb,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_farm_verification_status CHECK(status IN('PENDING','IMPROVED','UNCHANGED','WORSENED','INCONCLUSIVE')),
+        CONSTRAINT ck_farm_verification_evidence CHECK(crop_scan_id IS NOT NULL OR satellite_capture_id IS NOT NULL OR field_inspection_id IS NOT NULL OR jsonb_array_length(evidence_references)>0)
+      );
+      CREATE INDEX idx_farm_verifications_farm_observed ON farm_verifications(farm_id,observed_at DESC);
+      CREATE INDEX idx_farm_verifications_incident_status ON farm_verifications(incident_id,status);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000020000,"FarmDigitalTwin1755000020000"]
+Migration FarmDigitalTwin1755000020000 has been executed successfully.
+query: 
+      CREATE TABLE satellite_anomaly_assessments (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        capture_id uuid NOT NULL UNIQUE REFERENCES satellite_captures(id) ON DELETE CASCADE,
+        field_id uuid NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
+        baseline_method varchar(40) NOT NULL,
+        baseline_capture_ids uuid[] NOT NULL DEFAULT '{}',
+        status varchar(32) NOT NULL,
+        engine_version varchar(40) NOT NULL,
+        observed_at timestamptz NOT NULL,
+        source_identifier varchar(255) NOT NULL,
+        evidence jsonb NOT NULL DEFAULT '{}'::jsonb,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        version integer NOT NULL DEFAULT 1,
+        CONSTRAINT chk_satellite_anomaly_baseline CHECK (baseline_method IN (
+          'ROLLING_FIELD_BASELINE','PREVIOUS_VALID_OBSERVATION','INSUFFICIENT_HISTORY'
+        )),
+        CONSTRAINT chk_satellite_anomaly_status CHECK (status IN (
+          'COMPLETED','INSUFFICIENT_HISTORY','QUALITY_BLOCKED'
+        )),
+        CONSTRAINT chk_satellite_anomaly_scope CHECK (
+          evidence->>'conclusionScope' = 'SATELLITE_STRESS_ANOMALY'
+        )
+      );
+      CREATE INDEX idx_satellite_anomaly_field_observed
+        ON satellite_anomaly_assessments(field_id, observed_at DESC);
+      CREATE INDEX idx_satellite_anomaly_status
+        ON satellite_anomaly_assessments(status, observed_at DESC);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000021000,"SatelliteAnomalyEvidence1755000021000"]
+Migration SatelliteAnomalyEvidence1755000021000 has been executed successfully.
+query: 
+      CREATE TABLE farm_brain_runs(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        farm_id uuid NOT NULL REFERENCES farms(id) ON DELETE CASCADE,field_id uuid REFERENCES fields(id) ON DELETE CASCADE,
+        status varchar(24) NOT NULL,operation varchar(32) NOT NULL DEFAULT 'INVESTIGATE',schema_version varchar(40) NOT NULL,
+        input_hash char(64) NOT NULL,input_manifest jsonb NOT NULL,result jsonb,provider varchar(80),model_id varchar(120),
+        model_version varchar(120),input_tokens integer,output_tokens integer,latency_ms integer,error_code varchar(80),
+        started_at timestamptz,completed_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT chk_farm_brain_run_status CHECK(status IN('QUEUED','RUNNING','COMPLETED','FAILED')),
+        CONSTRAINT chk_farm_brain_manifest_privacy CHECK(NOT input_manifest ?| ARRAY['boundary','centroid','phone','email','password','accessToken','refreshToken'])
+      );
+      CREATE INDEX idx_farm_brain_runs_farm_created ON farm_brain_runs(farm_id,created_at DESC);
+      CREATE INDEX idx_farm_brain_runs_status_created ON farm_brain_runs(status,created_at DESC);
+      CREATE UNIQUE INDEX uq_farm_brain_active_input ON farm_brain_runs(user_id,farm_id,input_hash)
+        WHERE status IN('QUEUED','RUNNING','COMPLETED');
+
+      CREATE TABLE farm_brain_run_evidence(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),run_id uuid NOT NULL REFERENCES farm_brain_runs(id) ON DELETE CASCADE,
+        evidence_id varchar(255) NOT NULL,evidence_type varchar(64) NOT NULL,source varchar(80) NOT NULL,
+        observed_at timestamptz,snapshot_hash char(64) NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT uq_farm_brain_evidence UNIQUE(run_id,evidence_id)
+      );
+      CREATE INDEX idx_farm_brain_evidence_run ON farm_brain_run_evidence(run_id);
+
+      CREATE TABLE farm_brain_tool_calls(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),run_id uuid NOT NULL REFERENCES farm_brain_runs(id) ON DELETE CASCADE,
+        name varchar(64) NOT NULL,arguments jsonb NOT NULL DEFAULT '{}',status varchar(32) NOT NULL,reason text NOT NULL,
+        result_reference varchar(255),confirmed_by uuid REFERENCES users(id) ON DELETE SET NULL,confirmed_at timestamptz,
+        executed_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),
+        version integer NOT NULL DEFAULT 1,
+        CONSTRAINT chk_farm_brain_tool_name CHECK(name IN('getFarmDigitalTwin','getLatestWeather','getVegetationTrend',
+          'getRecentFarmerImages','createIncident','createInspectionTask','scheduleFollowUp','sendFarmerAlert',
+          'requestFarmerPhoto','escalateToExpert')),
+        CONSTRAINT chk_farm_brain_tool_status CHECK(status IN('PROPOSED','AWAITING_CONFIRMATION','REJECTED_BY_POLICY',
+          'CONFIRMED','EXECUTED','FAILED'))
+      );
+      CREATE INDEX idx_farm_brain_tool_calls_run_status ON farm_brain_tool_calls(run_id,status);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000022000,"GeminiFarmBrain1755000022000"]
+Migration GeminiFarmBrain1755000022000 has been executed successfully.
+query: 
+      CREATE TABLE organizations(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),name varchar(160) NOT NULL,slug varchar(120) NOT NULL,
+        type varchar(32) NOT NULL,evidence_class varchar(16) NOT NULL,external_reference varchar(255),
+        created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT uq_organizations_slug UNIQUE(slug),
+        CONSTRAINT ck_organization_type CHECK(type IN('FARMER_GROUP','COOPERATIVE','NGO','GOVERNMENT','COMMERCIAL_CUSTOMER','RESEARCH_PARTNER')),
+        CONSTRAINT ck_organization_evidence_class CHECK(evidence_class IN('LIVE','PILOT','DEMO','TEST'))
+      );
+      CREATE TABLE pilot_users(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,status varchar(24) NOT NULL,consented_at timestamptz NOT NULL,
+        onboarded_at timestamptz,evidence_reference varchar(255) NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT uq_pilot_users_org_user UNIQUE(organization_id,user_id),
+        CONSTRAINT ck_pilot_user_status CHECK(status IN('INVITED','CONSENTED','ONBOARDED','ACTIVE','WITHDRAWN'))
+      );
+      CREATE INDEX idx_pilot_users_status_onboarded ON pilot_users(status,onboarded_at DESC);
+      CREATE TABLE subscriptions(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+        plan varchar(80) NOT NULL,status varchar(24) NOT NULL,started_at timestamptz NOT NULL,ended_at timestamptz,
+        provider_customer_reference varchar(255),created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_subscription_status CHECK(status IN('TRIAL','ACTIVE','PAST_DUE','CANCELLED','ENDED')),
+        CONSTRAINT ck_subscription_dates CHECK(ended_at IS NULL OR ended_at>=started_at)
+      );
+      CREATE INDEX idx_subscriptions_org_status ON subscriptions(organization_id,status);
+      CREATE TABLE subscription_payments(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),subscription_id uuid NOT NULL REFERENCES subscriptions(id) ON DELETE RESTRICT,
+        provider varchar(40) NOT NULL,provider_payment_reference varchar(255) NOT NULL,amount_minor bigint NOT NULL,currency char(3) NOT NULL,
+        status varchar(16) NOT NULL,paid_at timestamptz,verified_at timestamptz,verification_source varchar(255),
+        created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT uq_subscription_payment_provider_ref UNIQUE(provider,provider_payment_reference),
+        CONSTRAINT ck_subscription_payment_amount CHECK(amount_minor>0),
+        CONSTRAINT ck_subscription_payment_status CHECK(status IN('PENDING','PAID','FAILED','REFUNDED')),
+        CONSTRAINT ck_verified_paid_payment CHECK(status<>'PAID' OR (paid_at IS NOT NULL AND verified_at IS NOT NULL AND verification_source IS NOT NULL))
+      );
+      CREATE INDEX idx_subscription_payments_status_paid ON subscription_payments(status,paid_at DESC);
+      CREATE TABLE user_feedback(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),organization_id uuid REFERENCES organizations(id) ON DELETE SET NULL,
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,rating smallint,feedback text NOT NULL,
+        context_type varchar(40) NOT NULL,context_id uuid,consent_to_quote boolean NOT NULL DEFAULT false,
+        created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_user_feedback_rating CHECK(rating IS NULL OR rating BETWEEN 1 AND 5),
+        CONSTRAINT ck_user_feedback_body CHECK(length(trim(feedback)) BETWEEN 1 AND 4000)
+      );
+      CREATE INDEX idx_user_feedback_org_created ON user_feedback(organization_id,created_at DESC);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000023000,"BusinessViabilityEvidence1755000023000"]
+Migration BusinessViabilityEvidence1755000023000 has been executed successfully.
+query: 
+      CREATE TABLE password_setup_tokens (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash varchar(64) NOT NULL UNIQUE,
+        expires_at timestamptz NOT NULL,
+        used_at timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX idx_password_setup_tokens_user_active
+        ON password_setup_tokens(user_id, expires_at DESC) WHERE used_at IS NULL;
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000024000,"PasswordSetupTokens1755000024000"]
+Migration PasswordSetupTokens1755000024000 has been executed successfully.
+query: CREATE TABLE weather_risk_alerts (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id) ON DELETE CASCADE, category varchar(48) NOT NULL, suitability varchar(24) NOT NULL, notified_at timestamptz NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), version integer NOT NULL DEFAULT 1, CONSTRAINT uq_weather_risk_alert_field_category UNIQUE(field_id,category))
+query: CREATE INDEX idx_weather_risk_alerts_field ON weather_risk_alerts(field_id)
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000025000,"WeatherRiskAlerts1755000025000"]
+Migration WeatherRiskAlerts1755000025000 has been executed successfully.
+query: 
+      CREATE TABLE subscription_plans(
+        code varchar(40) PRIMARY KEY,name varchar(120) NOT NULL,price_minor bigint,currency char(3) NOT NULL,
+        billing_interval varchar(16) NOT NULL,limits jsonb NOT NULL,is_active boolean NOT NULL DEFAULT true,sort_order integer NOT NULL DEFAULT 0,
+        created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_subscription_plan_billing_interval CHECK(billing_interval IN('MONTHLY','CUSTOM')),
+        CONSTRAINT ck_subscription_plan_price CHECK(price_minor IS NULL OR price_minor>=0)
+      );
+      INSERT INTO subscription_plans(code,name,price_minor,currency,billing_interval,limits,sort_order) VALUES
+        ('FREE','Free',0,'PKR','MONTHLY','{"maxFarms":1,"maxActiveCropSeasons":2,"geminiAnalysesPerMonth":3,"satelliteMonitoring":false,"advancedReports":false,"maxTeamMembers":1}'::jsonb,0),
+        ('FARMER_PRO','Farmer Pro',99900,'PKR','MONTHLY','{"maxFarms":3,"maxActiveCropSeasons":6,"geminiAnalysesPerMonth":30,"satelliteMonitoring":true,"advancedReports":true,"maxTeamMembers":1}'::jsonb,1),
+        ('FARM_BUSINESS','Farm Business',499900,'PKR','MONTHLY','{"maxFarms":15,"maxActiveCropSeasons":40,"geminiAnalysesPerMonth":150,"satelliteMonitoring":true,"advancedReports":true,"maxTeamMembers":5}'::jsonb,2),
+        ('COOPERATIVE','Cooperative',NULL,'PKR','CUSTOM','{"maxFarms":null,"maxActiveCropSeasons":null,"geminiAnalysesPerMonth":1000,"satelliteMonitoring":true,"advancedReports":true,"maxTeamMembers":null}'::jsonb,3);
+
+      ALTER TABLE subscriptions
+        ALTER COLUMN organization_id DROP NOT NULL,
+        ADD COLUMN user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+        ADD COLUMN plan_code varchar(40) REFERENCES subscription_plans(code);
+      UPDATE subscriptions SET plan_code=plan WHERE plan_code IS NULL AND plan IN(SELECT code FROM subscription_plans);
+      ALTER TABLE subscriptions
+        ALTER COLUMN plan_code SET NOT NULL,
+        DROP COLUMN plan,
+        ADD CONSTRAINT ck_subscription_owner CHECK((user_id IS NOT NULL)::int + (organization_id IS NOT NULL)::int = 1);
+      CREATE INDEX idx_subscriptions_user_status ON subscriptions(user_id,status);
+
+      ALTER TABLE subscription_payments DROP CONSTRAINT ck_subscription_payment_status;
+      ALTER TABLE subscription_payments ADD CONSTRAINT ck_subscription_payment_status CHECK(status IN('PENDING','PAID','FAILED','REFUNDED','CANCELLED'));
+      ALTER TABLE subscription_payments
+        ADD COLUMN plan_code varchar(40) REFERENCES subscription_plans(code),
+        ADD COLUMN verified_by_user_id uuid REFERENCES users(id),
+        ADD COLUMN notes text;
+
+      CREATE TABLE invoices(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),subscription_id uuid NOT NULL REFERENCES subscriptions(id) ON DELETE RESTRICT,
+        payment_id uuid REFERENCES subscription_payments(id) ON DELETE SET NULL,amount_minor bigint NOT NULL,currency char(3) NOT NULL,
+        status varchar(16) NOT NULL,line_description varchar(255) NOT NULL,issued_at timestamptz NOT NULL DEFAULT now(),due_at timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_invoice_status CHECK(status IN('DRAFT','ISSUED','PAID','VOID')),
+        CONSTRAINT ck_invoice_amount CHECK(amount_minor>=0)
+      );
+      CREATE INDEX idx_invoices_subscription ON invoices(subscription_id,issued_at DESC);
+
+      CREATE TABLE billing_events(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),subscription_id uuid REFERENCES subscriptions(id) ON DELETE SET NULL,
+        user_id uuid REFERENCES users(id) ON DELETE SET NULL,type varchar(40) NOT NULL,payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX idx_billing_events_subscription ON billing_events(subscription_id,created_at DESC);
+      CREATE INDEX idx_billing_events_user ON billing_events(user_id,created_at DESC);
+
+      CREATE TABLE usage_records(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+        organization_id uuid REFERENCES organizations(id) ON DELETE CASCADE,metric varchar(60) NOT NULL,
+        period_start date NOT NULL,period_end date NOT NULL,count integer NOT NULL DEFAULT 0,computed_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT ck_usage_record_owner CHECK(user_id IS NOT NULL OR organization_id IS NOT NULL),
+        CONSTRAINT uq_usage_records_user_metric_period UNIQUE(user_id,metric,period_start)
+      );
+      CREATE INDEX idx_usage_records_org_metric_period ON usage_records(organization_id,metric,period_start);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000026000,"BillingSubscriptions1755000026000"]
+Migration BillingSubscriptions1755000026000 has been executed successfully.
+query: 
+      ALTER TABLE users ADD COLUMN is_test_account boolean NOT NULL DEFAULT false;
+
+      ALTER TABLE farmer_profiles
+        ADD COLUMN acquisition_source varchar(24),
+        ADD COLUMN referred_by_user_id uuid REFERENCES users(id),
+        ADD COLUMN referral_code varchar(12);
+      UPDATE farmer_profiles SET acquisition_source='DIRECT' WHERE acquisition_source IS NULL;
+      UPDATE farmer_profiles SET referral_code=upper(substr(md5(random()::text||id::text),1,8)) WHERE referral_code IS NULL;
+      ALTER TABLE farmer_profiles
+        ALTER COLUMN acquisition_source SET NOT NULL,
+        ALTER COLUMN acquisition_source SET DEFAULT 'DIRECT',
+        ALTER COLUMN referral_code SET NOT NULL,
+        ADD CONSTRAINT ck_farmer_profiles_acquisition_source CHECK(acquisition_source IN('DIRECT','REFERRAL','FARMER_GROUP','SOCIAL','PARTNER','OTHER')),
+        ADD CONSTRAINT uq_farmer_profiles_referral_code UNIQUE(referral_code);
+      CREATE INDEX idx_farmer_profiles_referred_by ON farmer_profiles(referred_by_user_id);
+
+      CREATE TABLE pilot_leads(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),name varchar(160) NOT NULL,email varchar(320) NOT NULL,
+        phone varchar(24),country varchar(80) NOT NULL,farm_size_acres numeric(10,2),main_crop varchar(80) NOT NULL,
+        farm_count integer,acquisition_source varchar(24) NOT NULL DEFAULT 'DIRECT',status varchar(16) NOT NULL DEFAULT 'NEW',
+        created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_pilot_lead_status CHECK(status IN('NEW','CONTACTED','CONVERTED','DECLINED')),
+        CONSTRAINT ck_pilot_lead_acquisition_source CHECK(acquisition_source IN('DIRECT','REFERRAL','FARMER_GROUP','SOCIAL','PARTNER','OTHER')),
+        CONSTRAINT ck_pilot_lead_farm_size CHECK(farm_size_acres IS NULL OR farm_size_acres>=0),
+        CONSTRAINT ck_pilot_lead_farm_count CHECK(farm_count IS NULL OR farm_count>=0)
+      );
+      CREATE INDEX idx_pilot_leads_status_created ON pilot_leads(status,created_at DESC);
+
+      CREATE TABLE landing_page_views(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),viewed_on date NOT NULL,count integer NOT NULL DEFAULT 0,
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT uq_landing_page_views_viewed_on UNIQUE(viewed_on)
+      );
+
+      -- No uniqueness constraint: one-time email types (ONBOARDING_INCOMPLETE, ROADMAP_READY,
+      -- INSIGHT_READY) are guarded by an application-level "exists" check before insert;
+      -- WEEKLY_SUMMARY is guarded by an application-level this-week date-range check, since it
+      -- must legitimately recur — a hard UNIQUE(user_id,email_type) would block those resends.
+      CREATE TABLE lifecycle_email_log(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        email_type varchar(40) NOT NULL,sent_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX idx_lifecycle_email_log_user_type_sent ON lifecycle_email_log(user_id,email_type,sent_at DESC);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000027000,"GrowthFunnel1755000027000"]
+Migration GrowthFunnel1755000027000 has been executed successfully.
+query: 
+      -- A cross-cutting, judge-facing execution ledger. Existing detailed per-feature tables
+      -- (farm_brain_runs + evidence + tool_calls, ai_interactions, crop-scan model_predictions)
+      -- remain the internal source of truth for their own domains and are untouched; this table
+      -- is a structured SUMMARY written once a run reaches a terminal state — no raw prompt/
+      -- response bodies and no chain-of-thought are stored here, only validated, already-public
+      -- fields (findings/hypothesis statements, tool names, confidence, error codes).
+      CREATE TABLE ai_runs(
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+        farm_id uuid REFERENCES farms(id) ON DELETE SET NULL,
+        crop_season_id uuid REFERENCES crop_cycles(id) ON DELETE SET NULL,
+        incident_id uuid REFERENCES farm_incidents(id) ON DELETE SET NULL,
+        operation varchar(40) NOT NULL,
+        provider varchar(40) NOT NULL,
+        model varchar(160) NOT NULL,
+        status varchar(16) NOT NULL,
+        started_at timestamptz NOT NULL,
+        completed_at timestamptz,
+        latency_ms integer,
+        input_type varchar(60),
+        evidence_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+        tool_calls jsonb NOT NULL DEFAULT '[]'::jsonb,
+        tool_call_count integer NOT NULL DEFAULT 0,
+        incident_created boolean NOT NULL DEFAULT false,
+        confidence double precision,
+        output_schema_version varchar(40),
+        input_tokens integer,
+        output_tokens integer,
+        estimated_cost numeric(12,6),
+        cost_currency char(3),
+        error_code varchar(80),
+        human_review_status varchar(20) NOT NULL DEFAULT 'NOT_REQUIRED',
+        source_table varchar(40),
+        source_id uuid,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        version integer NOT NULL DEFAULT 1,
+        CONSTRAINT ck_ai_run_operation CHECK(operation IN(
+          'CROP_ANALYSIS','FARM_HEALTH_ANALYSIS','ROADMAP_GENERATION','INCIDENT_INVESTIGATION',
+          'FOLLOW_UP_ANALYSIS','WEATHER_RISK_ANALYSIS','SATELLITE_RISK_ANALYSIS','WEEKLY_SUMMARY'
+        )),
+        CONSTRAINT ck_ai_run_status CHECK(status IN('QUEUED','RUNNING','COMPLETED','FAILED')),
+        CONSTRAINT ck_ai_run_human_review CHECK(human_review_status IN('NOT_REQUIRED','REQUIRED','REVIEWED')),
+        CONSTRAINT ck_ai_run_confidence CHECK(confidence IS NULL OR (confidence>=0 AND confidence<=1))
+      );
+      CREATE INDEX idx_ai_runs_user_created ON ai_runs(user_id,created_at DESC);
+      CREATE INDEX idx_ai_runs_operation_created ON ai_runs(operation,created_at DESC);
+      CREATE INDEX idx_ai_runs_farm ON ai_runs(farm_id);
+      CREATE INDEX idx_ai_runs_status ON ai_runs(status);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000028000,"AiRunTelemetry1755000028000"]
+Migration AiRunTelemetry1755000028000 has been executed successfully.
+query: 
+      ALTER TABLE farm_incidents
+        ADD COLUMN investigation_run_id uuid REFERENCES farm_brain_runs(id) ON DELETE SET NULL,
+        ADD COLUMN initial_vegetation_score double precision,
+        ADD COLUMN initial_affected_area_hectares double precision,
+        ADD COLUMN follow_up_risk_score double precision,
+        ADD COLUMN follow_up_vegetation_score double precision,
+        ADD COLUMN follow_up_affected_area_hectares double precision,
+        ADD COLUMN farmer_confirmed boolean,
+        ADD COLUMN farmer_confirmed_at timestamptz,
+        ADD COLUMN expert_confirmed boolean,
+        ADD COLUMN expert_confirmed_at timestamptz,
+        ADD COLUMN expert_confirmed_by uuid REFERENCES users(id) ON DELETE SET NULL,
+        ADD CONSTRAINT ck_farm_incident_follow_up_risk CHECK(follow_up_risk_score IS NULL OR follow_up_risk_score BETWEEN 0 AND 1);
+      CREATE INDEX idx_farm_incidents_investigation_run ON farm_incidents(investigation_run_id) WHERE investigation_run_id IS NOT NULL;
+
+      ALTER TABLE notifications ADD COLUMN incident_id uuid REFERENCES farm_incidents(id) ON DELETE SET NULL;
+      CREATE INDEX idx_notifications_incident ON notifications(incident_id) WHERE incident_id IS NOT NULL;
+
+      ALTER TABLE farm_interventions
+        ADD COLUMN started_at timestamptz,
+        ADD COLUMN completed_at timestamptz,
+        ADD CONSTRAINT ck_farm_intervention_completion CHECK((status='COMPLETED')=(completed_at IS NOT NULL));
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000029000,"ImpactOutcomeTracking1755000029000"]
+Migration ImpactOutcomeTracking1755000029000 has been executed successfully.
+query: ALTER TABLE pilot_users RENAME COLUMN consented_at TO registered_at
+query: 
+      ALTER TABLE pilot_users
+        ALTER COLUMN organization_id DROP NOT NULL,
+        ALTER COLUMN registered_at DROP NOT NULL,
+        ALTER COLUMN evidence_reference DROP NOT NULL,
+        ADD COLUMN invited_at timestamptz NOT NULL DEFAULT now(),
+        ADD COLUMN invited_by uuid REFERENCES users(id) ON DELETE SET NULL,
+        ADD COLUMN activated_at timestamptz,
+        ADD COLUMN completed_at timestamptz,
+        ADD COLUMN dropped_at timestamptz,
+        ADD COLUMN source varchar(24),
+        DROP CONSTRAINT ck_pilot_user_status,
+        ADD CONSTRAINT ck_pilot_user_status CHECK(status IN('INVITED','REGISTERED','ONBOARDED','ACTIVE','COMPLETED','DROPPED')),
+        ADD CONSTRAINT ck_pilot_user_source CHECK(source IS NULL OR source IN('DIRECT','REFERRAL','FARMER_GROUP','SOCIAL','PARTNER','OTHER'));
+      CREATE UNIQUE INDEX uq_pilot_users_user_no_org ON pilot_users(user_id) WHERE organization_id IS NULL;
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000030000,"PilotEnrollment1755000030000"]
+Migration PilotEnrollment1755000030000 has been executed successfully.
+query: 
+      ALTER TABLE user_feedback
+        ALTER COLUMN feedback DROP NOT NULL,
+        ADD COLUMN farm_id uuid REFERENCES farms(id) ON DELETE SET NULL,
+        ADD COLUMN useful boolean,
+        ADD COLUMN would_recommend boolean,
+        ADD COLUMN public_reference_url varchar(2048),
+        ADD COLUMN published_at timestamptz,
+        ADD COLUMN published_by uuid REFERENCES users(id) ON DELETE SET NULL,
+        ADD CONSTRAINT ck_user_feedback_published_pair CHECK((published_at IS NULL)=(published_by IS NULL)),
+        ADD CONSTRAINT ck_user_feedback_publish_requires_consent CHECK(published_at IS NULL OR consent_to_quote=true);
+      CREATE INDEX idx_user_feedback_farm_created ON user_feedback(farm_id,created_at DESC) WHERE farm_id IS NOT NULL;
+      CREATE INDEX idx_user_feedback_feature_useful ON user_feedback(context_type,useful) WHERE useful IS NOT NULL;
+      CREATE INDEX idx_user_feedback_published ON user_feedback(published_at DESC) WHERE published_at IS NOT NULL;
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000031000,"FeedbackCollection1755000031000"]
+Migration FeedbackCollection1755000031000 has been executed successfully.
+query: 
+      ALTER TABLE subscription_plans ADD COLUMN stripe_price_id varchar(255);
+      -- Reuses the existing subscriptions.provider_customer_reference column (already real,
+      -- already generic) for the Stripe customer id — no new column needed.
+      CREATE INDEX idx_subscriptions_provider_customer ON subscriptions(provider_customer_reference) WHERE provider_customer_reference IS NOT NULL;
+
+      ALTER TABLE subscription_plans DROP CONSTRAINT ck_subscription_plan_billing_interval;
+      ALTER TABLE subscription_plans ADD CONSTRAINT ck_subscription_plan_billing_interval CHECK(billing_interval IN('MONTHLY','ANNUAL','CUSTOM'));
+
+      INSERT INTO subscription_plans(code,name,price_minor,currency,billing_interval,limits,sort_order) VALUES
+        ('FARMER_PRO_ANNUAL','Farmer Pro (Annual)',999000,'PKR','ANNUAL','{"maxFarms":3,"maxActiveCropSeasons":6,"geminiAnalysesPerMonth":30,"satelliteMonitoring":true,"advancedReports":true,"maxTeamMembers":1}'::jsonb,1),
+        ('FARM_BUSINESS_ANNUAL','Farm Business (Annual)',4999000,'PKR','ANNUAL','{"maxFarms":15,"maxActiveCropSeasons":40,"geminiAnalysesPerMonth":150,"satelliteMonitoring":true,"advancedReports":true,"maxTeamMembers":5}'::jsonb,3);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000032000,"StripePayments1755000032000"]
+Migration StripePayments1755000032000 has been executed successfully.
+query: 
+      CREATE TABLE mandi_prices (
+        id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+        crop_name varchar(120) NOT NULL,
+        market_name varchar(160) NOT NULL,
+        district varchar(120) NOT NULL,
+        province varchar(120) NOT NULL,
+        minimum_price integer NOT NULL,
+        maximum_price integer NOT NULL,
+        average_price integer NOT NULL,
+        quantity integer NOT NULL DEFAULT 100,
+        unit varchar(24) NOT NULL,
+        source varchar(40) NOT NULL,
+        source_identifier varchar(255) NOT NULL,
+        source_url varchar(500) NOT NULL,
+        price_date date NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        version integer NOT NULL DEFAULT 1,
+        CONSTRAINT uq_mandi_prices_observation UNIQUE(crop_name, market_name, price_date, source),
+        CONSTRAINT ck_mandi_prices_positive CHECK(minimum_price > 0 AND maximum_price > 0 AND average_price > 0 AND quantity > 0),
+        CONSTRAINT ck_mandi_prices_order CHECK(minimum_price <= average_price AND average_price <= maximum_price)
+      );
+      CREATE INDEX idx_mandi_prices_crop_date ON mandi_prices(crop_name, price_date DESC);
+      CREATE INDEX idx_mandi_prices_market_date ON mandi_prices(market_name, price_date DESC);
+      CREATE INDEX idx_mandi_prices_location_date ON mandi_prices(province, district, price_date DESC);
+    
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000033000,"MarketIntelligence1755000033000"]
+Migration MarketIntelligence1755000033000 has been executed successfully.
+query: DROP INDEX uq_satellite_scene_field;
+      CREATE UNIQUE INDEX uq_satellite_scene_field ON satellite_captures(field_id,provider,provider_scene_id)
+      WHERE provider_scene_id IS NOT NULL AND provider <> 'EARTHSEARCH_STAC';
+      CREATE UNIQUE INDEX uq_satellite_platform_scene ON satellite_captures
+      (field_id,provider,provider_scene_id,(raw_metadata->>'geometryHash'),(raw_metadata->>'processingVersion'))
+      WHERE provider='EARTHSEARCH_STAC' AND provider_scene_id IS NOT NULL AND processing_status='COMPLETED';
+query: CREATE TABLE satellite_task_outbox (
+      capture_id uuid PRIMARY KEY REFERENCES satellite_captures(id) ON DELETE CASCADE,
+      user_id uuid NOT NULL REFERENCES users(id),
+      next_dispatch_at timestamptz NOT NULL DEFAULT now(),
+      dispatch_count integer NOT NULL DEFAULT 0,
+      completed_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now()
+    ); CREATE INDEX idx_satellite_outbox_due ON satellite_task_outbox(next_dispatch_at) WHERE completed_at IS NULL;
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000037000,"SatellitePlatformOutbox1755000037000"]
+Migration SatellitePlatformOutbox1755000037000 has been executed successfully.
+query: CREATE TABLE field_water_profiles (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id),
+      crop_cycle_id uuid NOT NULL REFERENCES crop_cycles(id), owner_id uuid NOT NULL REFERENCES users(id),
+      version integer NOT NULL CHECK(version>0), inputs jsonb NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(crop_cycle_id,version)
+    );
+    CREATE TABLE irrigation_events (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id),
+      crop_cycle_id uuid NOT NULL REFERENCES crop_cycles(id), owner_id uuid NOT NULL REFERENCES users(id),
+      event_date date NOT NULL, inputs jsonb NOT NULL, idempotency_key uuid NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(owner_id,idempotency_key), UNIQUE(crop_cycle_id,event_date)
+    );
+    CREATE TABLE irrigation_runs (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id),
+      crop_cycle_id uuid NOT NULL REFERENCES crop_cycles(id), owner_id uuid NOT NULL REFERENCES users(id),
+      kind varchar(32) NOT NULL CHECK(kind IN ('IRRIGATION','WATER_PRODUCTIVITY')),
+      status varchar(32) NOT NULL DEFAULT 'QUEUED' CHECK(status IN ('QUEUED','PROCESSING','COMPLETED','FAILED','BLOCKED_EXTERNAL')),
+      idempotency_key uuid NOT NULL, request_hash varchar(64) NOT NULL,
+      inputs jsonb NOT NULL, result jsonb, failure_code varchar(64),
+      created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
+      UNIQUE(owner_id,idempotency_key)
+    );
+    CREATE INDEX idx_irrigation_runs_owner_created ON irrigation_runs(owner_id,created_at DESC);
+    CREATE TABLE irrigation_task_outbox (
+      run_id uuid PRIMARY KEY REFERENCES irrigation_runs(id) ON DELETE CASCADE,
+      next_dispatch_at timestamptz NOT NULL DEFAULT now(), dispatch_count integer NOT NULL DEFAULT 0,
+      completed_at timestamptz
+    );
+    CREATE INDEX idx_irrigation_outbox_due ON irrigation_task_outbox(next_dispatch_at) WHERE completed_at IS NULL;
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000038000,"IrrigationWaterProductivity1755000038000"]
+Migration IrrigationWaterProductivity1755000038000 has been executed successfully.
+query: COMMIT
+
+exit=0

@@ -1,0 +1,48 @@
+  console.log
+    ◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+FAIL test/knowledge.integration-spec.ts (6.364 s)
+  Expert-controlled agricultural knowledge
+    × seeds only safe, non-chemical generic hackathon guidance (2 ms)
+    × prevents approval audit history from being changed or deleted
+
+  ● Expert-controlled agricultural knowledge › seeds only safe, non-chemical generic hackathon guidance
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m  7 |[39m   [36mlet[39m runner[33m:[39m [33mQueryRunner[39m[33m;[39m
+     [90m  8 |[39m
+    [31m[1m>[22m[39m[90m  9 |[39m   beforeAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 10 |[39m     [36mconst[39m imported [33m=[39m [36mawait[39m [36mimport[39m([32m'../src/infrastructure/database/data-source'[39m)[33m;[39m
+     [90m 11 |[39m     source [33m=[39m imported[33m.[39m[36mdefault[39m[33m;[39m
+     [90m 12 |[39m     [36mawait[39m source[33m.[39minitialize()[33m;[39m[0m
+
+      at test/knowledge.integration-spec.ts:9:3
+      at Object.<anonymous> (test/knowledge.integration-spec.ts:5:1)
+
+  ● Expert-controlled agricultural knowledge › prevents approval audit history from being changed or deleted
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m  7 |[39m   [36mlet[39m runner[33m:[39m [33mQueryRunner[39m[33m;[39m
+     [90m  8 |[39m
+    [31m[1m>[22m[39m[90m  9 |[39m   beforeAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 10 |[39m     [36mconst[39m imported [33m=[39m [36mawait[39m [36mimport[39m([32m'../src/infrastructure/database/data-source'[39m)[33m;[39m
+     [90m 11 |[39m     source [33m=[39m imported[33m.[39m[36mdefault[39m[33m;[39m
+     [90m 12 |[39m     [36mawait[39m source[33m.[39minitialize()[33m;[39m[0m
+
+      at test/knowledge.integration-spec.ts:9:3
+      at Object.<anonymous> (test/knowledge.integration-spec.ts:5:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 2 total
+Snapshots:   0 total
+Time:        6.631 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

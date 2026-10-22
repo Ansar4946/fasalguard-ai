@@ -1,0 +1,23 @@
+[
+ {
+  "id": "F01-28",
+  "name": "baseline: core worker processes a scan within 60 s",
+  "status": "PASS",
+  "detail": "NEEDS_FOLLOW_UP",
+  "ms": 3944
+ },
+ {
+  "id": "F01-29",
+  "name": "after a Redis restart (stop 5 s, start), a scan submitted once Redis is healthy is processed by the already-running worker within 90 s",
+  "status": "PASS",
+  "detail": "analyse=202 final=NEEDS_FOLLOW_UP",
+  "ms": 21556
+ },
+ {
+  "id": "F01-29b",
+  "name": "after a 45 s Redis outage, a scan submitted once Redis is healthy is processed by the already-running worker within 120 s",
+  "status": "PASS",
+  "detail": "analyse=202 final=NEEDS_FOLLOW_UP",
+  "ms": 60849
+ }
+]

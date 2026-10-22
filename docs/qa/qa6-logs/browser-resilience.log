@@ -1,0 +1,10 @@
+PASS SETUP register known-password user (API /auth/register) :: status 201, role FARMER
+PASS SETUP farm + field created :: farm 201, field 201
+FAIL RL-1 API 429 (per-user limit exhausted) must not be treated as logout: BFF /api/auth/me keeps cookies :: {"api429s":42,"bffMeStatus":401,"cookiesAfterBffMe":[],"proxyStatus":307,"proxyLocation":"/login?returnTo=%2Fdashboard"}
+PASS OUT-0 signed in before outage :: url /dashboard
+PASS OUT-1a proxy (no JS) during outage: redirect target and cookie handling :: {"status":307,"location":"/login?reason=session-unavailable","setCookie":[]}
+FAIL OUT-1b BFF GET /api/auth/me during outage must not clear session (expect 503, cookies kept) :: {"status":401,"setCookie":["fg_access=<cleared>","fg_refresh=<cleared>"],"cookiesAfter":[]}
+FAIL OUT-1 cookies retained while Postgres is down (no logout) :: API /auth/me during outage -> 503; nav [["/dashboard","/login?reason=session-unavailable",200],["/farms","/login?returnTo=%2Ffarms",200],["/assistant","/login?returnTo=%2Fassistant",200]]
+FAIL OUT-2 authenticated page navigation stays on the page (503-type handling, not redirect to /login) :: redirected to /login?reason=session-unavailable
+FAIL OUT-3 after Postgres restart, /dashboard loads with the same cookies (no re-login) :: api me ok=true, url /login?returnTo=%2Fdashboard, status 200
+SUMMARY {"PASS":4,"FAIL":5}

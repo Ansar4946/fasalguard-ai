@@ -1,0 +1,17 @@
+
+> @fasalguard/api@0.1.0 test
+> jest --runInBand --runTestsByPath test/spectral-indices.spec.ts test/sentinel-hub-provider.spec.ts test/satellite-storage.spec.ts test/automatic-monitoring.spec.ts test/notification-processor.spec.ts
+
+PASS test/sentinel-hub-provider.spec.ts (126.456 s)
+PASS test/notification-processor.spec.ts (9.393 s)
+PASS test/automatic-monitoring.spec.ts
+PASS test/spectral-indices.spec.ts
+PASS test/satellite-storage.spec.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        142.267 s
+Ran all test suites within paths "test/spectral-indices.spec.ts", "test/sentinel-hub-provider.spec.ts", "test/satellite-storage.spec.ts", "test/automatic-monitoring.spec.ts", "test/notification-processor.spec.ts".
+
+exit=0

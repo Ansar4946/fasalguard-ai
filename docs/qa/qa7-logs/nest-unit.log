@@ -1,0 +1,16 @@
+PASS test/weather-alert.service.spec.ts (22.219 s)
+PASS test/security-hardening.spec.ts
+PASS test/sentinel-hub-provider.spec.ts
+PASS test/roboflow-vision.provider.spec.ts
+PASS test/crop-scan-processor.spec.ts
+PASS test/jwt-auth-guard.spec.ts
+PASS test/open-meteo-provider.spec.ts
+PASS test/weather-rules.engine.spec.ts
+PASS test/media-policy.spec.ts
+PASS test/geojson-polygon.spec.ts
+PASS test/stress-analysis.client.spec.ts
+PASS test/spectral-indices.spec.ts
+PASS test/satellite-storage.spec.ts
+PASS test/farm-presenter.spec.ts
+Test Suites: 14 passed, 14 total
+Tests:       66 passed, 66 total

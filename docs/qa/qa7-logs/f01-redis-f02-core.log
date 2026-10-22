@@ -1,0 +1,3 @@
+FAIL F01-27 core analyse while Redis is down: the failure must not leave the scan stuck in IMAGE_VALIDATION with no job (retry after recovery must work) :: analyse request hung for 30 s while Redis was down (client timeout, no fast 503); final status after recovery=NEEDS_FOLLOW_UP, retry=202
+PASS F02-20 legacy core satellite path (Sentinel Hub credentials from .env): create scan on core API -> terminal state :: provider=COPERNICUS_SENTINEL_HUB final=CLOUD_BLOCKED cloud=26.24
+SUMMARY pass=1 fail=1 blocked=0

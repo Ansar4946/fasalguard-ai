@@ -1,0 +1,27 @@
+COMMAND: node node_modules/@nestjs/cli/bin/nest.js build
+CWD: services/api
+
+<--- Last few GCs --->
+
+[8716:000001F500559000]   126351 ms: Scavenge (interleaved) 321.7 (387.7) -> 293.5 (408.0) MB, pooled: 0 MB, 33.21 / 0.01 ms  (average mu = 0.998, current mu = 0.997) allocation failure; 
+[8716:000001F500559000]   127319 ms: Scavenge (interleaved) 344.0 (410.0) -> 319.4 (425.7) MB, pooled: 0 MB, 145.72 / 0.01 ms  (average mu = 0.998, current mu = 0.997) allocation failure; 
+
+FATAL ERROR: NewSpace::EnsureCurrentCapacity Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF7F8903D9F 
+ 2: 00007FF7F754DCB7 
+ 3: 00007FF7F734E4F7 
+ 4: 00007FF7F730ED73 
+ 5: 00007FF7F73508FA 
+ 6: 00007FF7F734FF26 
+ 7: 00007FF7F7360E82 
+ 8: 00007FF7F73609AB 
+ 9: 00007FF7F8C324AD 
+10: 00007FF7F734BFC0 
+11: 00007FF7F736681A 
+12: 00007FF7F7372CB6 
+13: 00007FF7F6F43A1B 
+14: 000001F5384B75FA 
+
+EXIT: 134 SIGNAL: null

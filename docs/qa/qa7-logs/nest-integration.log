@@ -1,0 +1,13 @@
+PASS test/farm-management.integration-spec.ts (31.222 s)
+PASS test/media.integration-spec.ts
+FAIL test/auth.integration-spec.ts
+  ● Authentication and authorization API › lists, revokes one, and revokes all device sessions
+PASS test/database-geospatial.integration-spec.ts
+  ● Console
+Test Suites: 1 failed, 3 passed, 4 total
+Tests:       1 failed, 22 passed, 23 total
+    ✓ registers only a farmer and records versioned consent (581 ms)
+    ✓ authenticates, returns the current user, and enforces RBAC (762 ms)
+    ✓ rotates refresh tokens and revokes the family on reuse (434 ms)
+    ✕ lists, revokes one, and revokes all device sessions (28 ms)
+Tests:       1 failed, 3 passed, 4 total

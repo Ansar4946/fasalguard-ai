@@ -1,0 +1,22 @@
+
+> @fasalguard/api@0.1.0 migration:revert
+> typeorm-ts-node-commonjs -d src/infrastructure/database/data-source.ts migration:revert
+
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+query: SELECT version()
+query: SELECT * FROM current_schema()
+query: CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+query: CREATE EXTENSION IF NOT EXISTS "postgis"
+query: SELECT * FROM "information_schema"."tables" WHERE "table_schema" = 'public' AND "table_name" = 'typeorm_migrations'
+query: SELECT * FROM "typeorm_migrations" "typeorm_migrations" ORDER BY "id" DESC
+39 migrations are already loaded in the database.
+FieldGeometryImports1755000040000 is the last executed migration. It was executed on Tue Aug 12 2025 12:00:40 GMT+0000 (Coordinated Universal Time).
+Now reverting it...
+query: START TRANSACTION
+query: DROP TABLE field_geometry_imports
+query: ALTER TABLE fields DROP COLUMN boundary_metadata
+query: DELETE FROM "typeorm_migrations" WHERE "timestamp" = $1 AND "name" = $2 -- PARAMETERS: [1755000040000,"FieldGeometryImports1755000040000"]
+Migration FieldGeometryImports1755000040000 has been reverted successfully.
+query: COMMIT
+
+exit=0

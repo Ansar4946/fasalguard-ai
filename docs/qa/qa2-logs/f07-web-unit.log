@@ -1,0 +1,19 @@
+✔ source 100kg converts explicitly to displayed 40kg (103.1653ms)
+✔ empty observations stay unavailable (0.817ms)
+✔ mixed latest dates do not distort the overview (3.2521ms)
+✔ invalid source, units, region, values and ingestion dates reject (4.324ms)
+✔ missing, future and impossible dates never use ingestion time as fallback (2.3581ms)
+✔ identical duplicates count once and conflicting duplicates reject (2.2404ms)
+✔ weekly movement matches markets exactly seven days apart (2.3386ms)
+✔ calendar windows retain gaps without invented quotes (6.441ms)
+✔ freshness changes at Pakistan midnight (1.5185ms)
+✔ different raw commodity varieties cannot blend (2.1455ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3202.3462
+exit=0

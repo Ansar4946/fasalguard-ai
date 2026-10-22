@@ -1,0 +1,77 @@
+[
+ {
+  "name": "F08-B01 Start recording is disabled until consent; Play transcript disabled (no server TTS provider)",
+  "status": "PASS",
+  "detail": "status: Checking secure voice availability…"
+ },
+ {
+  "name": "F08-B02 ticking consent persists a VOICE_PROCESSING grant row in PostgreSQL",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F08-B03 REAL: mic -> WAV -> private upload -> AssemblyAI -> editable transcript (English synthetic speech)",
+  "status": "PASS",
+  "detail": "status=\"Transcript ready. Review and edit it before sending.\" transcript=\"When should I sow wheat in Punjab? Please tell me the best time. When should I sow wheat in Punjab?\""
+ },
+ {
+  "name": "F08-B04 DB: recording stored privately for owner A only (voice-note, ready, audio/wav, size>1000)",
+  "status": "PASS",
+  "detail": "{\"ct\":\"audio/wav\",\"bytes\":255404}"
+ },
+ {
+  "name": "F08-B05 transcript is only a draft: nothing auto-sent to the assistant (0 assistant messages for A)",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F08-B06 REAL answer + Listen: send reviewed transcript, answer card appears, Listen speaks or says plainly no voice installed",
+  "status": "PASS",
+  "detail": "installedVoiceLocales=[] result=\"No English voice is installed on this device. Read the answer on screen instead.\" (headless Chromium has no OS voices; real spoken audio unverified)"
+ },
+ {
+  "name": "F08-B07 revoke: unticking consent writes granted=false, disables Start, recording refused afterwards",
+  "status": "PASS",
+  "detail": "status=\"Voice-processing consent revoked.\""
+ },
+ {
+  "name": "F08-B08 consent state after reload reflects the SERVER (granted earlier, then revoked -> unchecked)",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F08-B09 re-grant then reload: UI shows consent from server (grant persisted, UI not stuck unchecked)",
+  "status": "FAIL",
+  "detail": "server holds an active grant but the UI shows consent unchecked after reload (state not rehydrated; farmer must re-tick every visit and cannot see their real consent state)"
+ },
+ {
+  "name": "F08-B10 farmer B: consent NOT inherited from A, no transcript of A visible, Start disabled",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F08-B11 provider outage (route-injected 503 on transcribe): clear error, no invented transcript",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F08-B12 mic permission denied: readable message, no crash",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F08-B13 375px mobile viewport: no horizontal overflow",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F08-B14 bad audio (pure silence from mic): honest \"no speech\" message, transcript stays empty",
+  "status": "PASS",
+  "detail": "status=\"No speech was detected. Please record again.\""
+ },
+ {
+  "name": "F08-B15 long recording: auto-stops at maxRecordingSeconds (60 s), upload accepted, no hang",
+  "status": "PASS",
+  "detail": "auto-stopped after ~61s; final status=\"No speech was detected. Please record again.\"; latest media {\"s\":1912364,\"status\":\"ready\"}"
+ }
+]

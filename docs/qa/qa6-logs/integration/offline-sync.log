@@ -1,0 +1,18 @@
+  console.log
+    ◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+PASS test/offline-sync.integration-spec.ts (5.942 s)
+  Offline mutation receipts and optimistic synchronization
+    √ stores one receipt for repeated delivery of the same client mutation (24 ms)
+    √ allows a failed receipt to be claimed for retry without another receipt (15 ms)
+    √ returns no updated row when an editable task has a stale version (43 ms)
+    √ supports monotonic cursor reads without binary payloads (11 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        6.148 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

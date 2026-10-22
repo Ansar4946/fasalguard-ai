@@ -1,0 +1,66 @@
+
+> @fasalguard/api@0.1.0 test
+> jest --runInBand --runInBand
+
+[33m[Nest] 43  - [39m10/14/2026, 2:20:09 AM [33m   WARN[39m [38;5;3m[WeatherAlertService] [39m[33mWeather alert evaluation failed for field f1: provider outage[39m
+[33m[Nest] 43  - [39m10/14/2026, 2:20:23 AM [33m   WARN[39m [38;5;3m[RiskAssessmentService] [39m[33mSkipped autonomous Farm Brain escalation for field field-1 (trigger=SATELLITE_UPDATE, level=CRITICAL): ENTITLEMENT_LIMIT_REACHED[39m
+PASS test/stripe.service.spec.ts (26.627 s)
+PASS test/weather-alert.service.spec.ts (11.4 s)
+PASS test/feedback.service.spec.ts
+PASS test/farm-digital-twin.service.spec.ts
+PASS test/incident-lifecycle.service.spec.ts
+PASS test/pilot-enrollment.service.spec.ts
+PASS test/farm-brain.schema.spec.ts
+PASS test/security-hardening.spec.ts (6.482 s)
+PASS test/risk-farm-brain-escalation.spec.ts
+PASS test/sentinel-hub-provider.spec.ts
+PASS test/admin-billing.service.spec.ts
+PASS test/impact-analytics.service.spec.ts
+PASS test/roboflow-vision.provider.spec.ts
+PASS test/crop-scan-processor.spec.ts
+PASS test/ai-run-logger.service.spec.ts
+PASS test/market.scheduler.spec.ts
+PASS test/severity.engine.spec.ts
+PASS test/follow-up-llm.spec.ts
+PASS test/action-plan.service.spec.ts
+PASS test/dashboard.presenter.spec.ts
+PASS test/expert-review.service.spec.ts
+PASS test/gemini-farm-reasoning.provider.spec.ts
+PASS test/assistant-providers.spec.ts
+PASS test/open-meteo-provider.spec.ts
+PASS test/amis-market-price.provider.spec.ts
+PASS test/ai-operations-analytics.service.spec.ts
+PASS test/entitlement.service.spec.ts
+PASS test/weather-rules.engine.spec.ts
+PASS test/observability.spec.ts
+PASS test/pilot-lifecycle-sync.service.spec.ts
+PASS test/funnel-analytics.service.spec.ts
+PASS test/risk.engine.spec.ts
+PASS test/notification-processor.spec.ts
+PASS test/amis-html.parser.spec.ts
+PASS test/analytics.service.spec.ts
+PASS test/automatic-monitoring.spec.ts
+PASS test/report.processor.spec.ts
+PASS test/pilot-analytics.service.spec.ts
+PASS test/stress-analysis.client.spec.ts
+PASS test/referral.service.spec.ts
+PASS test/spectral-indices.spec.ts
+PASS test/notification-policy.spec.ts
+PASS test/geojson-polygon.spec.ts
+PASS test/media-policy.spec.ts
+PASS test/health.controller.spec.ts
+PASS test/request-id.middleware.spec.ts
+PASS test/satellite-storage.spec.ts
+PASS test/development-push.provider.spec.ts
+PASS test/pilot-lead.service.spec.ts
+PASS test/outbreak-privacy.spec.ts
+PASS test/farm-presenter.spec.ts
+PASS test/pdf-renderer.spec.ts
+
+Test Suites: 52 passed, 52 total
+Tests:       201 passed, 201 total
+Snapshots:   0 total
+Time:        110.318 s
+Ran all test suites.
+
+exit=0

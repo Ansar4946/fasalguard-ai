@@ -1,0 +1,82 @@
+{
+  "status": "RUN_PASS",
+  "fieldId": "59dbe2a8-55c5-4522-8c33-cb19e8526218",
+  "provider": "OPEN_METEO",
+  "fetchedAt": "2026-10-14T03:20:39.180931+00:00",
+  "expiresAt": "2026-10-14T03:35:39.180931+00:00",
+  "providerIssuedAt": null,
+  "freshness": "FRESH",
+  "timezone": "Asia/Karachi",
+  "browserTimezone": "America/New_York",
+  "hourlyPoints": 168,
+  "daily": [
+    {
+      "key": "2026-10-14",
+      "lowC": 20.1,
+      "highC": 28.5,
+      "maxWindKph": 20,
+      "totalPrecipitationMm": 21.1,
+      "maxRainProbabilityPercent": 98
+    },
+    {
+      "key": "2026-10-15",
+      "lowC": 19.2,
+      "highC": 27.6,
+      "maxWindKph": 11.5,
+      "totalPrecipitationMm": 2.5,
+      "maxRainProbabilityPercent": 100
+    },
+    {
+      "key": "2026-10-16",
+      "lowC": 19.1,
+      "highC": 28.9,
+      "maxWindKph": 7.9,
+      "totalPrecipitationMm": 0,
+      "maxRainProbabilityPercent": 0
+    },
+    {
+      "key": "2026-10-17",
+      "lowC": 18.7,
+      "highC": 29.4,
+      "maxWindKph": 6.1,
+      "totalPrecipitationMm": 0,
+      "maxRainProbabilityPercent": 0
+    },
+    {
+      "key": "2026-10-18",
+      "lowC": 18.6,
+      "highC": 29.8,
+      "maxWindKph": 4.1,
+      "totalPrecipitationMm": 0,
+      "maxRainProbabilityPercent": 0
+    },
+    {
+      "key": "2026-10-19",
+      "lowC": 19.2,
+      "highC": 31,
+      "maxWindKph": 7.9,
+      "totalPrecipitationMm": 0,
+      "maxRainProbabilityPercent": 2
+    },
+    {
+      "key": "2026-10-20",
+      "lowC": 18.7,
+      "highC": 31.8,
+      "maxWindKph": 7.6,
+      "totalPrecipitationMm": 0,
+      "maxRainProbabilityPercent": 0
+    }
+  ],
+  "rawMetadata": {
+    "dataKind": "MODEL_FORECAST",
+    "attribution": "Weather data by Open-Meteo.com (CC BY 4.0)",
+    "gridLatitude": 30.966606,
+    "gridLongitude": 71.978676,
+    "processingVersion": "f04-v1"
+  },
+  "simulatedOutageAndRecovery": true,
+  "syntheticExpirySuppressedGuidance": true,
+  "nonOwnerDenied": true,
+  "anonymousDenied": true,
+  "invalidUuidRejected": true
+}

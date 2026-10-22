@@ -1,0 +1,50 @@
+
+> @fasalguard/api@0.1.0 migration:run
+> typeorm-ts-node-commonjs -d src/infrastructure/database/data-source.ts migration:run
+
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+query: SELECT version()
+query: SELECT * FROM current_schema()
+query: CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+query: CREATE EXTENSION IF NOT EXISTS "postgis"
+query: SELECT * FROM "information_schema"."tables" WHERE "table_schema" = 'public' AND "table_name" = 'typeorm_migrations'
+query: SELECT * FROM "typeorm_migrations" "typeorm_migrations" ORDER BY "id" DESC
+36 migrations are already loaded in the database.
+37 migrations were found in the source code.
+SatellitePlatformOutbox1755000037000 is the last executed migration. It was executed on Tue Aug 12 2025 12:00:37 GMT+0000 (Coordinated Universal Time).
+1 migrations are new migrations must be executed.
+query: START TRANSACTION
+query: CREATE TABLE field_water_profiles (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id),
+      crop_cycle_id uuid NOT NULL REFERENCES crop_cycles(id), owner_id uuid NOT NULL REFERENCES users(id),
+      version integer NOT NULL CHECK(version>0), inputs jsonb NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(crop_cycle_id,version)
+    );
+    CREATE TABLE irrigation_events (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id),
+      crop_cycle_id uuid NOT NULL REFERENCES crop_cycles(id), owner_id uuid NOT NULL REFERENCES users(id),
+      event_date date NOT NULL, inputs jsonb NOT NULL, idempotency_key uuid NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(owner_id,idempotency_key), UNIQUE(crop_cycle_id,event_date)
+    );
+    CREATE TABLE irrigation_runs (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), field_id uuid NOT NULL REFERENCES fields(id),
+      crop_cycle_id uuid NOT NULL REFERENCES crop_cycles(id), owner_id uuid NOT NULL REFERENCES users(id),
+      kind varchar(32) NOT NULL CHECK(kind IN ('IRRIGATION','WATER_PRODUCTIVITY')),
+      status varchar(32) NOT NULL DEFAULT 'QUEUED' CHECK(status IN ('QUEUED','PROCESSING','COMPLETED','FAILED','BLOCKED_EXTERNAL')),
+      idempotency_key uuid NOT NULL, request_hash varchar(64) NOT NULL,
+      inputs jsonb NOT NULL, result jsonb, failure_code varchar(64),
+      created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
+      UNIQUE(owner_id,idempotency_key)
+    );
+    CREATE INDEX idx_irrigation_runs_owner_created ON irrigation_runs(owner_id,created_at DESC);
+    CREATE TABLE irrigation_task_outbox (
+      run_id uuid PRIMARY KEY REFERENCES irrigation_runs(id) ON DELETE CASCADE,
+      next_dispatch_at timestamptz NOT NULL DEFAULT now(), dispatch_count integer NOT NULL DEFAULT 0,
+      completed_at timestamptz
+    );
+    CREATE INDEX idx_irrigation_outbox_due ON irrigation_task_outbox(next_dispatch_at) WHERE completed_at IS NULL;
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000038000,"IrrigationWaterProductivity1755000038000"]
+Migration IrrigationWaterProductivity1755000038000 has been executed successfully.
+query: COMMIT
+
+exit=0

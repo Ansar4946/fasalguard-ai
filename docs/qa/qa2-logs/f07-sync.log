@@ -1,0 +1,18 @@
+--- MODE=real
+{"mode":"real","before":0,"result":{"received":0,"inserte{"mode":"real","before":0,"result":{"received":0,"inserted":0},"ms":14610,"after":0,"latest":[]}
+--- MODE=real
+{"mode":"real","before":0,"result":{"received":0,"inserted":0},"ms":13807,"after":0,"latest":[]}
+--- MODE=captured
+{"mode":"captured","before":0,"result":{"received":76,"inserted":76},"ms":4535,"after":76,"latest":[{"crop":"Cotton","n":8,"d":"2026-10-14"},{"crop":"Maize","n":12,"d":"2026-10-14"},{"crop":"Rice","n":10,"d":"2026-10-14"},{"crop":"Sugarcane","n":35,"d":"2026-10-14"},{"crop":"Wheat","n":11,"d":"2026-10-14"}]}
+--- MODE=captured
+{"mode":"captured","before":76,"result":{"received":76,"inserted":0},"ms":5067,"after":76,"latest":[{"crop":"Cotton","n":8,"d":"2026-10-14"},{"crop":"Maize","n":12,"d":"2026-10-14"},{"crop":"Rice","n":10,"d":"2026-10-14"},{"crop":"Sugarcane","n":35,"d":"2026-10-14"},{"crop":"Wheat","n":11,"d":"2026-10-14"}]}
+--- MODE=unreachable
+{"mode":"unreachable","before":76,"error":{"name":"Error","code":"AMIS_INVALID_ORIGIN","message":"AMIS origin is not approved.","retryable":false},"ms":93,"after":76,"latest":[{"crop":"Cotton","n":8,"d":"2026-10-14"},{"crop":"Maize","n":12,"d":"2026-10-14"},{"crop":"Rice","n":10,"d":"2026-10-14"},{"crop":"Sugarcane","n":35,"d":"2026-10-14"},{"crop":"Wheat","n":11,"d":"2026-10-14"}]}
+--- MODE=ssrf
+{"mode":"ssrf","before":76,"error":{"name":"Error","code":"AMIS_INVALID_ORIGIN","message":"AMIS origin is not approved.","retryable":false},"ms":26,"after":76,"latest":[{"crop":"Cotton","n":8,"d":"2026-10-14"},{"crop":"Maize","n":12,"d":"2026-10-14"},{"crop":"Rice","n":10,"d":"2026-10-14"},{"crop":"Sugarcane","n":35,"d":"2026-10-14"},{"crop":"Wheat","n":11,"d":"2026-10-14"}]}
+--- MODE=malformed
+{"mode":"malformed","before":76,"error":{"name":"Error","code":"AMIS_INVALID_RESPONSE","message":"AMIS returned no usable Wheat prices.","retryable":true},"ms":151,"after":76,"latest":[{"crop":"Cotton","n":8,"d":"2026-10-14"},{"crop":"Maize","n":12,"d":"2026-10-14"},{"crop":"Rice","n":10,"d":"2026-10-14"},{"crop":"Sugarcane","n":35,"d":"2026-10-14"},{"crop":"Wheat","n":11,"d":"2026-10-14"}]}
+--- MODE=http500
+{"mode":"http500","before":76,"error":{"name":"Error","code":"AMIS_UPSTREAM_FAILURE","message":"AMIS market data is temporarily unavailable.","retryable":true},"ms":1755,"after":76,"latest":[{"crop":"Cotton","n":8,"d":"2026-10-14"},{"crop":"Maize","n":12,"d":"2026-10-14"},{"crop":"Rice","n":10,"d":"2026-10-14"},{"crop":"Sugarcane","n":35,"d":"2026-10-14"},{"crop":"Wheat","n":11,"d":"2026-10-14"}]}
+--- MODE=disabled
+{"mode":"disabled","before":76,"error":{"name":"Error","code":"AMIS_SYNC_DISABLED","message":"AMIS synchronization requires explicit operator approval.","retryable":false},"ms":24,"after":76,"latest":[{"crop":"Cotton","n":8,"d":"2026-10-14"},{"crop":"Maize","n":12,"d":"2026-10-14"},{"crop":"Rice","n":10,"d":"2026-10-14"},{"crop":"Sugarcane","n":35,"d":"2026-10-14"},{"crop":"Wheat","n":11,"d":"2026-10-14"}]}

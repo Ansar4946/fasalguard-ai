@@ -1,0 +1,25 @@
+PASS test/assistant-grounding.integration-spec.ts (8.251 s)
+  F10 grounded assistant on PostgreSQL
+    √ rejects an unauthenticated request (67 ms)
+    √ grounds an English answer on approved sources only and persists the exact citation (113 ms)
+    √ retrieves ur-language approved knowledge through full-text search (70 ms)
+    √ retrieves hi-language approved knowledge through full-text search (65 ms)
+    √ uses the farmer saved language when none is supplied (70 ms)
+    √ abstains in the question language without calling a model when no approved source matches (61 ms)
+    √ never exposes draft or retired knowledge (58 ms)
+    √ discards the model text for forged citation (64 ms)
+    √ discards the model text for no citation (65 ms)
+    √ discards the model text for one real and one forged citation (67 ms)
+    √ returns 503 and persists nothing when the provider is unavailable (65 ms)
+    √ recovers on the next request after an outage (98 ms)
+    √ treats retrieval text and user text as data, and tsquery syntax cannot break the query (72 ms)
+    √ is idempotent: the same key sequentially and under concurrency creates one answer (364 ms)
+    √ isolates owners: B cannot read or write A conversations or use A farm (79 ms)
+    √ validates input: unsupported language, empty/oversized message, bad idempotency key (130 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       16 passed, 16 total
+Snapshots:   0 total
+Time:        8.786 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

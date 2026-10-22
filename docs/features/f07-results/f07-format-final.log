@@ -1,0 +1,6 @@
+COMMAND: node node_modules/prettier/bin/prettier.cjs --write test/market-workflow.integration-spec.ts test/market.integration-spec.ts
+CWD: services/api
+test/market-workflow.integration-spec.ts 626ms (unchanged)
+test/market.integration-spec.ts 43ms
+
+EXIT: 0 ERROR: none

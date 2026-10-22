@@ -1,0 +1,13 @@
+PASS test/voice-assistant.integration-spec.ts (7.256 s)
+  F08 authenticated PostgreSQL voice workflow
+    √ requires authentication for capability discovery (86 ms)
+    √ rejects wrong-purpose and cross-owner media (87 ms)
+    √ records consent, transcribes owned ready voice media, and gates synthesis (129 ms)
+    √ reuses the active consent grant and reports the stored state in capabilities (284 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        7.524 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

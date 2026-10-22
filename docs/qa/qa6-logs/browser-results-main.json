@@ -1,0 +1,1042 @@
+{
+  "results": [
+    {
+      "id": "SETUP register known-password user (API /auth/register)",
+      "status": "PASS",
+      "detail": "status 201, role FARMER"
+    },
+    {
+      "id": "SETUP farm + field created",
+      "status": "PASS",
+      "detail": "farm 201, field 201"
+    },
+    {
+      "id": "AUTH-1 identifier-only POST /api/auth/login (web BFF) rejected",
+      "status": "PASS",
+      "detail": "status 400, cookies 0"
+    },
+    {
+      "id": "AUTH-1b empty password via BFF rejected",
+      "status": "PASS",
+      "detail": "status 400"
+    },
+    {
+      "id": "AUTH-1c identifier-only POST to Nest API /auth/login rejected",
+      "status": "PASS",
+      "detail": "status 400"
+    },
+    {
+      "id": "AUTH-2a wrong password via BFF -> 401, no cookie",
+      "status": "PASS",
+      "detail": "status 401, body {\"error\":{\"code\":\"INVALID_CREDENTIALS\",\"message\":\"No account found for that email or phone number.\"}}"
+    },
+    {
+      "id": "AUTH-2b UI wrong password -> error shown, stays on /login, no cookie",
+      "status": "PASS",
+      "detail": "alert=\"No account found for that email or phone number.\", url /login, fg cookies 0"
+    },
+    {
+      "id": "AUTH-3 UI correct password -> /dashboard with session cookies",
+      "status": "PASS",
+      "detail": "url /dashboard, cookies fg_access(httpOnly=true,secure=true,sameSite=Lax) fg_refresh(httpOnly=true,secure=true,sameSite=Lax)"
+    },
+    {
+      "id": "AUTH-4 onboarding route creates account + session (password is random/emailed)",
+      "status": "PASS",
+      "detail": "status 201, emailDelivery=failed, cookies 2"
+    },
+    {
+      "id": "CSP-0 security headers present on /login",
+      "status": "PASS",
+      "detail": "missing: none; HSTS=true"
+    },
+    {
+      "id": "CSP page /login (anon)",
+      "status": "PASS",
+      "detail": "http 200 -> /login; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 2 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /dashboard",
+      "status": "PASS",
+      "detail": "http 200 -> /dashboard; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":1,\"tiles\":9,\"tilesLoaded\":9,\"vectors\":2}; non-CSP network failures 2 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /farms",
+      "status": "PASS",
+      "detail": "http 200 -> /farms; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 4 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /farms/new",
+      "status": "PASS",
+      "detail": "http 200 -> /farms/new; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":1,\"tiles\":6,\"tilesLoaded\":6,\"vectors\":0}; non-CSP network failures 9 (localhost:3046 net::ERR_ABORTED; server.arcgisonline.com net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /farms/c1740fe7-f026-48e7-8162-1666c70cff53",
+      "status": "PASS",
+      "detail": "http 200 -> /farms/c1740fe7-f026-48e7-8162-1666c70cff53; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":1,\"tiles\":4,\"tilesLoaded\":4,\"vectors\":1}; non-CSP network failures 9 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /farms/c1740fe7-f026-48e7-8162-1666c70cff53/edit",
+      "status": "PASS",
+      "detail": "http 200 -> /farms/c1740fe7-f026-48e7-8162-1666c70cff53/edit; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":1,\"tiles\":6,\"tilesLoaded\":6,\"vectors\":5}; non-CSP network failures 8 (server.arcgisonline.com net::ERR_ABORTED; localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /farms/c1740fe7-f026-48e7-8162-1666c70cff53/fields",
+      "status": "PASS",
+      "detail": "http 200 -> /farms/c1740fe7-f026-48e7-8162-1666c70cff53/fields; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 6 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /fields",
+      "status": "PASS",
+      "detail": "http 200 -> /farms; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 3 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /satellite",
+      "status": "PASS",
+      "detail": "http 200 -> /satellite; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 5 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /radar",
+      "status": "PASS",
+      "detail": "http 200 -> /radar; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 5 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /weather",
+      "status": "PASS",
+      "detail": "http 200 -> /weather; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 3 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /market-intelligence",
+      "status": "PASS",
+      "detail": "http 200 -> /market-intelligence; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 3 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /learning",
+      "status": "PASS",
+      "detail": "http 200 -> /learning; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 4 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /scan",
+      "status": "PASS",
+      "detail": "http 200 -> /scan; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 3 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /tasks",
+      "status": "PASS",
+      "detail": "http 200 -> /tasks; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 5 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /alerts",
+      "status": "PASS",
+      "detail": "http 200 -> /alerts; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 6 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /irrigation",
+      "status": "PASS",
+      "detail": "http 200 -> /irrigation; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 5 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP page /analytics",
+      "status": "PASS",
+      "detail": "http 200 -> /analytics; csp violations 0, csp console 0, csp-blocked requests 0; leaflet {\"containers\":0,\"tiles\":0,\"tilesLoaded\":0,\"vectors\":0}; non-CSP network failures 5 (localhost:3046 net::ERR_ABORTED); page errors 0"
+    },
+    {
+      "id": "CSP-MAP leaflet container renders (tiles may be offline)",
+      "status": "PASS",
+      "detail": "{\"container\":1,\"tiles\":6,\"loaded\":6,\"paths\":0} csp-violations 0"
+    },
+    {
+      "id": "CSP-IMG img-src probe (OSM, Esri, googleusercontent, arbitrary https)",
+      "status": "PASS",
+      "detail": "{\"res\":{\"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0\":\"loaded\",\"https://a.tile.openstreetmap.org/0/0/0.png\":\"loaded\",\"https://lh3.googleusercontent.com/x.png\":\"error\",\"https://example.com/x.png\":\"error\"},\"viol\":[]}"
+    },
+    {
+      "id": "CSP-NEG negative control: fetch/script to example.com blocked by connect-src/script-src",
+      "status": "PASS",
+      "detail": "[\"connect-src\",\"script-src-elem\"]"
+    },
+    {
+      "id": "ASSIST-1 /assistant loads, no CSP violation (incl. mic recording + audio playback path)",
+      "status": "FAIL",
+      "detail": "violations=[{\"directive\":\"connect-src\",\"effective\":\"connect-src\",\"blocked\":\"https://mock-storage.invalid/upload/voice-note%2Fa1d052fd-65f4-4525-9df6-f291ff6a5a07%2F2026-10-16%2Fa1ad5f4d-96ca-435d-96c7-e6664ed4bf86-voice-2026-10-16t09-43-05-099z.webm?temporary=1\",\"source\":\"http://localhost:3046/_next/static/chunks/3-j-ht5tpycgn.js\",\"sample\":\"\"}] consoleCsp=[\"Connecting to 'https://mock-storage.invalid/upload/voice-note%2Fa1d052fd-65f4-4525-9df6-f291ff6a5a07%2F2026-10-16%2Fa1ad5f4d-96ca-435d-96c7-e6664ed4bf86-voice-2026-10-16t09-43-05-099z.webm?temporary=1' violates the following Content Security Policy directive: \\\"connect-src 'self'\\\". The action has been blocked.\",\"Fetch API cannot load https://mock-storage.invalid/upload/voice-note%2Fa1d052fd-65f4-4525-9df6-f291ff6a5a07%2F2026-10-16%2Fa1ad5f4d-96ca-435d-96c7-e6664ed4bf86-voice-2026-10-16t09-43-05-099z.webm?temporary=1. Refused to conne"
+    },
+    {
+      "id": "ASSIST-2 Permissions-Policy allows microphone for self",
+      "status": "PASS",
+      "detail": "allowsFeature(microphone)=true"
+    },
+    {
+      "id": "ASSIST-3 mic recording flow (fake device, permission granted)",
+      "status": "PASS",
+      "detail": "{\"policyAllows\":true,\"initialStatus\":\"Consent on file. Ready to record.\",\"startEnabled\":true,\"recordingBtn\":1,\"afterStopStatus\":\"Failed to fetch\",\"playEnabled\":true,\"afterPlayStatus\":\"Playing generated speech.\",\"dataAudio\":\"loadeddata\",\"blobAudio\":\"loadedmetadata\"}"
+    },
+    {
+      "id": "ASSIST-4 audio data:/blob: URL accepted by media-src",
+      "status": "PASS",
+      "detail": "data=loadeddata blob=loadedmetadata"
+    },
+    {
+      "id": "ASSIST-5 permission prompt path (not granted): graceful message, no CSP violation",
+      "status": "PASS",
+      "detail": "{\"status\":\"Microphone could not be started.\",\"violations\":[]}"
+    }
+  ],
+  "out": {
+    "csp": {
+      "/login (anon)": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/login",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/login?returnTo=%2Fexpert&_rsc=_H_fFy2_Q06N8BA7",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/login?returnTo=%2Fexpert&_rsc=sW2A7HEmFQnSVIMx",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        ],
+        "pageErr": [],
+        "title": "Sign in | FasalGuard AI | FasalGuard AI"
+      },
+      "/dashboard": {
+        "leaflet": {
+          "containers": 1,
+          "tiles": 9,
+          "tilesLoaded": 9,
+          "vectors": 2
+        },
+        "url": "/dashboard",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/farms?_rsc=IOe_mmh6jQxP6_Ru",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=IOe_mmh6jQxP6_Ru",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "/farms": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/farms",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=okWEejhgoPtX4cOZ",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=b5TlHcM8vLr-nPUO",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53?_rsc=okWEejhgoPtX4cOZ",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53?_rsc=PUkKbRHlIoyHqE3G",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "pageErr": [],
+        "title": "My Farms | FasalGuard AI"
+      },
+      "/farms/new": {
+        "leaflet": {
+          "containers": 1,
+          "tiles": 6,
+          "tilesLoaded": 6,
+          "vectors": 0
+        },
+        "url": "/farms/new",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/farms?_rsc=3YxabXjg-86s66D1",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13503/22894",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13502/22893",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13502/22895",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13503/22893",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13503/22895",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=w4OFqgDBQkSHVcRK",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=3FwxZCd9pUxVteax",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13502/22894",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "pageErr": [],
+        "title": "Add Farm | FasalGuard AI"
+      },
+      "/farms/c1740fe7-f026-48e7-8162-1666c70cff53": {
+        "leaflet": {
+          "containers": 1,
+          "tiles": 4,
+          "tilesLoaded": 4,
+          "vectors": 1
+        },
+        "url": "/farms/c1740fe7-f026-48e7-8162-1666c70cff53",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/farms?_rsc=wUNdv9aYnyM99cHC",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53/edit?_rsc=wUNdv9aYnyM99cHC",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53/fields?_rsc=wUNdv9aYnyM99cHC",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=NBppMnvCtJoC5Gad",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=wUNdv9aYnyM99cHC",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=vaqfVl1ssqD2hzT-",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53/fields?_rsc=vaqfVl1ssqD2hzT-",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53/edit?_rsc=vaqfVl1ssqD2hzT-",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=vaqfVl1ssqD2hzT-",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "/farms/c1740fe7-f026-48e7-8162-1666c70cff53/edit": {
+        "leaflet": {
+          "containers": 1,
+          "tiles": 6,
+          "tilesLoaded": 6,
+          "vectors": 5
+        },
+        "url": "/farms/c1740fe7-f026-48e7-8162-1666c70cff53/edit",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13509/22882",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13508/22881",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13509/22881",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13509/22883",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53?_rsc=3eeK32I-eIa2dk13",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=LLhFbxginHNkqAro",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=aRrnHXoJSfQyu08M",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53?_rsc=aRrnHXoJSfQyu08M",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "pageErr": [],
+        "title": "Edit Farm | FasalGuard AI"
+      },
+      "/farms/c1740fe7-f026-48e7-8162-1666c70cff53/fields": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/farms/c1740fe7-f026-48e7-8162-1666c70cff53/fields",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=OoZCdaoyZszrPGoy",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=OoZCdaoyZszrPGoy",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53?_rsc=OoZCdaoyZszrPGoy",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=sooG6wOd3B8J6CSP",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=jkYYJ6VGwdbd6Nmn",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53?_rsc=jkYYJ6VGwdbd6Nmn",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "/fields": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/farms",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=okWEejhgoPtX4cOZ",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms/c1740fe7-f026-48e7-8162-1666c70cff53?_rsc=okWEejhgoPtX4cOZ",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=b5TlHcM8vLr-nPUO",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "pageErr": [],
+        "title": "My Farms | FasalGuard AI"
+      },
+      "/satellite": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/satellite",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=jea8vaqs-FoNeKWA",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=jea8vaqs-FoNeKWA",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=jea8vaqs-FoNeKWA",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=dj5m3-zrfDNKzuLB",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=v_PmPsnlcYemR1zJ",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "Satellite Monitoring | FasalGuard AI"
+      },
+      "/radar": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/radar",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=m_f8ikZz6Qd6bdiC",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=m_f8ikZz6Qd6bdiC",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=m_f8ikZz6Qd6bdiC",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=ZhxgyNAvABLEcEK4",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=qm46_n1PAaMtA5Se",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "/weather": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/weather",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=jHfTh41oPtI89Lp7",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=jHfTh41oPtI89Lp7",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=J9m4kOMBNMtthurw",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "Weather Intelligence | FasalGuard AI"
+      },
+      "/market-intelligence": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/market-intelligence",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=joDCzA0afLJ-T_lQ",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=vddhH2xvlMa9oRBm",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=vddhH2xvlMa9oRBm",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "Market Intelligence | FasalGuard AI | FasalGuard AI"
+      },
+      "/learning": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/learning",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=GUkK8V6TTy-GcSBa",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=GUkK8V6TTy-GcSBa",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=GUkK8V6TTy-GcSBa",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=TpKb-WxlVvQRPC-7",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "/scan": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/scan",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/farms?_rsc=PC8C-aGcw0tF7kWW",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=PC8C-aGcw0tF7kWW",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=oh6TTkq7UafsLSa6",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "/tasks": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/tasks",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=P6r55Rb2Und8fdyh",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=P6r55Rb2Und8fdyh",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=P6r55Rb2Und8fdyh",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=2flm0lHFMYoj5bDr",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=2flm0lHFMYoj5bDr",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "Tasks | FasalGuard AI"
+      },
+      "/alerts": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/alerts",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/farms?_rsc=JF0E-R0oFR3BR0MY",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=JF0E-R0oFR3BR0MY",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=JF0E-R0oFR3BR0MY",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=43FtHzrS53sGn9WH",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=9ZC8VOswwzw7omIf",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=9ZC8VOswwzw7omIf",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "/irrigation": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/irrigation",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=N0SwterDJyMAoAlV",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=N0SwterDJyMAoAlV",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=N0SwterDJyMAoAlV",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=ZvLunwe3XuQMNh_9",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=FP_9EXr-FIyGmEfQ",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+          "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        ],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "/analytics": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/analytics",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=ix5_aAief6TvBg04",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=ix5_aAief6TvBg04",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=ix5_aAief6TvBg04",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=RIQ46WEYoMva24gv",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=Dt318okBLJyNDlfE",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      },
+      "probe-page(/farms/new)": {
+        "leaflet": {
+          "containers": 1,
+          "tiles": 6,
+          "tilesLoaded": 6,
+          "vectors": 0
+        },
+        "url": "/farms/new",
+        "status": 200,
+        "csp_header": true,
+        "violations": [],
+        "consoleCsp": [
+          "Connecting to 'https://example.com/' violates the following Content Security Policy directive: \"connect-src 'self'\". The action has been blocked.",
+          "Fetch API cannot load https://example.com/. Refused to connect because it violates the document's Content Security Policy.",
+          "Loading the script 'https://example.com/x.js' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+        ],
+        "failed": [
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13503/22894",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13502/22893",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13502/22895",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13503/22893",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13503/22895",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=3FwxZCd9pUxVteax",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=w4OFqgDBQkSHVcRK",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13502/22894",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "https://lh3.googleusercontent.com/x.png",
+            "err": "net::ERR_BLOCKED_BY_ORB"
+          },
+          {
+            "url": "https://example.com/x.png",
+            "err": "net::ERR_BLOCKED_BY_ORB"
+          },
+          {
+            "url": "https://example.com/x.js",
+            "err": "csp"
+          }
+        ],
+        "consoleErr": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "pageErr": [],
+        "title": "Add Farm | FasalGuard AI"
+      },
+      "/assistant (mic+audio)": {
+        "leaflet": {
+          "containers": 0,
+          "tiles": 0,
+          "tilesLoaded": 0,
+          "vectors": 0
+        },
+        "url": "/assistant",
+        "status": 200,
+        "csp_header": true,
+        "violations": [
+          {
+            "directive": "connect-src",
+            "effective": "connect-src",
+            "blocked": "https://mock-storage.invalid/upload/voice-note%2Fa1d052fd-65f4-4525-9df6-f291ff6a5a07%2F2026-10-16%2Fa1ad5f4d-96ca-435d-96c7-e6664ed4bf86-voice-2026-10-16t09-43-05-099z.webm?temporary=1",
+            "source": "http://localhost:3046/_next/static/chunks/3-j-ht5tpycgn.js",
+            "sample": ""
+          }
+        ],
+        "consoleCsp": [
+          "Connecting to 'https://mock-storage.invalid/upload/voice-note%2Fa1d052fd-65f4-4525-9df6-f291ff6a5a07%2F2026-10-16%2Fa1ad5f4d-96ca-435d-96c7-e6664ed4bf86-voice-2026-10-16t09-43-05-099z.webm?temporary=1' violates the following Content Security Policy directive: \"connect-src 'self'\". The action has been blocked.",
+          "Fetch API cannot load https://mock-storage.invalid/upload/voice-note%2Fa1d052fd-65f4-4525-9df6-f291ff6a5a07%2F2026-10-16%2Fa1ad5f4d-96ca-435d-96c7-e6664ed4bf86-voice-2026-10-16t09-43-05-099z.webm?temporary=1. Refused to connect because it violates the document's Content Security Policy."
+        ],
+        "failed": [
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=CXFfwhjoM64xMTwT",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=CXFfwhjoM64xMTwT",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/farms?_rsc=qBF2cSjYMDHn5iF2",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/dashboard?_rsc=l7bDxmlnvef1ZsvQ",
+            "err": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://localhost:3046/weather?_rsc=qBF2cSjYMDHn5iF2",
+            "err": "net::ERR_ABORTED"
+          }
+        ],
+        "consoleErr": [],
+        "pageErr": [],
+        "title": "FasalGuard AI"
+      }
+    },
+    "notes": [],
+    "headers": {
+      "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com https://lh3.googleusercontent.com https:; font-src 'self' data:; connect-src 'self'; media-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "referrer-policy": "strict-origin-when-cross-origin",
+      "permissions-policy": "microphone=(self), camera=(self), geolocation=(self), payment=(), usb=()",
+      "cross-origin-opener-policy": "same-origin",
+      "strict-transport-security": "max-age=63072000; includeSubDomains"
+    },
+    "leaflet": {
+      "container": 1,
+      "tiles": 6,
+      "loaded": 6,
+      "paths": 0
+    },
+    "imgProbe": {
+      "res": {
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0": "loaded",
+        "https://a.tile.openstreetmap.org/0/0/0.png": "loaded",
+        "https://lh3.googleusercontent.com/x.png": "error",
+        "https://example.com/x.png": "error"
+      },
+      "viol": []
+    },
+    "negControl": [
+      "connect-src",
+      "script-src-elem"
+    ],
+    "speechCaps": "{\"available\":false,\"provider\":\"FAKE\",\"sttLanguages\":[],\"ttsLanguages\":[],\"acceptedContentTypes\":[],\"maxRecordingSeconds\":120,\"consentVersion\":\"2026-10-voice-v1\",\"reason\":\"Real speech service is not configured.\",\"consentGranted\":false}",
+    "mic": {
+      "policyAllows": true,
+      "initialStatus": "Consent on file. Ready to record.",
+      "startEnabled": true,
+      "recordingBtn": 1,
+      "afterStopStatus": "Failed to fetch",
+      "playEnabled": true,
+      "afterPlayStatus": "Playing generated speech.",
+      "dataAudio": "loadeddata",
+      "blobAudio": "loadedmetadata"
+    },
+    "micDenied": {
+      "status": "Microphone could not be started.",
+      "violations": []
+    }
+  }
+}

@@ -1,0 +1,17 @@
+PASS test/assemblyai-speech.spec.ts (32.209 s)
+  AssemblyAiSpeechProvider (stubbed network)
+    √ uploads bytes, requests the right language code, and returns text with confidence (45 ms)
+    √ advertises speech-to-text only and fails closed without a key (6 ms)
+    √ rejects unreadable media, unsupported formats and oversized recordings before calling AssemblyAI (9 ms)
+    √ never leaks provider error text or the key (3 ms)
+    √ maps a provider-side transcription error and an empty transcript to distinct failures (11 ms)
+    √ is bounded by the deadline when the provider never finishes (1532 ms)
+  AssemblyAiSpeechProvider (REAL AssemblyAI API)
+    √ transcribes real English speech accurately with high confidence (6551 ms)
+    √ rejects a wrong key without leaking it (462 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        32.642 s
+Ran all test suites matching /test\\assemblyai-speech.spec.ts/i.

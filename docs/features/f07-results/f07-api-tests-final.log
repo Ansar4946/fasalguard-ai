@@ -1,0 +1,45 @@
+COMMAND: node node_modules/jest/bin/jest.js --config jest.config.cjs --runInBand --runTestsByPath test/market-data-policy.spec.ts test/amis-html.parser.spec.ts test/amis-market-price.provider.spec.ts test/market.scheduler.spec.ts
+CWD: services/api
+PASS test/market-data-policy.spec.ts (127.903 s)
+[Nest] 10252  - 10/14/2026, 3:00:00 PM    WARN [MarketService] Market read cache unavailable; reading PostgreSQL.
+[Nest] 10252  - 10/14/2026, 3:00:00 PM    WARN [MarketService] Market database read failed or timed out.
+PASS test/market.scheduler.spec.ts
+PASS test/amis-market-price.provider.spec.ts (5.929 s)
+FAIL test/amis-html.parser.spec.ts
+  ● AMIS HTML parser › parses the AMIS column order and skips unavailable rows
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+    @@ -8,10 +8,10 @@
+          "minimumPrice": 11500,
+          "priceDate": "2026-09-03",
+          "province": "Punjab",
+          "quantity": 100,
+          "source": "AMIS",
+    -     "sourceIdentifier": "AMIS:wheat:Faisalabad:2026-09-03",
+    +     "sourceIdentifier": "AMIS:Wheat:Faisalabad:2026-09-03",
+          "sourceUrl": "http://www.amis.pk/example",
+          "unit": "KG",
+        },
+      ]
+
+      15 | describe('AMIS HTML parser', () => {
+      16 |   it('parses the AMIS column order and skips unavailable rows', () => {
+    > 17 |     expect(parseAmisCommodityPage(fixture, 'wheat', 'http://www.amis.pk/example')).toEqual([
+         |                                                                                    ^
+      18 |       {
+      19 |         crop: 'Wheat',
+      20 |         market: 'Faisalabad',
+
+      at Object.<anonymous> (test/amis-html.parser.spec.ts:17:84)
+
+Test Suites: 1 failed, 3 passed, 4 total
+Tests:       1 failed, 32 passed, 33 total
+Snapshots:   0 total
+Time:        138.304 s
+Ran all test suites within paths "test/market-data-policy.spec.ts", "test/amis-html.parser.spec.ts", "test/amis-market-price.provider.spec.ts", "test/market.scheduler.spec.ts".
+
+EXIT: 1 SIGNAL: null

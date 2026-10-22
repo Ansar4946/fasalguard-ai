@@ -1,0 +1,75 @@
+{
+  "status": "RUN_PASS",
+  "passed": 17,
+  "failed": 0,
+  "results": [
+    {
+      "name": "unauthenticated page redirects to login and every notification BFF route returns 401",
+      "status": "PASS"
+    },
+    {
+      "name": "empty state is honest: no fake alerts, no badge, \"No notifications yet\"",
+      "status": "PASS"
+    },
+    {
+      "name": "real notifications appear newest-first for the owner only, with an honest delivery line",
+      "status": "PASS"
+    },
+    {
+      "name": "the bell shows the real unread count (2) and announces it",
+      "status": "PASS"
+    },
+    {
+      "name": "filters: Unread shows 2, a category filter narrows the list",
+      "status": "PASS"
+    },
+    {
+      "name": "marking one as read updates the database, the card and the bell; reload keeps it",
+      "status": "PASS"
+    },
+    {
+      "name": "farmer B cannot read, mark or bulk-mark farmer A notifications through the BFF",
+      "status": "PASS"
+    },
+    {
+      "name": "cross-origin mutations and malformed requests are rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "settings: push toggle and quiet hours are saved to PostgreSQL and survive a reload; invalid input is refused",
+      "status": "PASS"
+    },
+    {
+      "name": "without notification consent the settings explain why push is off",
+      "status": "PASS"
+    },
+    {
+      "name": "a refresh outage keeps the last list labelled out of date and never shows it as empty; Retry recovers",
+      "status": "PASS"
+    },
+    {
+      "name": "malformed list body is an error, not an empty inbox",
+      "status": "PASS"
+    },
+    {
+      "name": "a failed first load shows an error with Retry that recovers once the API is back",
+      "status": "PASS"
+    },
+    {
+      "name": "an unread-count outage shows no badge and says the count is unavailable",
+      "status": "PASS"
+    },
+    {
+      "name": "mark all as read clears the badge and only the caller rows change",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile viewport (375px): no horizontal overflow; a keyboard user can reach Mark as read",
+      "status": "PASS"
+    },
+    {
+      "name": "a revoked session shows \"session has ended\" and never leaves the old list on screen",
+      "status": "PASS"
+    }
+  ]
+}

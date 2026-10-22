@@ -1,0 +1,4 @@
+src/infrastructure/database/migrations/1755000041000-offline-crop-observations.ts 227ms
+src/infrastructure/database/migrations/index.ts 67ms (unchanged)
+
+exit=0

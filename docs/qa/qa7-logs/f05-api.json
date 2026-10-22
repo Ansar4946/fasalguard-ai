@@ -1,0 +1,170 @@
+[
+ {
+  "id": "F05-01",
+  "name": "unauthenticated validate/import/export/boundary -> 401; wrong role -> 403",
+  "status": "PASS",
+  "detail": "",
+  "ms": 148
+ },
+ {
+  "id": "F05-02",
+  "name": "valid polygon: area matches independent geodesic calculation within 0.5% and PostGIS geography within 0.05%",
+  "status": "PASS",
+  "detail": "area=4.213426493453979 ha independent=4.2134 postgis=4.2134 keys=areaSquareMeters,centroid,bbox,areaHectares,areaAcres,areaMethod,isSurvey",
+  "ms": 271
+ },
+ {
+  "id": "F05-03",
+  "name": "polygon with hole: area = outer - hole (golden)",
+  "status": "PASS",
+  "detail": "",
+  "ms": 66
+ },
+ {
+  "id": "F05-04",
+  "name": "clockwise exterior ring accepted/normalised, area positive and equal to CCW",
+  "status": "PASS",
+  "detail": "",
+  "ms": 266
+ },
+ {
+  "id": "F05-05",
+  "name": "invalid geometry rejected 400: bowtie, unclosed, 3 positions, out-of-range lon/lat, NaN string, 3D coords, Point, MultiPolygon, crs, extra field, collinear/zero-area, duplicate vertices only",
+  "status": "PASS",
+  "detail": "{\"bowtie\":400,\"unclosed\":400,\"three\":400,\"lon181\":400,\"lat91\":400,\"nanStr\":400,\"threeD\":400,\"point\":400,\"multi\":400,\"crs\":400,\"collinear\":400,\"dupes\":400,\"boolean\":400,\"empty\":400,\"nullGeom\":400}",
+  "ms": 369
+ },
+ {
+  "id": "F05-06",
+  "name": "bad hole: hole outside shell, hole overlapping shell edge, two overlapping holes -> 400",
+  "status": "PASS",
+  "detail": "",
+  "ms": 71
+ },
+ {
+  "id": "F05-07",
+  "name": "limits: >5000 vertices -> 400; >256 KiB body -> 413; 21 holes -> 400; 26 features -> 400",
+  "status": "PASS",
+  "detail": "",
+  "ms": 113
+ },
+ {
+  "id": "F05-08",
+  "name": "validate with farmId: polygon outside farm boundary rejected; foreign farmId 404",
+  "status": "PASS",
+  "detail": "inside=200 outside=400 FIELD_OUTSIDE_FARM foreign=404",
+  "ms": 117
+ },
+ {
+  "id": "F05-09",
+  "name": "import FeatureCollection x2 -> 201, rows persisted with GEOJSON_IMPORT metadata, area in DB equals PostGIS geography",
+  "status": "PASS",
+  "detail": "[{\"id\":\"6a35d017\",\"ha\":4.211215529823304,\"v\":1},{\"id\":\"66e01b87\",\"ha\":4.211215529823304,\"v\":1}]",
+  "ms": 72
+ },
+ {
+  "id": "F05-10",
+  "name": "idempotent replay: same key+payload -> same ids, no new rows; same key different payload -> 409; same key other farm -> 409",
+  "status": "PASS",
+  "detail": "diff=409/IDEMPOTENCY_CONFLICT; B reusing A's key -> independent 201 (keys are owner scoped)",
+  "ms": 172
+ },
+ {
+  "id": "F05-11",
+  "name": "concurrent import retries (8 parallel, same key) -> exactly one set of rows",
+  "status": "PASS",
+  "detail": "201,201,201,201,201,201,201,201",
+  "ms": 239
+ },
+ {
+  "id": "F05-12",
+  "name": "import atomic: one invalid feature among valid -> nothing created; duplicate names -> 409 and nothing created",
+  "status": "PASS",
+  "detail": "bad=400 dup=409 dupWithinRequest=409",
+  "ms": 120
+ },
+ {
+  "id": "F05-13",
+  "name": "import validation: empty collection, missing/invalid idempotency key, name 1 char/161 chars, foreign farm, bad farm uuid, extra fields",
+  "status": "PASS",
+  "detail": "{\"empty\":400,\"nokey\":400,\"badkey\":400,\"short\":400,\"long\":400,\"foreign\":404,\"badFarm\":400,\"extra\":400}",
+  "ms": 186
+ },
+ {
+  "id": "F05-14",
+  "name": "export: farm GeoJSON contains imported fields, valid FeatureCollection, round-trip geometry equality, Cache-Control private, empty farm -> empty collection",
+  "status": "PASS",
+  "detail": "features=4",
+  "ms": 201
+ },
+ {
+  "id": "F05-15",
+  "name": "deleted field disappears from export and cannot be replayed via import key",
+  "status": "PASS",
+  "detail": "replay=404 FIELD_NOT_FOUND",
+  "ms": 130
+ },
+ {
+  "id": "F05-16",
+  "name": "boundary update MAP_DRAWN: version+1, area recomputed in DB, metadata, response metrics",
+  "status": "PASS",
+  "detail": "",
+  "ms": 119
+ },
+ {
+  "id": "F05-17",
+  "name": "stale version -> 409 BOUNDARY_VERSION_CONFLICT with no change; missing/zero/negative/float/boolean/string version -> 400",
+  "status": "PASS",
+  "detail": "{\"zero\":400,\"neg\":400,\"flt\":400,\"bool\":400,\"str\":400,\"missing\":400}",
+  "ms": 200
+ },
+ {
+  "id": "F05-18",
+  "name": "concurrent boundary writers (6 parallel same version) -> exactly one 200, rest 409; version +1 only",
+  "status": "PASS",
+  "detail": "200,409,409,409,409,409",
+  "ms": 164
+ },
+ {
+  "id": "F05-19",
+  "name": "source/GPS rules: GPS_CAPTURE needs confirmed accuracy + matching samples; samples with MAP_DRAWN rejected; accuracy >10km, naive timestamp, bool rejected; valid GPS persisted with samples",
+  "status": "PASS",
+  "detail": "{\"noConfirm\":400,\"mismatch\":400,\"fewer\":400,\"mapWithSamples\":400,\"badSource\":400,\"hugeAcc\":400,\"naive\":400,\"boolAcc\":400} ; GPS saved, isSurvey=false",
+  "ms": 256
+ },
+ {
+  "id": "F05-20",
+  "name": "ownership on boundary: farmer B -> 404, no change; deleted field 404; unknown id 404; bad id 422/400",
+  "status": "PASS",
+  "detail": "",
+  "ms": 99
+ },
+ {
+  "id": "F05-21",
+  "name": "boundary outside parent farm via platform PATCH is rejected (field within farm)",
+  "status": "PASS",
+  "detail": "",
+  "ms": 70
+ },
+ {
+  "id": "F05-22",
+  "name": "core API field create: boundary outside farm / invalid / overlapping duplicate name rejected; hole preserved on metadata-only rename",
+  "status": "FAIL",
+  "detail": "duplicate active field name returned 500 {\"error\":{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"An unexpected error occurred.\"},\"meta\":{\"requestId\":\"d588ef95-29a1-4 (expected 409 conflict)",
+  "ms": 212
+ },
+ {
+  "id": "F05-23",
+  "name": "DB invariants: stored geometries valid, SRID 4326, area_hectares consistent for all QA fields",
+  "status": "PASS",
+  "detail": "{\"n\":60,\"invalid\":0,\"srid\":0,\"area\":0}",
+  "ms": 6
+ },
+ {
+  "id": "F05-24",
+  "name": "postgres outage during geometry validate/import: typed 5xx (503), no hang, recovers",
+  "status": "PASS",
+  "detail": "during outage: 500 after 3345 ms (401 would mean farmers are logged out by a DB blip, see D3); recovered=200",
+  "ms": 14153
+ }
+]

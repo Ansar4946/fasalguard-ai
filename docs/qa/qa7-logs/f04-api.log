@@ -1,0 +1,18 @@
+PASS F04-01 unauthenticated forecast/current/risks/suitability -> 401 (platform, core, BFF) :: 
+PASS F04-02 invalid / unknown field id, foreign farmer -> 422/400 / 404 (no data leak) :: bad=400
+PASS F04-03 REAL Open-Meteo forecast via platform: 168 hourly, 7 daily, provider, tz, freshness FRESH :: fetchedAt=2026-10-16T09:06:33.409695+00:00 current.temp=27.7C grid=31.458698,72.47312 attribution=Weather data by Open-Meteo.com (CC BY 4.0)
+PASS F04-04 physical plausibility of real data: temp -10..55C Punjab, RH 0..100, precip>=0, daily high>=low, ET0 0..10 :: 
+PASS F04-05 DB persistence: weather_forecasts row, 168 points, matches API fetchedAt :: 
+PASS F04-06 cache reuse + idempotency: 15 concurrent requests -> one fetchedAt, <=1 new DB row :: 
+PASS F04-07 current endpoint shape + shared cell for 2nd field of same farmer (maize) persisted separately :: maize fetchedAt 2026-10-16T09:06:36.859870+00:00
+PASS F04-08 risks/suitability: crop-specific, only EXPERT_APPROVED rules may allow recommendations (demo rules not actionable) :: wheat: matches=0 assessment=null productionAssessment=null; no-crop field matches=0
+PASS F04-09 field with no crop cycle: forecast still works, rules empty :: 
+PASS F04-10 location change invalidates forecast (PATCH boundary moves field ~100 km): new grid cell / new fetch :: 
+PASS F04-11 core API legacy weather (OpenWeatherMap with real key): current :: {"fieldId":"99c3d17c-e71e-45ac-8927-4272e6f9c02e","provider":"OPENWEATHERMAP","observedAt":"2026-10-16T12:00:00.000Z","weather":{"time":"2026-10-16T12:00:00.000Z","temperatureC":31.82,"relativeHumidit
+PASS F04-12 Redis outage: forecast for a new field still 200 and persisted (cache is best-effort) :: served + persisted with Redis down
+PASS F04-13 provider connection refused (DNS to 127.0.0.1) with fresh cache -> still served FRESH from cache/DB; new cell -> typed 503, no fabricated data :: new cell -> 503 WEATHER_PROVIDER_UNAVAILABLE
+PASS F04-14 provider timeout (blackhole address) for new cell -> 503 within a bounded time :: 503 WEATHER_PROVIDER_UNAVAILABLE after 6330 ms
+PASS F04-15 stale fallback: 20-minute-old stored bundle + provider down -> served STALE with ageSeconds; 3-hour-old -> 503 :: stale served (age 1200s, risks recommendationAllowed=false); 3h old -> 503 WEATHER_PROVIDER_UNAVAILABLE
+PASS F04-16 web BFF forecast endpoint with auth returns same shape; DB down gives typed error not hang :: BFF 200 keys=daily,hourly,current,provider,timezone,fetchedAt,rawMetadata,providerIssuedAt
+PASS F04-17 rate/abuse: 60 sequential forecast calls -> no 5xx, one provider fetch (fetchedAt stable) :: statuses 200
+SUMMARY pass=17 fail=0 blocked=0

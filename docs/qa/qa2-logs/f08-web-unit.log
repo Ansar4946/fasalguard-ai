@@ -1,0 +1,16 @@
+✔ normalizes Urdu punctuation without transliterating crop names (10.662ms)
+✔ computes WER, CER, and exact normalized crop-term matches (1.2975ms)
+✔ aggregates weighted error rates rather than averaging sample percentages (2.2043ms)
+✔ requires explicit dataset consent and checksum-pinned samples (1.6681ms)
+✔ capability parser accepts only bounded truthful speech metadata (4.859ms)
+✔ recording type selection never invents unsupported codecs (0.5952ms)
+✔ recording filenames contain no path input (2.4982ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1346.4037
+exit=0

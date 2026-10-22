@@ -1,0 +1,9 @@
+COMMAND: node node_modules/jest/bin/jest.js --runInBand --testRegex=market-workflow.integration-spec.ts$
+CWD: services/api
+Test Suites: 1 skipped, 0 of 1 total
+Tests:       5 skipped, 5 total
+Snapshots:   0 total
+Time:        110.66 s
+Ran all test suites.
+
+EXIT: 0 ERROR: none

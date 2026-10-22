@@ -1,0 +1,226 @@
+[
+ {
+  "id": "F01-01",
+  "name": "unauthenticated create/get/analyse/list -> 401 (API)",
+  "status": "PASS",
+  "detail": "",
+  "ms": 100
+ },
+ {
+  "id": "F01-02",
+  "name": "unauthenticated BFF /api/crop-scans* -> 401",
+  "status": "PASS",
+  "detail": "",
+  "ms": 154
+ },
+ {
+  "id": "F01-03",
+  "name": "expired token and revoked session -> 401",
+  "status": "PASS",
+  "detail": "",
+  "ms": 1993
+ },
+ {
+  "id": "F01-04",
+  "name": "wrong role (AGRICULTURE_EXPERT) -> 403",
+  "status": "PASS",
+  "detail": "",
+  "ms": 1089
+ },
+ {
+  "id": "F01-05",
+  "name": "create: malformed fieldId / non-v4 / extra props",
+  "status": "PASS",
+  "detail": "extra props rejected 400",
+  "ms": 96
+ },
+ {
+  "id": "F01-06",
+  "name": "create on foreign / nonexistent field -> 403 (no scan row)",
+  "status": "PASS",
+  "detail": "foreign=403, nonexistent=403 (F01.md AT04 plans 404 for foreign resources; actual is 403)",
+  "ms": 72
+ },
+ {
+  "id": "F01-07",
+  "name": "presign validation: bad mime, svg/html/pdf, >15MB, zero/negative/float size, bad purpose, empty name, long name, bad checksum",
+  "status": "PASS",
+  "detail": "{\"svg\":400,\"html\":400,\"pdf\":400,\"big\":400,\"zero\":400,\"neg\":400,\"flt\":400,\"purpose\":400,\"noname\":400,\"longname\":400,\"badsum\":400,\"symbols\":201} (path-traversal name sanitised, not an error)",
+  "ms": 555
+ },
+ {
+  "id": "F01-08",
+  "name": "REAL: wheat field, real leaf image -> upload -> attach -> analyse 202 -> terminal state with real provider",
+  "status": "FAIL",
+  "detail": "real-image scan ended status=NEEDS_FOLLOW_UP failureCode='sharp is not a function' (internal TypeError in the compiled worker: sharp default import); no screening produced",
+  "ms": 3505
+ },
+ {
+  "id": "F01-09",
+  "name": "result contract: not a firm diagnosis, disclaimer, alternatives, confidence in [0,1], DB matches API",
+  "status": "BLOCKED",
+  "detail": "BLOCKED_BY_DEFECT F01-D1: worker failed with failureCode 'sharp is not a function' (status NEEDS_FOLLOW_UP); behaviour under test could not be exercised",
+  "ms": 61
+ },
+ {
+  "id": "F01-11",
+  "name": "farmer B cannot read/attach/analyse/list farmer A scan or media",
+  "status": "PASS",
+  "detail": "get=404 analyse=404 attach-A-media=400 access-url=404 list-A-field-as-B=200 []",
+  "ms": 766
+ },
+ {
+  "id": "F01-12",
+  "name": "analyse validation: no image -> 400; bad uuid -> 400; unknown id -> 404",
+  "status": "PASS",
+  "detail": "",
+  "ms": 445
+ },
+ {
+  "id": "F01-13",
+  "name": "empty history: new field with no scans -> [] ; list requires fieldId (400)",
+  "status": "PASS",
+  "detail": "",
+  "ms": 157
+ },
+ {
+  "id": "F01-14",
+  "name": "attach: bad category, non-uuid media, other-purpose media, pending media, many images",
+  "status": "FAIL",
+  "detail": "image-count cap missing: 7 images attached to one scan (codes 201,201,201,201,201,201,201); F01.md says <=3, platform router says <=5",
+  "ms": 9269
+ },
+ {
+  "id": "F01-15",
+  "name": "upload completion: never-uploaded media, HTML bytes labelled png, PNG bytes labelled jpeg",
+  "status": "PASS",
+  "detail": "neverUploaded->complete=404; html-as-png: put=204 complete=400 {\"error\":{\"code\":\"INVALID_IMAGE_CONTENT\",\"message\":\"Uploaded image content is co; png-as-jpeg: put=204 complete=400",
+  "ms": 706
+ },
+ {
+  "id": "F01-16",
+  "name": "declared size vs actual bytes mismatch (declare 1000, send ~2.7MB)",
+  "status": "PASS",
+  "detail": "presign=201 put=204 complete=400 {\"error\":{\"code\":\"MEDIA_VERIFICATION_FAILED\",\"message\":\"Uploaded object metadata does not match its ",
+  "ms": 396
+ },
+ {
+  "id": "F01-17",
+  "name": "PUT upload URL after complete: replay must not overwrite a verified object (TOCTOU)",
+  "status": "FAIL",
+  "detail": "verified object was overwritten after completion (PUT replay=204); media status still 'ready'",
+  "ms": 2444
+ },
+ {
+  "id": "F01-18",
+  "name": "corrupt image (valid PNG header + garbage) -> typed failure, no prediction",
+  "status": "PASS",
+  "detail": "rejected before analysis: presign=201 complete=400 attach=400 {\"error\":{\"code\":\"INVALID_SCAN_MEDIA\",\"message\":\"Image must be a completed private crop-scan upload ",
+  "ms": 277
+ },
+ {
+  "id": "F01-19",
+  "name": "tiny image 100x100 -> IMAGE_DIMENSIONS_TOO_SMALL, no prediction",
+  "status": "PASS",
+  "detail": "status=NEEDS_FOLLOW_UP failure=IMAGE_DIMENSIONS_TOO_SMALL diagnoses=0 predictions=0",
+  "ms": 1885
+ },
+ {
+  "id": "F01-20",
+  "name": "solid black 800x800 (TOO_DARK) -> follow-up, no prediction",
+  "status": "BLOCKED",
+  "detail": "BLOCKED_BY_DEFECT F01-D1: worker failed with failureCode 'sharp is not a function' (status NEEDS_FOLLOW_UP); behaviour under test could not be exercised",
+  "ms": 1787
+ },
+ {
+  "id": "F01-21",
+  "name": "HTML bytes uploaded as image/png -> must not reach provider",
+  "status": "PASS",
+  "detail": "rejected before analysis: presign=201 complete=400 attach=400 {\"error\":{\"code\":\"INVALID_SCAN_MEDIA\",\"message\":\"Image must be a completed private crop-scan upload ",
+  "ms": 175
+ },
+ {
+  "id": "F01-22",
+  "name": "huge-pixel image 20000x20000 uniform PNG (small file, 400 MP)",
+  "status": "PASS",
+  "detail": "rejected before analysis: presign=201 complete=400 attach=400 {\"error\":{\"code\":\"INVALID_SCAN_MEDIA\",\"message\":\"Image must be a completed private crop-scan upload ",
+  "ms": 632
+ },
+ {
+  "id": "F01-23",
+  "name": "maize field screened with the real provider: unsupported crop must not receive another crop model labels",
+  "status": "BLOCKED",
+  "detail": "BLOCKED_BY_DEFECT F01-D1: worker failed with failureCode 'sharp is not a function' (status NEEDS_FOLLOW_UP); behaviour under test could not be exercised",
+  "ms": 2516
+ },
+ {
+  "id": "F01-24",
+  "name": "field without crop cycle: must not be screened with a generic crop model",
+  "status": "BLOCKED",
+  "detail": "BLOCKED_BY_DEFECT F01-D1: worker failed with failureCode 'sharp is not a function' (status NEEDS_FOLLOW_UP); behaviour under test could not be exercised",
+  "ms": 4741
+ },
+ {
+  "id": "F01-25",
+  "name": "concurrent analyse x6 on one scan -> exactly one accepted job and <=1 prediction",
+  "status": "PASS",
+  "detail": "codes=202,400,400,400,400,400 rows={\"p\":0,\"d\":0}",
+  "ms": 3172
+ },
+ {
+  "id": "F01-26",
+  "name": "analyse rate limit: >10 analyses/hour per farmer -> 429",
+  "status": "PASS",
+  "detail": "202,202,202,202,202,202,202,202,202,202,429,429",
+  "ms": 23682
+ },
+ {
+  "id": "F01-30",
+  "name": "platform capabilities (configured models, no secrets in response)",
+  "status": "PASS",
+  "detail": "{\"provider\":\"roboflow\",\"configured\":true,\"supportedCrops\":[\"cotton\",\"rice\",\"wheat\"],\"models\":[{\"crop\":\"wheat\",\"modelId\":\"wheat-disease-detection-zsn0p-unjeb\",\"version\":\"1\"},{\"crop\":\"rice\",\"modelId\":\"rice-disease-classification-fypya-ba63b\",\"version\":\"1\"},{\"crop\":\"cotton\",\"modelId\":\"cotton-leaf-disea",
+  "ms": 29
+ },
+ {
+  "id": "F01-31",
+  "name": "REAL platform path: create -> attach (shared media) -> analyse 202 -> Celery -> provider -> terminal",
+  "status": "FAIL",
+  "detail": "POST analyse returned 500 {\"error\":{\"code\":\"INTERNAL_ERROR\",\"message\":\"Something went wrong. Try again.\"}, although the task was queued and finished: status=DIAGNOSED failure=null cond=HealthyLeaf conf=0.999412 disp=SCREENING_COMPLETE",
+  "ms": 4919
+ },
+ {
+  "id": "F01-31b",
+  "name": "platform result persisted: model provenance, DB rows, firm=false, disclaimer, alternatives",
+  "status": "PASS",
+  "detail": "cond=HealthyLeaf conf=0.999412 alts=3 ai_runs=1 model=wheat-disease-detection-zsn0p-unjeb@1",
+  "ms": 53
+ },
+ {
+  "id": "F01-10",
+  "name": "idempotency: analyse again on a DIAGNOSED scan (platform) -> 400 SCAN_NOT_READY; still one diagnosis & prediction row",
+  "status": "PASS",
+  "detail": "",
+  "ms": 24
+ },
+ {
+  "id": "F01-32",
+  "name": "platform: B cannot read A scan (404), foreign field create 403",
+  "status": "PASS",
+  "detail": "list-A-field-as-B=200 []",
+  "ms": 48
+ },
+ {
+  "id": "F01-33",
+  "name": "platform: validation (extra fields, bad uuid, no token, wrong role) and repeat analyse",
+  "status": "PASS",
+  "detail": "repeat-analyse=400",
+  "ms": 744
+ },
+ {
+  "id": "F01-34",
+  "name": "platform: maize field -> CROP_NOT_SUPPORTED, no fabricated prediction",
+  "status": "PASS",
+  "detail": "status=NEEDS_FOLLOW_UP failure=CROP_NOT_SUPPORTED predictions=0",
+  "ms": 4479
+ }
+]

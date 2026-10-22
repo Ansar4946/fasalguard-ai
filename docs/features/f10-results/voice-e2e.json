@@ -1,0 +1,57 @@
+{
+  "status": "RUN_PASS",
+  "passed": 9,
+  "failed": 0,
+  "results": [
+    {
+      "name": "recording is disabled until the farmer consents",
+      "status": "PASS"
+    },
+    {
+      "name": "capabilities show speech-to-text but no server text-to-speech (Play transcript disabled)",
+      "status": "PASS"
+    },
+    {
+      "name": "REAL: microphone audio -> private upload -> AssemblyAI -> transcript in the editor and question box",
+      "status": "PASS",
+      "detail": {
+        "transcript": "When should I sow wheat in my field this November? When should I sow wheat in my field this November?"
+      }
+    },
+    {
+      "name": "the transcript only fills the box: nothing was sent to the assistant automatically",
+      "status": "PASS"
+    },
+    {
+      "name": "database: consent recorded and the recording stored privately for the owner",
+      "status": "PASS",
+      "detail": {
+        "contentType": "audio/wav",
+        "bytes": 226604
+      }
+    },
+    {
+      "name": "farmer sends the (reviewed) transcript with Ask and gets an answer card",
+      "status": "PASS",
+      "detail": {
+        "grounding": "ABSTAINED"
+      }
+    },
+    {
+      "name": "Listen reads the answer aloud with an on-device voice, or says plainly that none is installed",
+      "status": "PASS",
+      "detail": {
+        "installedVoiceLocales": [],
+        "result": "No English voice is installed on this device. Read the answer on screen instead."
+      }
+    },
+    {
+      "name": "transcription outage (HTTP 503) shows a clear error, keeps the farmer able to type, and invents no transcript",
+      "status": "PASS"
+    },
+    {
+      "name": "unauthenticated transcription request is rejected",
+      "status": "PASS"
+    }
+  ]
+}

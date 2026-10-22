@@ -1,0 +1,23 @@
+[
+ {
+  "id": "F03-17",
+  "name": "archive run inputs equal an independent Open-Meteo archive request (same lat/lon/dates) within 0.05 mm",
+  "status": "PASS",
+  "detail": "25 days 2026-09-21..2026-10-15; max|dET0|=0.0000 max|dRain|=0.0000",
+  "ms": 750
+ },
+ {
+  "id": "F03-18",
+  "name": "season without sowing date -> 409 SEASON_INPUTS_REQUIRED on profile save (no row written)",
+  "status": "PASS",
+  "detail": "",
+  "ms": 314
+ },
+ {
+  "id": "F03-19",
+  "name": "two seasons on one field: B-owned cycle id cannot be used on A field; deleted season rejected",
+  "status": "PASS",
+  "detail": "",
+  "ms": 147
+ }
+]

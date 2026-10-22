@@ -1,0 +1,7 @@
+/dashboard -> /dashboard | api /auth/me 200 in 71ms | load 6654 ms
+/farms -> /farms | api /auth/me 200 in 12ms | load 5299 ms
+/satellite -> /satellite | api /auth/me 200 in 11ms | load 5335 ms
+/weather -> /weather | api /auth/me 200 in 34ms | load 5324 ms
+/radar -> /radar | api /auth/me 200 in 12ms | load 5509 ms
+/market-intelligence -> /market-intelligence | api /auth/me 429 in 5ms | load 5257 ms
+{"200 /login":15,"200 /_next/image":8,"200 /_next/static":115,"200 /login-field-hero.png":1,"401 /api/auth":1,"307 /expert":1,"200 /onboarding/personal":3,"307 /login":11,"200 /api/auth":7,"200 /dashboard":12,"200 /api/farms":14,"200 /farms":10,"200 /api/notifications":6,"200 /fields":11,"200 /scan":11,"200 /satellite":9,"200 /irrigation":10,"200 /weather":7,"200 /market-intelligence":9,"200 /alerts":10,"200 /radar":9,"200 /tasks":8,"200 /api/growth":1,"200 /farms/631a6157-b87a-4641-8dd5-28ce46fbac65":4,"200 /api/fields":11,"200 /analytics":2,"404 /settings":1,"200 /farms/new":2,"200 /api/billing":1,"307 /satellite":1,"307 /weather":1,"200 /api/market":2,"307 /market-intelligence":1,"307 /radar":1,"307 /alerts":1,"307 /tasks":1,"307 /dashboard":1,"307 /farms":1,"307 /fields":1,"307 /scan":1}

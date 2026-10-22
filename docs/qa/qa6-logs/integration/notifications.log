@@ -1,0 +1,33 @@
+PASS test/notifications.integration-spec.ts (9.158 s)
+  F12 notifications on PostgreSQL
+    √ rejects an unauthenticated get /notifications (13 ms)
+    √ rejects an unauthenticated get /notifications/unread-count (10 ms)
+    √ rejects an unauthenticated post /notifications/read-all (12 ms)
+    √ rejects an unauthenticated get /notifications/preferences (7 ms)
+    √ rejects an unauthenticated put /notifications/preferences/WEATHER (8 ms)
+    √ starts empty, then lists only the caller notifications newest first with a delivery summary (171 ms)
+    √ counts, marks one and marks all as read; owners cannot touch each other (189 ms)
+    √ bounds the list limit and rejects malformed query values (154 ms)
+    √ suppresses duplicate notifications by deduplication key (34 ms)
+    √ stores a notification but creates no delivery without notification consent (139 ms)
+    √ returns every category with defaults and saves preferences per user (92 ms)
+    √ rejects preferences with only a start (9 ms)
+    √ rejects preferences with identical start and end (10 ms)
+    √ rejects preferences with a malformed time (11 ms)
+    √ rejects preferences with an unknown time zone (11 ms)
+    √ rejects preferences with a missing pushEnabled (11 ms)
+    √ rejects preferences with an unexpected field (11 ms)
+    √ rejects an unknown category (13 ms)
+    √ does not schedule delivery for a category the farmer turned off, but still stores it (110 ms)
+    √ delays delivery to the end of the farmer quiet hours, and urgent notifications bypass them (157 ms)
+    √ registers a phone token, lets only its owner remove it, and stops scheduling pushes to it (146 ms)
+    √ rejects malformed token registrations before touching the database (52 ms)
+    √ rebinds a token to the farmer who registers it last, so a handed-over phone stops serving the old account (102 ms)
+    √ still enforces the emergency-wording safety policy (31 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       24 passed, 24 total
+Snapshots:   0 total
+Time:        9.476 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

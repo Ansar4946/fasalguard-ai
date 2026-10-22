@@ -1,0 +1,17 @@
+PASS F03-01 unauthenticated context/profile/events/runs -> 401 (platform + BFF); wrong role 403 :: 
+PASS F03-02 ownership: B cannot read context/profile/events or submit for A field (404), nor use A season on own field :: 
+PASS F03-03 context: crop, sowing date, area, coordinates; rice and missing-sowing fields give explicit conflicts :: wheat ctx ok; rice -> UNSUPPORTED_CROP_SYSTEM; no-sowing -> n/a; waterProductivityEnabled=false
+PASS F03-04 profile validation: bad initialDate, efficiency 0/1.5, wettedFraction 0, uplandNoGroundwater false, theta ordering, Kcb ordering, extra field, boolean numeric, NaN-like, short source, negative version :: {"date":400,"eff0":400,"eff15":400,"wet0":400,"upl":400,"thetaOrder":400,"kcb":400,"extra":400,"boolNum":400,"shortSrc":400,"negVer":400,"cn":400,"lengths":400,"future":400}
+PASS F03-05 profile save v1 then optimistic concurrency: stale version -> 409; parallel writers -> exactly one wins :: 200,409,409,409,409
+PASS F03-06 run 202 (manual weather): outbox -> beat -> Celery -> COMPLETED; result has provenance, no weather fabricated, advice fields :: result keys: daily,method,advisory,assumptions,snapshotHash,profileSource,weatherInputs,profileVersion,initialCondition,weatherProvenance,parameterVerification
+PASS F03-07 science sanity: zero rain, ET0=4 mm/day over 25 days -> positive irrigation requirement, depletion bounded by TAW, no NaN/negative; numbers equal DB copy :: advisory.netDepthMm=61.60802522774935 ; advisory.grossDepthMm=82.14403363699914
+PASS F03-08 sensitivity: heavy rain (80 mm/day) run needs less irrigation than dry run; recorded irrigation event reduces need :: dry-sum=82.14 wet-sum=0.00 (selected numeric fields)
+PASS F03-09 idempotency: same key+payload -> same run id (no duplicate); same key different payload -> 409 :: 
+PASS F03-10 run validation: future endDate, before sowing, missing weather days, extra weather day, MANUAL without rows, ARCHIVE with rows, rain<0, et0>30, confirmedNoOtherIrrigation false, profile missing season :: {"future":400,"short":400,"extra":400,"noRows":400,"archWithRows":400,"rainNeg":400,"et0Big":400,"noConfirm":400,"srcShort":400,"keyBad":400,"beforeSow":400,"rice":409}
+PASS F03-11 events: record actual irrigation (201); same key replay identical; same key different -> 409; second event same date 409; future date 400; 0/negative/301 mm 400; B cannot read :: {"fut":400,"zero":400,"neg":400,"big":400,"pre":400,"effBig":400}
+PASS F03-12 REAL Open-Meteo ARCHIVE weather run (profile from sowing to yesterday) -> COMPLETED with provider provenance and plausible ET0 inputs :: provider=OPEN_METEO_ARCHIVE ET0 mean=3.92 mm/day rain total=30.5 mm
+PASS F03-13 WaPOR water-productivity run is honestly BLOCKED_EXTERNAL when WAPOR_ENABLED=false (no synthetic result) :: status=BLOCKED_EXTERNAL code=WAPOR_NOT_CONFIGURED (needs WAPOR credentials/pywapor)
+PASS F03-14 rate limit: runs >10/hour per farmer -> 429; history lists own runs only :: 202,202,202,202,202,202,202,202,202,202,429,429
+PASS F03-15 run result access: B cannot read A run by id (404) :: 
+PASS F03-16 broker outage keeps a committed run: stop Redis, submit (accepted or typed error), restart, beat redispatches -> COMPLETED :: accepted with Redis down; completed after recovery via outbox
+SUMMARY pass=16 fail=0 blocked=0

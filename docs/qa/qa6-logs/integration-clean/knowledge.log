@@ -1,0 +1,16 @@
+  console.log
+    ◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+PASS test/knowledge.integration-spec.ts
+  Expert-controlled agricultural knowledge
+    √ seeds only safe, non-chemical generic hackathon guidance (16 ms)
+    √ prevents approval audit history from being changed or deleted (116 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        3.62 s, estimated 7 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

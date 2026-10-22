@@ -1,0 +1,7 @@
+COMMAND: node node_modules/next/dist/bin/next build
+▲ Next.js 16.2.12 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+
+EXIT: null SIGNAL: SIGTERM

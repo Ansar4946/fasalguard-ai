@@ -1,0 +1,21 @@
+✔ real SQLite persists history/outbox across database restart and isolates accounts (445.2372ms)
+✔ simulated offline transport, expired auth, conflict and server outage retain pending history (11.2929ms)
+✔ ACK is validated in full before any SQLite record is marked synced (5.7805ms)
+✔ sync refuses plaintext transport and missing identity (7.6096ms)
+✔ pull metadata and cursor commit together, account cursors remain isolated (9.6984ms)
+✔ conflicting pull keeps local payload and cursor, including earlier records in the page (106.1433ms)
+✔ preprocessing reads RGB pixels into the documented NCHW tensor (7.709ms)
+✔ invalid manifest, output shape and nonfinite model scores fail closed (8.8615ms)
+✔ cached sessions reject malformed field/season/crop identities and names (7.5531ms)
+✔ retained photo encryption authenticates bytes, account and capture identity (77.071ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1349.8121
+
+exit=0
+error=none

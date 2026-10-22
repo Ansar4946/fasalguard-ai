@@ -1,0 +1,121 @@
+[
+ {
+  "id": "B-F05-01",
+  "name": "Fields page (UI->BFF->API->DB): farm shows its fields; import a GeoJSON FeatureCollection file; DB rows appear",
+  "status": "PASS",
+  "detail": "imported via UI, 1 DB row",
+  "ms": 4759
+ },
+ {
+  "id": "B-F05-02",
+  "name": "UI rejects invalid GeoJSON (bowtie), non-JSON, and >256 KiB file with a visible alert; DB unchanged",
+  "status": "PASS",
+  "detail": "{\"bowtie\":\"Boundary is self-intersecting or has invalid rings/holes.\",\"junk\":\"The file does not contain valid JSON.\",\"big\":\"Choose a GeoJSON file smaller than 250000 bytes; the request limit includes its envelope.\"}",
+  "ms": 6155
+ },
+ {
+  "id": "B-F05-03",
+  "name": "farmer B opening farmer A farm fields page gets a not-found/denied state (no A data)",
+  "status": "PASS",
+  "detail": "Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Analytics Settings UPGRADE TO PRO You've reached a plan limit. Unlock",
+  "ms": 2353
+ },
+ {
+  "id": "B-F05-04",
+  "name": "empty state: farmer with no farms sees a useful empty farms page (no sample data)",
+  "status": "PASS",
+  "detail": "Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Analytics Settings Support Sign out Search farms, fields and alerts EN / اردو AA My Farms",
+  "ms": 1937
+ },
+ {
+  "id": "B-F04-01",
+  "name": "Weather page: real Open-Meteo forecast for owned field; shows freshness, provider attribution, outlook; no console errors",
+  "status": "PASS",
+  "detail": "Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Satellite Monitoring Weather Intelligence Irrigation & Water Market Intelligence Outbreak Radar Alerts Tasks USSD Expense Demo Ex",
+  "ms": 2100
+ },
+ {
+  "id": "B-F04-02",
+  "name": "Weather page: demo (unverified) rules are labelled illustrative, never as expert guidance",
+  "status": "PASS",
+  "detail": "demo rule labelled",
+  "ms": 2094
+ },
+ {
+  "id": "B-F04-03",
+  "name": "Weather page: provider outage shows stale/unavailable state, not a blank or fabricated forecast",
+  "status": "PASS",
+  "detail": "Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Satellite Monitoring Weather Intelligence Irrigation & Water Market Intelligence Outbreak",
+  "ms": 8233
+ },
+ {
+  "id": "B-F02-01",
+  "name": "Satellite page: empty state, then Request scan -> real STAC scan completes in DB and the UI shows a terminal state",
+  "status": "PASS",
+  "detail": "db=COMPLETED; UI terminal text without reload=true; NDVI visible after reload=false",
+  "ms": 43895
+ },
+ {
+  "id": "B-F02-02",
+  "name": "Satellite page as farmer B never shows A scans/fields",
+  "status": "PASS",
+  "detail": "",
+  "ms": 4415
+ },
+ {
+  "id": "B-F03-01",
+  "name": "Irrigation page full UI flow: fill real profile form -> save -> record event -> calculate (Open-Meteo archive) -> result equals DB",
+  "status": "PASS",
+  "detail": "DB gross depth 75.26 mm shown in UI; profile version 1",
+  "ms": 41413
+ },
+ {
+  "id": "B-F03-02",
+  "name": "Irrigation page: rice field selected -> explicit unsupported-system message, no calculation controls enabled",
+  "status": "PASS",
+  "detail": "unsupported message shown",
+  "ms": 6852
+ },
+ {
+  "id": "B-F01-00",
+  "name": "Scan flow UI: select field -> upload real leaf photo under the SHIPPED Content-Security-Policy (browser PUT to the stack storage URL)",
+  "status": "FAIL",
+  "detail": "photo did not reach private storage (check CORS/PUT)",
+  "ms": 14210
+ },
+ {
+  "id": "B-F01-01",
+  "name": "Scan flow UI: select field -> upload real leaf photo with bypassCSP=true (harness workaround for the http storage origin, see B-F01-00) -> photo stored and Continue enabled",
+  "status": "PASS",
+  "detail": "ready media rows=1; continue enabled=true",
+  "ms": 14992
+ },
+ {
+  "id": "B-F01-02",
+  "name": "Scan flow UI: corrupt/disguised file chosen in the picker is refused with a visible message",
+  "status": "PASS",
+  "detail": "",
+  "ms": 5270
+ },
+ {
+  "id": "B-F01-03",
+  "name": "Scan flow UI end-to-end: upload -> symptoms -> Start AI analysis -> analysis/result page; farmer-readable outcome, never a raw internal error string",
+  "status": "FAIL",
+  "detail": "scan failed internally: status=NEEDS_FOLLOW_UP failure_code='sharp is not a function' ; UI shows: Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Analytics Settings UPGRADE TO PRO You've reached a plan limit. Unlock more farms, crop seasons, Gemini analyses, satellite monitoring and advanced reports. Upgrade Support Sign out Search f",
+  "ms": 28712
+ },
+ {
+  "id": "B-ALL-01",
+  "name": "mobile 375px: weather, satellite, irrigation, scan, fields pages have no horizontal overflow",
+  "status": "PASS",
+  "detail": "{\"/weather\":0,\"/satellite\":0,\"/irrigation\":0,\"/scan\":0,\"/farms/:farm/fields\":0}",
+  "ms": 15783
+ },
+ {
+  "id": "B-ALL-02",
+  "name": "unauthenticated browser visits to feature pages redirect to login (no data flash)",
+  "status": "FAIL",
+  "detail": "{\"/weather\":\"/login\",\"/satellite\":\"/login\",\"/irrigation\":\"/irrigation\",\"/scan\":\"/login\",\"/farms\":\"/login\"} ; unauthenticated /irrigation renders: Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Satellite Monitoring Weather Intelligence Irrigation & Water Market Intelligence Outbreak Radar Alerts Tasks USSD Expense Demo Ex",
+  "ms": 6881
+ }
+]

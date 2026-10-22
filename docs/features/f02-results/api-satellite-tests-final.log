@@ -1,0 +1,13 @@
+PASS test/sentinel-hub-provider.spec.ts (30.25 s)
+PASS test/notification-processor.spec.ts
+PASS test/automatic-monitoring.spec.ts
+PASS test/spectral-indices.spec.ts
+PASS test/satellite-storage.spec.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        36.623 s
+Ran all test suites within paths "test/spectral-indices.spec.ts", "test/sentinel-hub-provider.spec.ts", "test/satellite-storage.spec.ts", "test/automatic-monitoring.spec.ts", "test/notification-processor.spec.ts".
+
+exit=0

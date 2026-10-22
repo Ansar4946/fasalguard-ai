@@ -1,0 +1,162 @@
+[
+  {
+    "name": "390: banner present with reason",
+    "ok": true,
+    "detail": "⚠ SAMPLE DATA - illustrative only. These are not measurements of your field. Real satellite data is unavailable right now: the latest satellite scan failed. Request a new real scan"
+  },
+  {
+    "name": "390: Request a new real scan button",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "390: map watermark badge",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "390: metric cards say sample",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "390: AI interpretation + next steps disabled",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "390: no real action links in sample mode",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "390: old failure text not shown",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "390: no horizontal page scroll",
+    "ok": true,
+    "detail": "overflow 0px"
+  },
+  {
+    "name": "390: map renders field + sample zones",
+    "ok": true,
+    "detail": "7 svg paths"
+  },
+  {
+    "name": "390: vegetation chips labelled sample",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "390: change detection labelled sample",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "390: no storage writes / sample not in storage",
+    "ok": true,
+    "detail": "(pre-existing unrelated key allowed: onboarding) writes=[\"fasalguard.onboarding.v1\"]"
+  },
+  {
+    "name": "390: no satellite mutation requests made by viewing",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: banner present with reason",
+    "ok": true,
+    "detail": "⚠ SAMPLE DATA - illustrative only. These are not measurements of your field. Real satellite data is unavailable right now: the latest satellite scan failed. Request a new real scan"
+  },
+  {
+    "name": "1440: Request a new real scan button",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: map watermark badge",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: metric cards say sample",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: AI interpretation + next steps disabled",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: no real action links in sample mode",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: old failure text not shown",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: no horizontal page scroll",
+    "ok": true,
+    "detail": "overflow 0px"
+  },
+  {
+    "name": "1440: map renders field + sample zones",
+    "ok": true,
+    "detail": "7 svg paths"
+  },
+  {
+    "name": "1440: vegetation chips labelled sample",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: change detection labelled sample",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "1440: no storage writes / sample not in storage",
+    "ok": true,
+    "detail": "(pre-existing unrelated key allowed: onboarding) writes=[\"fasalguard.onboarding.v1\"]"
+  },
+  {
+    "name": "1440: no satellite mutation requests made by viewing",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "MOCKED fresh: no sample label for real COMPLETED capture",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "MOCKED fresh: real action links present",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "MOCKED fresh: older-than notice absent",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "MOCKED stale: no sample label for real COMPLETED capture",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "MOCKED stale: real action links present",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "MOCKED stale: older-than notice shown",
+    "ok": true,
+    "detail": ""
+  }
+]
