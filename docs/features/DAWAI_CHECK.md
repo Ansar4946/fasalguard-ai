@@ -3,7 +3,7 @@
 A farmer photographs a pesticide label (or types the details) and gets a **risk screening**: product found in a
 reference list, ingredient consistency, banned-ingredient hit, registration number, expiry, company, price sanity.
 It is **not a laboratory test** and never says a product is "genuine"; with demo data the UI must say
-"consistent with the DEMO list". The API returns `demoDataset` and bilingual `disclaimer` for that purpose.
+"consistent with the DEMO list" and with the DPP lists "consistent with the DPP notified list". The API returns `demoDataset` and bilingual `disclaimer` for that purpose.
 
 ## Switches
 
@@ -22,7 +22,8 @@ It is **not a laboratory test** and never says a product is "genuine"; with demo
 - `GET /pesticide-checks` (latest 20, own) and `GET /pesticide-checks/:id` (own, else 404)
 - `GET /pesticide-products?search=` autocomplete, max 10
 
-Response: `{id, createdAt, inputMode, language, verdict, score, demoDataset, extracted, matchedProduct, checks[], explanation, disclaimer{en,ur}, provider, model, latencyMs}`.
+Response: `{id, createdAt, inputMode, language, verdict, score, demoDataset, listCoverage, dataSources[], matchedNotified, bannedMatch, extracted, matchedProduct, checks[], explanation, disclaimer{en,ur}, provider, model, latencyMs}`.
+Additive DPP fields: `listCoverage` is `DEMO` or `DPP_PARTIAL`; `dataSources` is `[{name, asOf, url}]` (empty for DEMO); `matchedNotified` is `{productText, category, whoClass, notification}` or null; `bannedMatch` is `{kind: ingredient|premix, name, notificationNumber, notificationDate, position?}` or null. `demoDataset` is true only if a demo row influenced the result.
 `verdict` is `VERIFIED | SUSPICIOUS | HIGH_RISK | UNREADABLE`. `score` is a **risk score 0-100 (higher = riskier)**; a banned ingredient forces `HIGH_RISK` / 100. Each check is `{code,status(pass|warn|fail|unknown),titleEn,titleUr,detailEn,detailUr}`.
 
 ## How it works
@@ -35,12 +36,23 @@ Response: `{id, createdAt, inputMode, language, verdict, score, demoDataset, ext
 
 ## Data
 
-Reference lists are **demo data** (`src/domain/pesticide-check/seed/`, see its README): 20 ingredient-based placeholder products, 13 internationally listed banned ingredients, and an empty `pesticide-products.user-demo.csv` for the owner's exact demo products. `npm run seed:pesticide` is idempotent. Replace with official DPP lists before any real-world claim.
+**Official DPP lists** (`seed/dpp/`, see its README; retrieved 2026-10-23): 26 banned ingredients (S.R.O. numbers/dates), 9 banned pre-mixture brands (SRO 624(I)/96) and 139 Form-16 notified products (S.R.O. 636(I)/2005). The Form-16 list is an ingredient + strength + formulation list from 2005 with no brands, companies or registration numbers, and it is partial. Plus 20 placeholder demo products (`DEMO ...`) and an empty `pesticide-products.user-demo.csv` for the owner's exact bottles. Usage terms of the DPP publications are unverified. `npm run seed:pesticide` is idempotent and deletes placeholder demo banned rows that are not on the DPP list.
+
+### Checks added with the DPP lists (only when the DPP tables are loaded)
+
+- `banned_ingredient`: DPP list A. Fail forces HIGH_RISK (100); the detail names the S.R.O. number and date (or the position text for BHC/Heptachlor).
+- `banned_premix_brand`: normalised brand equality or pg_trgm-compatible similarity >= 0.8 (also with the strength/formulation suffix removed, or a long brand name found in the label text). Fail forces HIGH_RISK.
+- `ingredient_notified`: pass when a Form-16 row has exactly the label's ingredients (strength/formulation match is reported, category and WHO class included); `unknown` (never warn/fail) otherwise, with "not found on the partial 2005 DPP list; this does not mean it is unregistered".
+- `product_registered` (brand level) keeps working for demo / user-demo rows; with DPP data and no brand match it is `unknown` ("brand names are not part of the DPP lists we hold") and adds no risk points.
+
+### Verdict policy with the DPP lists (constants in `pesticide-risk.engine.ts`)
+
+Banned ingredient or banned pre-mixture -> HIGH_RISK/100. Otherwise score >= 60 HIGH_RISK; score >= 25 or any failed check (e.g. expired) SUSPICIOUS; a notified-list pass (or a matched demo/user product) with nothing failed -> VERIFIED (UI: "Consistent with the DPP notified list"); nothing confirmed and nothing wrong -> SUSPICIOUS at the floor score `UNCONFIRMED_SCORE` (25), worded "Could not confirm on the list we hold ... does not mean the product is fake" with a neutral tone (the verdict enum is constrained in the database). Missing registration number (+10) and missing expiry (+15) still add risk as before.
 
 ## Enable locally
 
 ```
-npm run migration:run          # applies 1755000047000 (pg_trgm, tables, media purpose, ai_runs operation)
+npm run migration:run          # applies 1755000047000 (pg_trgm, tables, media purpose, ai_runs operation) and 1755000048000 (DPP lists)
 npm run seed:pesticide
 # .env: DAWAI_CHECK_ENABLED=true  (LABEL_READER_PROVIDER=tesseract is the default)
 ```

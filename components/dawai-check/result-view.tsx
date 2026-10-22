@@ -8,10 +8,12 @@ import {
   buildSpeechText,
   checkText,
   clampScore,
+  formatSourceDate,
+  latestSourceDate,
+  presentResult,
   scoreRing,
   similarityPercent,
   sortChecks,
-  verdictPresentation,
 } from "@/features/dawai-check/presentation";
 import type { CheckStatus, ExtractedLabel, Lang, PesticideCheckResult } from "@/features/dawai-check/types";
 import { buildShareText } from "@/features/dawai-check/ui";
@@ -55,6 +57,7 @@ const stepIcons: Record<string, IconKind> = {
 };
 
 const howKeys = ["howName", "howIngredient", "howReg", "howExpiry", "howCompany", "howPrice", "howRead", "howBanned"];
+const howKeysDpp = ["howBannedDpp", "howPremix", "howNotified", "howNotFound", "howReg", "howExpiry", "howRead"];
 
 const rise = (i: number): CSSProperties => ({ "--dc-i": i }) as CSSProperties;
 
@@ -158,7 +161,11 @@ export function ResultView({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const speech = useSpeech();
   const idBase = useId();
-  const p = verdictPresentation(result.verdict, result.demoDataset);
+  const p = presentResult(result);
+  const dppCoverage = result.listCoverage === "DPP_PARTIAL";
+  const banned = result.bannedMatch ?? null;
+  const notified = result.matchedNotified ?? null;
+  const sourceDate = latestSourceDate(result.dataSources);
   const tone = toneClasses[p.tone];
   const score = clampScore(result.score);
   const original = fieldsFromExtracted(result.extracted);
@@ -229,6 +236,11 @@ export function ResultView({
                 {t("demoBadge")}
               </div>
             )}
+            {p.showDppBadge && (
+              <div className="mb-3 inline-flex items-center gap-2 rounded-lg border-2 border-white/80 bg-black/35 px-3 py-1.5 text-sm font-black tracking-wide text-white">
+                {t("dppBadge")}
+              </div>
+            )}
             <div className="flex items-start gap-3 sm:gap-4">
               <span className="relative grid size-14 shrink-0 place-items-center">
                 <span aria-hidden="true" className="dc-halo absolute inset-0 rounded-2xl bg-white/40" />
@@ -248,6 +260,12 @@ export function ResultView({
             </div>
             <p className="mt-3 text-sm font-semibold leading-6">{t(p.summaryKey)}</p>
             {p.showDemoBadge && <p className="mt-2 text-xs font-bold">{t("demoBadgeNote")}</p>}
+            {p.showDppBadge && <p className="mt-2 text-xs font-bold">{t("dppBadgeNote")}</p>}
+            {banned?.notificationNumber && (
+              <p className="mt-3 rounded-xl bg-black/25 px-3 py-2 text-sm font-extrabold leading-6">
+                {t("bannedRefLabel")}: <span dir="ltr">{banned.name}, {banned.notificationNumber}</span>
+              </p>
+            )}
             {result.explanation && result.language === lang && (
               <p className="mt-3 rounded-xl bg-black/20 p-3 text-sm leading-6">{result.explanation}</p>
             )}
@@ -275,8 +293,28 @@ export function ResultView({
             </h3>
             <p className="text-lg font-extrabold">{result.extracted?.brandName || t("notRead")}</p>
             <div className="rounded-xl bg-surface-soft p-3">
-              <p className="text-xs font-bold text-muted">{t("registryMatch")}</p>
-              {result.matchedProduct ? (
+              <p className="text-xs font-bold text-muted">{notified && !result.matchedProduct ? t("notifiedMatchTitle") : t("registryMatch")}</p>
+              {notified && !result.matchedProduct ? (
+                <>
+                  <p className="mt-1 font-extrabold" dir="ltr">{notified.productText}</p>
+                  <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    {notified.category && (
+                      <>
+                        <dt className="font-bold text-muted">{t("notifiedCategory")}</dt>
+                        <dd className="font-semibold" dir="ltr">{notified.category}</dd>
+                      </>
+                    )}
+                    {notified.whoClass && (
+                      <>
+                        <dt className="font-bold text-muted">{t("notifiedWho")}</dt>
+                        <dd className="font-semibold" dir="ltr">{notified.whoClass}</dd>
+                      </>
+                    )}
+                    <dt className="font-bold text-muted">{t("notifiedNotification")}</dt>
+                    <dd className="font-semibold" dir="ltr">{notified.notification}</dd>
+                  </dl>
+                </>
+              ) : result.matchedProduct ? (
                 <>
                   <p className="mt-1 font-extrabold">{result.matchedProduct.brandName}</p>
                   <p className="text-xs text-muted">
@@ -292,6 +330,10 @@ export function ResultView({
                     <div className="dc-bar h-full rounded-full bg-brand" style={{ width: `${similarity}%` }} />
                   </div>
                 </>
+              ) : dppCoverage && !banned ? (
+                <p className="mt-1 text-sm font-semibold">{t("notFoundPlain")}</p>
+              ) : dppCoverage ? (
+                <p className="mt-1 text-sm font-semibold">{t("bannedRefLabel")}: {banned?.notificationNumber ?? banned?.name}</p>
               ) : (
                 <p className="mt-1 text-sm font-semibold">{t("noMatch")}</p>
               )}
@@ -450,9 +492,9 @@ export function ResultView({
             </h3>
             <div id={`${idBase}-how`} className="dc-collapse" data-open={howOpen}>
               <div>
-                <p className="pt-2 text-xs leading-5 text-muted">{t("howIntro")}</p>
+                <p className="pt-2 text-xs leading-5 text-muted">{t(dppCoverage ? "howIntroDpp" : "howIntro")}</p>
                 <ul className="mt-2 space-y-1.5 pb-1 text-sm">
-                  {howKeys.map((key) => (
+                  {(dppCoverage ? howKeysDpp : howKeys).map((key) => (
                     <li key={key} className="flex gap-2">
                       <GlyphIcon kind="check" className="mt-0.5 size-4 shrink-0 text-brand" />
                       <span>{t(key)}</span>
@@ -462,6 +504,25 @@ export function ResultView({
               </div>
             </div>
           </section>
+
+          {dppCoverage && sourceDate && (
+            <section aria-label={t("sourceLinks")} className="card dc-rise p-3 text-xs leading-5 text-muted" style={rise(6)}>
+              <p>
+                {t("dppSourcePrefix")} <span dir="ltr">{formatSourceDate(sourceDate, lang)}</span>. {t("dppSourceSuffix")}
+              </p>
+              {(result.dataSources ?? []).length > 0 && (
+                <ul className="mt-1 space-y-0.5">
+                  {(result.dataSources ?? []).map((source) => (
+                    <li key={source.url}>
+                      <a href={source.url} target="_blank" rel="noopener noreferrer" className="dc-focus font-bold text-brand-dark underline" dir="ltr">
+                        {source.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
 
           {/* Next steps */}
           <section aria-labelledby="dc-next-title" className="card dc-rise p-4" style={rise(6)}>

@@ -25,6 +25,7 @@ type View = "capture" | "manual" | "analysing" | "result";
 type Mode = "photo" | "manual";
 
 const LANG_KEY = "fg-dawai-lang";
+const COVERAGE_KEY = "fg-dawai-coverage";
 
 function subscribeOnline(callback: () => void): () => void {
   window.addEventListener("online", callback);
@@ -71,6 +72,8 @@ export function DawaiCheckApp() {
   });
   const [opening, setOpening] = useState(false);
   const [demoNote, setDemoNote] = useState(false);
+  // Which reference lists the API used last time (cached so the header chip is right before the first check of a visit).
+  const [seenDemo, setSeenDemo] = useState(false);
   const mediaIdRef = useRef<{ file: File; id: string } | null>(null);
   const runRef = useRef(0);
   const online = useOnline();
@@ -84,6 +87,31 @@ export function DawaiCheckApp() {
       return () => window.clearTimeout(id);
     }
   }, []);
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(COVERAGE_KEY) === "DEMO") {
+        const id = window.setTimeout(() => setSeenDemo(true), 0);
+        return () => window.clearTimeout(id);
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+
+  const resultCoverage = result?.listCoverage;
+  useEffect(() => {
+    if (!resultCoverage) return;
+    try {
+      window.localStorage.setItem(COVERAGE_KEY, resultCoverage);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [resultCoverage]);
+
+  // DEMO chip when a demo row influenced the result or the API only has the demo lists; otherwise the DPP chip.
+  const chipDemo = result ? Boolean(result.demoDataset) || result.listCoverage !== "DPP_PARTIAL" : seenDemo;
+  const chipKey = chipDemo ? "demoChip" : "dppChip";
 
   function changeLang(next: Lang): void {
     setLang(next);
@@ -280,12 +308,16 @@ export function DawaiCheckApp() {
               type="button"
               aria-expanded={demoNote}
               aria-controls={demoNoteId}
-              aria-label={`${t("demoChip")}. ${t("demoChipAria")}`}
+              aria-label={`${t(chipKey)}. ${t(chipDemo ? "demoChipAria" : "dppChipAria")}`}
               onClick={() => setDemoNote((v) => !v)}
-              className="dc-press dc-focus inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[#ffe14d] bg-[#111] px-3 text-xs font-black tracking-wide text-[#ffe14d]"
+              className={
+                chipDemo
+                  ? "dc-press dc-focus inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[#ffe14d] bg-[#111] px-3 text-xs font-black tracking-wide text-[#ffe14d]"
+                  : "dc-press dc-focus inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[#d9f5c7] bg-[#0b2e20] px-3 text-xs font-black tracking-wide text-[#d9f5c7]"
+              }
             >
               <GlyphIcon kind="info" className="size-4" />
-              {t("demoChip")}
+              {t(chipKey)}
             </button>
             <Segmented<Lang>
               onDark
@@ -302,7 +334,7 @@ export function DawaiCheckApp() {
           </div>
           <div id={demoNoteId} className="dc-collapse" data-open={demoNote}>
             <div>
-              <p className="mt-3 rounded-xl bg-black/25 p-3 text-xs font-semibold leading-5">{t("demoChipNote")}</p>
+              <p className="mt-3 rounded-xl bg-black/25 p-3 text-xs font-semibold leading-5">{t(chipDemo ? "demoChipNote" : "dppChipNote")}</p>
             </div>
           </div>
         </header>

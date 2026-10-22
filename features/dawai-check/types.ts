@@ -34,6 +34,29 @@ export interface CheckItem {
   detailUr: string;
 }
 
+export type ListCoverage = "DEMO" | "DPP_PARTIAL";
+
+export interface DataSourceRef {
+  name: string;
+  asOf: string;
+  url: string;
+}
+
+export interface MatchedNotified {
+  productText: string;
+  category: string | null;
+  whoClass: string | null;
+  notification: string;
+}
+
+export interface BannedMatch {
+  kind: "ingredient" | "premix";
+  name: string;
+  notificationNumber: string | null;
+  notificationDate: string | null;
+  position?: string | null;
+}
+
 export interface PesticideCheckResult {
   id: string;
   createdAt: string;
@@ -42,6 +65,11 @@ export interface PesticideCheckResult {
   verdict: Verdict;
   score: number;
   demoDataset: boolean;
+  /** Additive DPP fields; absent on results from an older API (treated as DEMO). */
+  listCoverage?: ListCoverage;
+  dataSources?: DataSourceRef[];
+  matchedNotified?: MatchedNotified | null;
+  bannedMatch?: BannedMatch | null;
   extracted: ExtractedLabel;
   matchedProduct: MatchedProduct | null;
   checks: CheckItem[];

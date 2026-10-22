@@ -44,6 +44,7 @@ import { AssistantGrounding1755000044000 } from './1755000044000-assistant-groun
 import { YieldReference1755000045000 } from './1755000045000-yield-reference';
 import { AssistantAccountData1755000046000 } from './1755000046000-assistant-account-data';
 import { PesticideCheck1755000047000 } from './1755000047000-pesticide-check';
+import { DppReferenceData1755000048000 } from './1755000048000-dpp-reference-data';
 export const databaseMigrations = [
   InitialGeospatialSchema1755000000000,
   SeedReferenceCrops1755000001000,
@@ -91,4 +92,5 @@ export const databaseMigrations = [
   YieldReference1755000045000,
   AssistantAccountData1755000046000,
   PesticideCheck1755000047000,
+  DppReferenceData1755000048000,
 ];

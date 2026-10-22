@@ -1,4 +1,4 @@
-import type { CheckItem, CheckStatus, PesticideCheckResult, Verdict } from "./types";
+import type { BannedMatch, CheckItem, CheckStatus, ListCoverage, PesticideCheckResult, Verdict } from "./types";
 
 export type Tone = "success" | "warning" | "danger" | "neutral";
 
@@ -8,26 +8,78 @@ export interface VerdictPresentation {
   titleKey: string;
   summaryKey: string;
   showDemoBadge: boolean;
+  /** "DPP LIST (PARTIAL, 2005)" badge: real DPP lists loaded and no demo row influenced the result. */
+  showDppBadge: boolean;
   showRetake: boolean;
   /** Next-step string keys, in display order. */
   nextStepKeys: string[];
 }
 
-/** Maps a verdict to wording keys. VERIFIED is never presented as authentic; demo data is flagged. */
-export function verdictPresentation(verdict: Verdict, demoDataset: boolean): VerdictPresentation {
-  const base = { showDemoBadge: demoDataset };
+export interface PresentationContext {
+  listCoverage?: ListCoverage;
+  bannedMatch?: BannedMatch | null;
+  /** DPP list loaded, nothing failed or warned, but the product could not be confirmed on the partial list. */
+  unconfirmed?: boolean;
+}
+
+/** True when real DPP lists were used and no demo row influenced the result. */
+export function isDppResult(demoDataset: boolean, listCoverage?: ListCoverage): boolean {
+  return listCoverage === "DPP_PARTIAL" && !demoDataset;
+}
+
+/** SUSPICIOUS only because the product is not on the partial list we hold (nothing failed or warned). */
+export function isUnconfirmed(result: Pick<PesticideCheckResult, "verdict" | "listCoverage" | "checks">): boolean {
+  if (result.verdict !== "SUSPICIOUS" || result.listCoverage !== "DPP_PARTIAL") return false;
+  const checks = result.checks ?? [];
+  return (
+    checks.some((c) => c.code === "ingredient_notified" && c.status === "unknown") &&
+    !checks.some((c) => c.status === "fail" || c.status === "warn")
+  );
+}
+
+/** Presentation for a full result (uses the DPP context). */
+export function presentResult(result: PesticideCheckResult): VerdictPresentation {
+  return verdictPresentation(result.verdict, result.demoDataset, {
+    listCoverage: result.listCoverage,
+    bannedMatch: result.bannedMatch,
+    unconfirmed: isUnconfirmed(result),
+  });
+}
+
+/**
+ * Maps a verdict to wording keys. VERIFIED is never presented as authentic or approved; demo data is flagged.
+ * With real DPP lists the wording is "consistent with the DPP notified list" and "not found" is never "fake".
+ */
+export function verdictPresentation(
+  verdict: Verdict,
+  demoDataset: boolean,
+  context: PresentationContext = {},
+): VerdictPresentation {
+  const dpp = isDppResult(demoDataset, context.listCoverage);
+  const base = { showDemoBadge: demoDataset, showDppBadge: dpp };
   switch (verdict) {
     case "VERIFIED":
       return {
         ...base,
         tone: "success",
         icon: "shield-check",
-        titleKey: demoDataset ? "verdictVerifiedDemoTitle" : "verdictVerifiedTitle",
-        summaryKey: demoDataset ? "verdictVerifiedDemoSummary" : "verdictVerifiedSummary",
+        titleKey: demoDataset ? "verdictVerifiedDemoTitle" : dpp ? "verdictDppTitle" : "verdictVerifiedTitle",
+        summaryKey: demoDataset ? "verdictVerifiedDemoSummary" : dpp ? "verdictDppSummary" : "verdictVerifiedSummary",
         showRetake: false,
         nextStepKeys: ["stepReceipt", "stepExpert"],
       };
     case "SUSPICIOUS":
+      if (context.unconfirmed && context.listCoverage === "DPP_PARTIAL") {
+        return {
+          ...base,
+          tone: "neutral",
+          icon: "help",
+          titleKey: "verdictUnconfirmedTitle",
+          summaryKey: "verdictUnconfirmedSummary",
+          showRetake: false,
+          nextStepKeys: ["stepDpp", "stepReceipt", "stepExpert"],
+        };
+      }
       return {
         ...base,
         tone: "warning",
@@ -37,16 +89,28 @@ export function verdictPresentation(verdict: Verdict, demoDataset: boolean): Ver
         showRetake: false,
         nextStepKeys: ["stepReceipt", "stepExpert", "stepHelpline"],
       };
-    case "HIGH_RISK":
+    case "HIGH_RISK": {
+      const banned = context.bannedMatch ?? null;
+      const titleKey = banned
+        ? banned.kind === "premix"
+          ? "verdictBannedPremixTitle"
+          : "verdictBannedTitle"
+        : "verdictHighRiskTitle";
+      const summaryKey = banned
+        ? banned.kind === "premix"
+          ? "verdictBannedPremixSummary"
+          : "verdictBannedSummary"
+        : "verdictHighRiskSummary";
       return {
         ...base,
         tone: "danger",
         icon: "shield-x",
-        titleKey: "verdictHighRiskTitle",
-        summaryKey: "verdictHighRiskSummary",
+        titleKey,
+        summaryKey,
         showRetake: false,
         nextStepKeys: ["stepKeep", "stepHelpline", "stepReceipt", "stepExpert"],
       };
+    }
     default:
       return {
         ...base,
@@ -68,6 +132,36 @@ export function sortChecks(checks: readonly CheckItem[]): CheckItem[] {
     .map((check, index) => ({ check, index }))
     .sort((a, b) => statusOrder[a.check.status] - statusOrder[b.check.status] || a.index - b.index)
     .map((entry) => entry.check);
+}
+
+const monthsEn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monthsUr = [
+  "جنوری",
+  "فروری",
+  "مارچ",
+  "اپریل",
+  "مئی",
+  "جون",
+  "جولائی",
+  "اگست",
+  "ستمبر",
+  "اکتوبر",
+  "نومبر",
+  "دسمبر",
+];
+
+/** "2026-10-23" -> "23 Oct 2026" / "23 اکتوبر 2026" (Latin digits). Anything unparseable is returned as is. */
+export function formatSourceDate(iso: string | null | undefined, lang: "en" | "ur"): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
+  if (!m) return iso ?? "";
+  const month = (lang === "ur" ? monthsUr : monthsEn)[Number(m[2]) - 1] ?? m[2];
+  return `${Number(m[3])} ${month} ${m[1]}`;
+}
+
+/** Latest retrieval date among the data sources (YYYY-MM-DD) or null. */
+export function latestSourceDate(sources: ReadonlyArray<{ asOf: string }> | undefined): string | null {
+  const dates = (sources ?? []).map((s) => s.asOf).filter((d) => /^\d{4}-\d{2}-\d{2}/.test(d)).sort();
+  return dates.length ? (dates[dates.length - 1] ?? null) : null;
 }
 
 export function clampScore(score: number): number {
@@ -97,7 +191,7 @@ export function buildSpeechText(
   lang: "en" | "ur",
   t: (key: string) => string,
 ): string {
-  const p = verdictPresentation(result.verdict, result.demoDataset);
+  const p = presentResult(result);
   const parts = [t(p.titleKey), t(p.summaryKey)];
   const failing = sortChecks(result.checks)
     .filter((c) => c.status === "fail" || c.status === "warn")

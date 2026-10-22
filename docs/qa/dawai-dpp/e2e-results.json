@@ -1,0 +1,303 @@
+[
+ {
+  "variant": "dpp-notified",
+  "http": 201,
+  "put": 204,
+  "ms": 2422,
+  "verdict": "VERIFIED",
+  "score": 0,
+  "listCoverage": "DPP_PARTIAL",
+  "demoDataset": false,
+  "read": {
+   "brand": "Agrimectin 1.8 EC",
+   "ing": "Abamectin",
+   "conc": "1.8%",
+   "form": "EC",
+   "exp": "12/2030"
+  },
+  "matchedNotified": {
+   "category": "Ins.",
+   "whoClass": "III",
+   "productText": "Abamectin 1.8% EC.",
+   "notification": "S.R.O. 636(I)/2005 dated 22.06.2005"
+  },
+  "bannedMatch": null,
+  "matchedProduct": null,
+  "checks": [
+   "ocr_quality:pass",
+   "product_registered:unknown",
+   "ingredient_match:unknown",
+   "ingredient_notified:pass",
+   "banned_ingredient:pass",
+   "banned_premix_brand:pass",
+   "registration_number:pass",
+   "expiry_date:pass",
+   "company_consistency:unknown",
+   "price_sanity:unknown"
+  ],
+  "explanation": "No major problem was found and the label is consistent with the DPP notified list (a partial 2005 list; this is not a registration check). All the checks that could be run passed. This is a risk screening, not a lab test; confirm with a licensed dealer or your agriculture extension officer before buying or using it.",
+  "pass": true
+ },
+ {
+  "variant": "premix-banned",
+  "http": 201,
+  "put": 204,
+  "ms": 1170,
+  "verdict": "HIGH_RISK",
+  "score": 100,
+  "listCoverage": "DPP_PARTIAL",
+  "demoDataset": false,
+  "read": {
+   "brand": "Ammo-phos 450 EC",
+   "ing": "Cypermethrin",
+   "conc": "5%",
+   "exp": "12/2030"
+  },
+  "matchedNotified": null,
+  "bannedMatch": {
+   "kind": "premix",
+   "name": "Ammo-phos 450 EC",
+   "notificationDate": "1996-07-15",
+   "notificationNumber": "SRO 624(I)/96"
+  },
+  "matchedProduct": null,
+  "checks": [
+   "ocr_quality:pass",
+   "product_registered:unknown",
+   "ingredient_match:unknown",
+   "ingredient_notified:unknown",
+   "banned_ingredient:fail",
+   "banned_premix_brand:fail",
+   "registration_number:warn",
+   "expiry_date:pass",
+   "company_consistency:unknown",
+   "price_sanity:unknown"
+  ],
+  "explanation": "This product is listed as a banned pre-mixture in the DPP list (Ammo-phos 450 EC, SRO 624(I)/96). Main points: Listed in the DPP banned pesticides list; Banned pre-mixture brand. This is a risk screening, not a lab test; confirm with a licensed dealer or your agriculture extension officer before buying or using it.",
+  "pass": true
+ },
+ {
+  "variant": "endosulfan",
+  "http": 201,
+  "put": 204,
+  "ms": 906,
+  "verdict": "HIGH_RISK",
+  "score": 100,
+  "listCoverage": "DPP_PARTIAL",
+  "demoDataset": false,
+  "read": {
+   "brand": "Superkill 35 EC",
+   "ing": "Endosulfan",
+   "conc": "35%",
+   "form": "EC",
+   "exp": "12/2030"
+  },
+  "matchedNotified": null,
+  "bannedMatch": {
+   "kind": "ingredient",
+   "name": "Endosulfan",
+   "position": "Prohibited the import either in technical grade material or formulation and ban its use in Pakistan",
+   "notificationDate": "2012-10-22",
+   "notificationNumber": "S.R.O. 1329(I)/2012"
+  },
+  "matchedProduct": null,
+  "checks": [
+   "ocr_quality:pass",
+   "product_registered:unknown",
+   "ingredient_match:unknown",
+   "ingredient_notified:unknown",
+   "banned_ingredient:fail",
+   "banned_premix_brand:pass",
+   "registration_number:warn",
+   "expiry_date:pass",
+   "company_consistency:unknown",
+   "price_sanity:unknown"
+  ],
+  "explanation": "Listed in the DPP banned pesticides list (Endosulfan, S.R.O. 1329(I)/2012). Main points: Listed in the DPP banned pesticides list; Registration number not found. This is a risk screening, not a lab test; confirm with a licensed dealer or your agriculture extension officer before buying or using it.",
+  "pass": true
+ },
+ {
+  "variant": "not-on-list",
+  "http": 201,
+  "put": 204,
+  "ms": 764,
+  "verdict": "SUSPICIOUS",
+  "score": 25,
+  "listCoverage": "DPP_PARTIAL",
+  "demoDataset": false,
+  "read": {
+   "brand": "GreenMax Super Spray",
+   "ing": "Zorbitol",
+   "conc": "50%",
+   "form": "EC",
+   "exp": "12/2030"
+  },
+  "matchedNotified": null,
+  "bannedMatch": null,
+  "matchedProduct": null,
+  "checks": [
+   "ocr_quality:pass",
+   "product_registered:unknown",
+   "ingredient_match:unknown",
+   "ingredient_notified:unknown",
+   "banned_ingredient:pass",
+   "banned_premix_brand:pass",
+   "registration_number:pass",
+   "expiry_date:pass",
+   "company_consistency:unknown",
+   "price_sanity:unknown"
+  ],
+  "explanation": "We could not confirm this product on the partial 2005 DPP list we hold. This does not mean it is fake or unregistered; ask the dealer for the registration details and check with the DPP. This is a risk screening, not a lab test; confirm with a licensed dealer or your agriculture extension officer before buying or using it.",
+  "pass": true
+ },
+ {
+  "variant": "expired",
+  "http": 201,
+  "put": 204,
+  "ms": 1351,
+  "verdict": "SUSPICIOUS",
+  "score": 45,
+  "listCoverage": "DPP_PARTIAL",
+  "demoDataset": false,
+  "read": {
+   "brand": "Agrimectin 1.8 EC",
+   "ing": "Abamectin",
+   "conc": "1.8%",
+   "form": "EC",
+   "exp": "01/2024"
+  },
+  "matchedNotified": {
+   "category": "Ins.",
+   "whoClass": "III",
+   "productText": "Abamectin 1.8% EC.",
+   "notification": "S.R.O. 636(I)/2005 dated 22.06.2005"
+  },
+  "bannedMatch": null,
+  "matchedProduct": null,
+  "checks": [
+   "ocr_quality:pass",
+   "product_registered:unknown",
+   "ingredient_match:unknown",
+   "ingredient_notified:pass",
+   "banned_ingredient:pass",
+   "banned_premix_brand:pass",
+   "registration_number:pass",
+   "expiry_date:fail",
+   "company_consistency:unknown",
+   "price_sanity:unknown"
+  ],
+  "explanation": "This product shows some suspicious signs. Main points: Product is expired. This is a risk screening, not a lab test; confirm with a licensed dealer or your agriculture extension officer before buying or using it.",
+  "pass": true
+ },
+ {
+  "variant": "demo-product",
+  "http": 201,
+  "put": 204,
+  "ms": 1200,
+  "verdict": "VERIFIED",
+  "score": 0,
+  "listCoverage": "DPP_PARTIAL",
+  "demoDataset": true,
+  "read": {
+   "brand": "DEMO Imidacloprid 20% SL",
+   "ing": "Imidacloprid",
+   "conc": "20%",
+   "form": "SL",
+   "exp": "12/2030"
+  },
+  "matchedNotified": {
+   "category": "Ins.",
+   "whoClass": "II",
+   "productText": "Imidacloprid 25 EC, 25 WP, 70 WS, 200 SL.",
+   "notification": "S.R.O. 636(I)/2005 dated 22.06.2005"
+  },
+  "bannedMatch": null,
+  "matchedProduct": "DEMO Imidacloprid 20% SL",
+  "checks": [
+   "ocr_quality:pass",
+   "product_registered:pass",
+   "ingredient_match:pass",
+   "ingredient_notified:pass",
+   "banned_ingredient:pass",
+   "banned_premix_brand:pass",
+   "registration_number:pass",
+   "expiry_date:pass",
+   "company_consistency:unknown",
+   "price_sanity:unknown"
+  ],
+  "explanation": "No major problem was found and the product is consistent with the DEMO list. All the checks that could be run passed. This is a risk screening, not a lab test; confirm with a licensed dealer or your agriculture extension officer before buying or using it.",
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-dpp-notified-en.png",
+  "title": "Something does not look right",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-premix-banned-en.png",
+  "title": "Listed as a banned pre-mixture by the DPP",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-not-on-list-en.png",
+  "title": "Could not confirm on the list we hold",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-dpp-notified-ur.png",
+  "title": "کچھ ٹھیک نہیں لگ رہا",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-premix-banned-ur.png",
+  "title": "ڈی پی پی کے ممنوعہ پری مکسچر کے طور پر درج",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-not-on-list-ur.png",
+  "title": "ہمارے پاس موجود فہرست میں تصدیق نہیں ہو سکی",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-dpp-notified-en.png",
+  "title": "Something does not look right",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-premix-banned-en.png",
+  "title": "Listed as a banned pre-mixture by the DPP",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-not-on-list-en.png",
+  "title": "Could not confirm on the list we hold",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-dpp-notified-ur.png",
+  "title": "کچھ ٹھیک نہیں لگ رہا",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-premix-banned-ur.png",
+  "title": "ڈی پی پی کے ممنوعہ پری مکسچر کے طور پر درج",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-not-on-list-ur.png",
+  "title": "ہمارے پاس موجود فہرست میں تصدیق نہیں ہو سکی",
+  "hscroll": 0,
+  "pass": true
+ }
+]

@@ -106,7 +106,7 @@ Rate limits to remember in a live demo: label upload presign is **30 per hour pe
 
 ```
 cd services/api
-npm run seed:pesticide          # 20 DEMO products + 13 banned ingredients, idempotent
+npm run seed:pesticide          # 20 DEMO products + the official DPP lists (26 banned ingredients, 9 banned pre-mixture brands, 139 Form-16 notified products), idempotent
 npm run seed:demo-knowledge     # 24 DEMO knowledge articles (12 topics x ur/en), idempotent
 ```
 
@@ -114,7 +114,7 @@ To add your 3-5 real products, edit `services/api/src/domain/pesticide-check/see
 
 ## 6. Known limitations (say these out loud if asked)
 
-- The product and banned lists are a **demo dataset, not the official DPP register**. The banned list is a recognised-international list and must be checked against the Pakistan list.
+- The **banned lists are the official DPP notifications** (retrieved 23 Oct 2026). The **notified-product list is the DPP Form-16 list of S.R.O. 636(I)/2005: ingredient + strength + formulation, no brand names, no companies, no registration numbers, and only a partial 2005 snapshot** (the DPP has several hundred more registered products today). "Not on our list" is therefore shown as "could not confirm", never as unregistered or fake. Brand-level matching only knows the 20 DEMO products and your user-demo products. Usage terms of the DPP publications are unverified. Details: `docs/qa/DAWAI_DPP_DATA.md`.
 - OCR has been proven on **synthetic labels** (rendered text) only. Real crumpled, glossy, curved or multilingual packs are untested; expect unreadable results more often.
 - OCR is **English only** (Tesseract). Urdu-script labels are not read.
 - The **Urdu wording has not been reviewed by a native speaker**; some phrasing is stiff.
@@ -128,9 +128,9 @@ To add your 3-5 real products, edit `services/api/src/domain/pesticide-check/see
 
 Setup before the room: logged in as the demo farmer, `/dawai-check` open, a printed or on-screen label photo ready (or the saved sample), phone volume up, mic permission already granted. Mark the 4 "QA9 FIXTURE" alerts as read if you do not want them shown in the assistant's warnings card.
 
-1. **0:00-0:35 Dawai Check.** Open Dawai Check, tap the Urdu toggle. Tap **Scan label**, take/choose the photo, tap check. Point at the stages (upload, reading, matching, checking). Result appears: say "it read the name and ingredient, matched our list, and shows the reasons". Point at the **DEMO DATASET** badge, the risk ring ("higher means riskier"), and the checks list (failures first). Tap **Listen**: the verdict and reasons are read aloud in Urdu. For contrast, optionally show the banned (endosulfan) label: red, score 100.
+1. **0:00-0:35 Dawai Check.** Open Dawai Check, tap the Urdu toggle. Tap **Scan label**, take/choose the photo, tap check. Point at the stages (upload, reading, matching, checking). Result appears: say "it read the name and ingredient, matched our list, and shows the reasons". Point at the **DPP LIST (PARTIAL, 2005)** badge (a DEMO DATASET badge appears only if one of our demo products matched), the risk ring ("higher means riskier"), and the checks list (failures first). Tap **Listen**: the verdict and reasons are read aloud in Urdu. For contrast, show the banned label (endosulfan, S.R.O. 1329(I)/2012) or the banned pre-mixture brand "Ammo-phos 450 EC" (SRO 624(I)/96): red, score 100, with the official reference. A label whose ingredient is not on the list says "Could not confirm on the list we hold - this does not mean the product is fake".
 2. **0:35-1:10 Voice question.** Go to AI Assistant (Urdu by default). Tick the consent box, tap the mic and say "میری گندم کے پتے پیلے کیوں ہو رہے ہیں؟", tap stop. The transcript appears, review it, it sends itself. The answer quotes the approved article and shows its citation with the "DEMO - not expert-reviewed" label. Tap **Listen**.
-3. **1:10-1:30 Honesty line.** Say: "This is risk screening on a demo dataset, not a lab test and not the official registry; the assistant only answers from approved articles and says it does not know otherwise." Optionally type "what is the capital of France" to show the abstention.
+3. **1:10-1:30 Honesty line.** Say: "This is risk screening against the Department of Plant Protection banned list and a partial 2005 notified list, not a lab test and not a registration check; the assistant only answers from approved articles and says it does not know otherwise." Optionally type "what is the capital of France" to show the abstention.
 
 **Fallbacks.**
 - *No network / backend down:* the app shows a plain "not available right now" message. Use the history tab (previous checks open without OCR) or the **Type the name** tab; or show the saved screenshots in `docs/qa/dawai-voice/`.

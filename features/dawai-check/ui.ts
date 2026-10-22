@@ -1,4 +1,4 @@
-import { checkText, clampScore, sortChecks, verdictPresentation } from "./presentation";
+import { checkText, clampScore, formatSourceDate, latestSourceDate, presentResult, sortChecks } from "./presentation";
 import type { Lang, PesticideCheckResult } from "./types";
 
 /* ---------- Relative time ---------- */
@@ -109,7 +109,7 @@ export function buildShareText(
   lang: Lang,
   t: (key: string) => string,
 ): string {
-  const p = verdictPresentation(result.verdict, result.demoDataset);
+  const p = presentResult(result);
   const lines: string[] = [`${t("title")} - FasalGuard AI`];
   const brand = result.extracted?.brandName?.trim();
   if (brand) lines.push(brand);
@@ -118,6 +118,20 @@ export function buildShareText(
     lines.push(`${t("scoreLabel")}: ${clampScore(result.score)} / 100`);
   }
   if (result.demoDataset) lines.push(`${t("demoBadge")}: ${t("demoBadgeNote")}`);
+  else if (p.showDppBadge) lines.push(`${t("dppBadge")}: ${t("dppBadgeNote")}`);
+  const banned = result.bannedMatch;
+  if (banned?.notificationNumber) lines.push(`${t("bannedRefLabel")}: ${banned.name}, ${banned.notificationNumber}`);
+  const notified = result.matchedNotified;
+  if (notified) {
+    const extra = [notified.category, notified.whoClass ? `${t("notifiedWho")} ${notified.whoClass}` : null]
+      .filter(Boolean)
+      .join(", ");
+    lines.push(`${t("notifiedMatchTitle")}: ${notified.productText}${extra ? ` (${extra})` : ""}; ${notified.notification}`);
+  }
+  if (p.showDppBadge) {
+    const when = latestSourceDate(result.dataSources);
+    if (when) lines.push(`${t("dppSourcePrefix")} ${formatSourceDate(when, lang)}.`);
+  }
   const flagged = sortChecks(result.checks ?? [])
     .filter((c) => c.status === "fail" || c.status === "warn")
     .slice(0, 4);

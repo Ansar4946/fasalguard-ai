@@ -1,13 +1,14 @@
 # Dawai Check seed data
 
-These CSVs feed the **reference lists** used by Dawai Check (`pesticide_products`, `banned_pesticide_ingredients`).
-They are **demo data**, not an official register. Everything seeded from here is marked `is_demo = true`
-and the app says "consistent with the DEMO list", never "genuine".
+These CSVs feed the **reference lists** used by Dawai Check. The **official DPP lists** (banned ingredients, banned
+pre-mixture brands, Form-16 notified products) live in [`dpp/`](dpp/README.md) and are what "banned in Pakistan" claims
+come from. The product CSVs below are **demo data** (`pesticide_products`), marked `is_demo = true`; a result that
+matched one is flagged as a DEMO result and never called "genuine".
 
 | File | What it is |
 | --- | --- |
 | `pesticide-products.demo.csv` | 20 ingredient-based placeholder rows named `DEMO <ingredient> <conc> <form>`. No real brands, registration numbers or prices. |
-| `banned-ingredients.demo.csv` | Internationally recognised persistent/banned ingredients (Stockholm / Rotterdam listings). Verify against the Pakistan DPP list before relying on it. |
+| `dpp/*.csv` | The official Pakistani DPP lists (26 banned ingredients, 9 banned pre-mixture brands, 139 Form-16 notified products). See `dpp/README.md`. The old placeholder `banned-ingredients.demo.csv` was removed; the seed also deletes demo banned rows that are not on the DPP list. |
 | `pesticide-products.user-demo.csv` | **Empty (header only).** Add the 3-5 exact products you will show in the demo. |
 
 ## Add your demo products
@@ -36,12 +37,12 @@ Then run (the seed is idempotent, safe to repeat):
 npm run seed:pesticide
 ```
 
-## Replace everything with the official lists
+## Brand-level registered products
 
-1. Export the official DPP registered-product list and banned list to CSVs with the same headers.
-2. Set `is_demo` to `false` on every row and put the official source (document name, date) in `source`.
-3. Point the seed at them with `PESTICIDE_SEED_DIR=/path/to/dir` (files named `pesticide-products.official.csv`
-   and `banned-ingredients.official.csv`) or replace the demo files, then run `npm run seed:pesticide`.
-4. Remove the demo rows: `DELETE FROM pesticide_products WHERE is_demo; DELETE FROM banned_pesticide_ingredients WHERE is_demo;`
+The DPP Form-16 list has no brand names, so the brand-level check only knows the demo products and the ones you add to
+`pesticide-products.user-demo.csv`. If you obtain an official brand-level register, export it with the same headers,
+set `is_demo` to `false`, put the document name and date in `source`, name it `pesticide-products.official.csv`
+(or point `PESTICIDE_SEED_DIR` at a folder with it) and run `npm run seed:pesticide`. Remove the demo products with
+`DELETE FROM pesticide_products WHERE is_demo;`.
 
 Rows are upserted by normalised brand name (lowercase, punctuation and spaces removed), so re-running updates in place.

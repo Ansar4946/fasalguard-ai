@@ -1,5 +1,6 @@
 /* Dawai Check on PostgreSQL. Needs a disposable database named qa10_test with ALL migrations applied
- * (including 1755000047000), e.g. a postgis/postgis container. The label reader is the deterministic
+ * (including 1755000047000 and 1755000048000), e.g. a postgis/postgis container. The REAL DPP CSVs
+ * (seed/dpp/) are seeded: 26 banned ingredients, 9 banned pre-mixture brands, 139 notified products. The label reader is the deterministic
  * Fake reader and media access is a stub: this proves migration, seed idempotency, fuzzy matching, the
  * HTTP contract, ownership isolation and the flag-off behaviour, not OCR quality (see label-ocr spec). */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/explicit-function-return-type */
@@ -30,12 +31,14 @@ import {
 } from '../src/domain/pesticide-check/pesticide-check.controller';
 import { PesticideCheckService } from '../src/domain/pesticide-check/pesticide-check.service';
 import { seedPesticideData } from '../src/domain/pesticide-check/pesticide-seed';
+import { DppReferenceData1755000048000 } from '../src/infrastructure/database/migrations/1755000048000-dpp-reference-data';
 import { FakeLabelReaderProvider } from '../src/domain/pesticide-check/providers/fake-label-reader.provider';
 
 const url = process.env.QA10_TEST_DATABASE_URL;
 if (url && new URL(url).pathname.slice(1) !== 'qa10_test')
   throw new Error('Dawai Check integration requires the disposable qa10_test database.');
 const integration = url ? describe : describe.skip;
+jest.setTimeout(60_000);
 const SEED_DIR = join(__dirname, '..', 'src', 'domain', 'pesticide-check', 'seed');
 
 integration('Dawai Check on PostgreSQL', () => {
@@ -46,6 +49,10 @@ integration('Dawai Check on PostgreSQL', () => {
   const media = {
     ready: randomUUID(),
     banned: randomUUID(),
+    dpp: randomUUID(),
+    dppExpired: randomUUID(),
+    premix: randomUUID(),
+    unlisted: randomUUID(),
     expired: randomUUID(),
     unreadable: randomUUID(),
     pending: randomUUID(),
@@ -106,6 +113,10 @@ integration('Dawai Check on PostgreSQL', () => {
     };
     await asset(media.ready, A.user, 'pesticide-label', 'ready', 'ok');
     await asset(media.banned, A.user, 'pesticide-label', 'ready', 'banned');
+    await asset(media.dpp, A.user, 'pesticide-label', 'ready', 'dpp');
+    await asset(media.dppExpired, A.user, 'pesticide-label', 'ready', 'dppexpired');
+    await asset(media.premix, A.user, 'pesticide-label', 'ready', 'premix');
+    await asset(media.unlisted, A.user, 'pesticide-label', 'ready', 'unlisted');
     await asset(media.expired, A.user, 'pesticide-label', 'ready', 'expired');
     await asset(media.unreadable, A.user, 'pesticide-label', 'ready', 'unreadable');
     await asset(media.pending, A.user, 'pesticide-label', 'pending', 'ok');
@@ -188,22 +199,93 @@ integration('Dawai Check on PostgreSQL', () => {
       expect(cols.map((r: { column_name: string }) => r.column_name)).toContain(c);
   });
 
-  it('seed is idempotent and everything seeded is flagged as demo', async () => {
+  it('seed loads the real DPP lists with provenance, is idempotent, and demo products stay demo', async () => {
     const count = async () =>
       Number((await db.query(`SELECT count(*)::int c FROM pesticide_products`))[0].c) +
-      Number((await db.query(`SELECT count(*)::int c FROM banned_pesticide_ingredients`))[0].c);
+      Number((await db.query(`SELECT count(*)::int c FROM banned_pesticide_ingredients`))[0].c) +
+      Number((await db.query(`SELECT count(*)::int c FROM banned_pesticide_products`))[0].c) +
+      Number((await db.query(`SELECT count(*)::int c FROM dpp_notified_products`))[0].c);
     const before = await count();
+    expect(before).toBe(20 + 26 + 9 + 139);
     const again = await seedPesticideData(db, SEED_DIR);
     expect(await count()).toBe(before);
-    expect(again.products).toBe(20);
-    expect(again.banned).toBe(13);
-    expect(again.skipped).toEqual([]);
-    const nonDemo = await db.query(`SELECT 1 FROM pesticide_products WHERE NOT is_demo`);
-    expect(nonDemo).toHaveLength(0);
+    expect(again).toMatchObject({
+      products: 20,
+      banned: 26,
+      bannedPremixes: 9,
+      notified: 139,
+      removedDemoBanned: 0,
+      skipped: [],
+    });
+    expect(await db.query(`SELECT 1 FROM pesticide_products WHERE NOT is_demo`)).toHaveLength(0);
     const names = (
       await db.query(`SELECT ingredient_normalized n FROM banned_pesticide_ingredients`)
     ).map((r: { n: string }) => r.n);
-    expect(names).toEqual(expect.arrayContaining(['ddt', 'endosulfan', 'lindane', 'aldrin']));
+    expect(names).toEqual(expect.arrayContaining(['ddt', 'endosulfan', 'monocrotophos', 'bhc']));
+    // Placeholder demo rows that are not on the DPP list are gone and everything left is official.
+    expect(names).not.toContain('aldrin');
+    expect(names).not.toContain('lindane');
+    expect(await db.query(`SELECT 1 FROM banned_pesticide_ingredients WHERE is_demo`)).toHaveLength(
+      0,
+    );
+    const endo = (
+      await db.query(
+        `SELECT notification_number,to_char(notification_date,'YYYY-MM-DD') d,to_char(retrieved_on,'YYYY-MM-DD') r,position_in_pakistan p
+         FROM banned_pesticide_ingredients WHERE ingredient_normalized='endosulfan'`,
+      )
+    )[0];
+    expect(endo).toMatchObject({
+      notification_number: 'S.R.O. 1329(I)/2012',
+      d: '2012-10-22',
+      r: '2026-10-23',
+    });
+    expect(endo.p).toMatch(/ban its use in Pakistan/);
+    const bhc = (
+      await db.query(
+        `SELECT notification_number,position_in_pakistan p FROM banned_pesticide_ingredients WHERE ingredient_normalized='bhc'`,
+      )
+    )[0];
+    expect(bhc.notification_number).toBeNull();
+    expect(bhc.p).toMatch(/Deregistered/);
+    const premix = (
+      await db.query(
+        `SELECT brand_normalized,ingredients_normalized i,notification_number n,to_char(notification_date,'YYYY-MM-DD') d
+         FROM banned_pesticide_products WHERE brand_normalized='tombel'`,
+      )
+    )[0];
+    expect(premix).toMatchObject({
+      i: ['quinalphos', 'thiometon'],
+      n: 'SRO 624(I)/96',
+      d: '1996-07-15',
+    });
+    const abam = (
+      await db.query(
+        `SELECT ingredients_normalized i,concentration_text c,formulations f,category,who_class,notification FROM dpp_notified_products WHERE serial=1`,
+      )
+    )[0];
+    expect(abam).toMatchObject({
+      i: ['abamectin'],
+      c: '1.8%',
+      f: ['EC'],
+      category: 'Ins.',
+      who_class: 'III',
+      notification: 'S.R.O. 636(I)/2005 dated 22.06.2005',
+    });
+    const withClass = Number(
+      (
+        await db.query(
+          `SELECT count(*)::int c FROM dpp_notified_products WHERE who_class IS NOT NULL`,
+        )
+      )[0].c,
+    );
+    expect(withClass).toBeGreaterThanOrEqual(120);
+    // A leftover demo banned row (e.g. from an older seed) is removed on the next seed run.
+    await db.query(
+      `INSERT INTO banned_pesticide_ingredients(ingredient,ingredient_normalized,source,is_demo) VALUES('Aldrin','aldrin','old demo',true)`,
+    );
+    const cleaned = await seedPesticideData(db, SEED_DIR);
+    expect(cleaned.removedDemoBanned).toBe(1);
+    expect(await count()).toBe(before);
   });
 
   it('pg_trgm fuzzy matching tolerates spelling noise on normalised brand names', async () => {
@@ -252,6 +334,13 @@ integration('Dawai Check on PostgreSQL', () => {
     );
     expect(b.explanation).toMatch(/DEMO list/);
     expect(b.explanation).not.toMatch(/genuine/i);
+    // Additive DPP fields: a matched demo product keeps the DEMO flag even though the DPP lists are loaded.
+    expect(b.listCoverage).toBe('DPP_PARTIAL');
+    expect(b.dataSources).toHaveLength(2);
+    expect(b.matchedNotified).toMatchObject({
+      productText: expect.stringMatching(/^Imidacloprid/),
+    });
+    expect(b.bannedMatch).toBeNull();
     expect(b.disclaimer.en).toMatch(/not a laboratory test/);
     expect(b.disclaimer.ur).toMatch(/[؀-ۿ]/);
     expect(typeof b.latencyMs).toBe('number');
@@ -269,6 +358,107 @@ integration('Dawai Check on PostgreSQL', () => {
     }).expect(201);
     expect(res.body.language).toBe('ur');
     expect(res.body.explanation).toMatch(/[؀-ۿ]/);
+  });
+
+  it('DPP notified: Abamectin 1.8% EC is consistent with the list, with WHO class, VERIFIED, not a demo result', async () => {
+    const b = (await post('/pesticide-checks', { mediaAssetId: media.dpp }).expect(201)).body;
+    expect(b.verdict).toBe('VERIFIED');
+    expect(b.demoDataset).toBe(false);
+    expect(b.listCoverage).toBe('DPP_PARTIAL');
+    expect(b.dataSources.map((d: { asOf: string }) => d.asOf)).toEqual([
+      '2026-10-23',
+      '2026-10-23',
+    ]);
+    expect(b.dataSources[0].url).toMatch(/^https:\/\/plantprotection\.gov\.pk\//);
+    const notified = b.checks.find((c: { code: string }) => c.code === 'ingredient_notified');
+    expect(notified.status).toBe('pass');
+    expect(notified.detailEn).toMatch(/WHO class III/);
+    expect(b.matchedNotified).toEqual({
+      productText: 'Abamectin 1.8% EC.',
+      category: 'Ins.',
+      whoClass: 'III',
+      notification: 'S.R.O. 636(I)/2005 dated 22.06.2005',
+    });
+    expect(b.matchedProduct).toBeNull();
+    const brand = b.checks.find((c: { code: string }) => c.code === 'product_registered');
+    expect(brand.status).toBe('unknown');
+    expect(brand.detailEn).toMatch(/brand names are not part of the DPP lists we hold/);
+    expect(b.explanation).toMatch(/consistent with the DPP notified list/);
+    expect(b.explanation).not.toMatch(/genuine|authentic|approved/i);
+    // A saved result re-presents identically.
+    const again = (await get(`/pesticide-checks/${b.id}`).expect(200)).body;
+    expect(again.matchedNotified).toEqual(b.matchedNotified);
+    expect(again.listCoverage).toBe('DPP_PARTIAL');
+    expect(again.dataSources).toEqual(b.dataSources);
+  });
+
+  it('DPP banned pre-mixture: an Ammo-phos 450 EC label is HIGH_RISK through the brand check alone', async () => {
+    const b = (await post('/pesticide-checks', { mediaAssetId: media.premix }).expect(201)).body;
+    expect(b.extracted.brandName).toBe('Ammo-phos 450 EC');
+    expect(b.verdict).toBe('HIGH_RISK');
+    expect(b.score).toBe(100);
+    const code = (c: string): { status: string; detailEn: string } =>
+      b.checks.find((x: { code: string }) => x.code === c) as { status: string; detailEn: string };
+    expect(code('banned_ingredient').status).toBe('pass');
+    expect(code('banned_premix_brand').status).toBe('fail');
+    expect(code('banned_premix_brand').detailEn).toMatch(
+      /listed as a banned pre-mixture \(SRO 624\(I\)\/96/,
+    );
+    expect(b.bannedMatch).toMatchObject({
+      kind: 'premix',
+      notificationNumber: 'SRO 624(I)/96',
+      notificationDate: '1996-07-15',
+    });
+    expect(b.demoDataset).toBe(false);
+    const again = (await get(`/pesticide-checks/${b.id}`).expect(200)).body;
+    expect(again.bannedMatch).toEqual(b.bannedMatch);
+  });
+
+  it('DPP banned ingredient: Endosulfan is HIGH_RISK and the detail cites S.R.O. 1329(I)/2012', async () => {
+    const b = (await post('/pesticide-checks', { mediaAssetId: media.banned }).expect(201)).body;
+    expect(b.verdict).toBe('HIGH_RISK');
+    const c = b.checks.find((x: { code: string }) => x.code === 'banned_ingredient');
+    expect(c.status).toBe('fail');
+    expect(c.detailEn).toMatch(/Listed in the DPP banned pesticides list/);
+    expect(c.detailEn).toMatch(/S\.R\.O\. 1329\(I\)\/2012/);
+    expect(b.bannedMatch).toMatchObject({
+      kind: 'ingredient',
+      name: 'Endosulfan',
+      notificationNumber: 'S.R.O. 1329(I)/2012',
+      notificationDate: '2012-10-22',
+    });
+    expect(b.demoDataset).toBe(false);
+  });
+
+  it('an ingredient that is not on the partial list is unknown (never warn/fail) and never called unregistered', async () => {
+    const b = (await post('/pesticide-checks', { mediaAssetId: media.unlisted }).expect(201)).body;
+    const c = b.checks.find((x: { code: string }) => x.code === 'ingredient_notified');
+    expect(c.status).toBe('unknown');
+    expect(c.detailEn).toMatch(/does not mean it is unregistered/);
+    expect(
+      b.checks.filter((x: { status: string }) => x.status === 'warn' || x.status === 'fail'),
+    ).toEqual([]);
+    expect(b.verdict).toBe('SUSPICIOUS');
+    expect(b.score).toBe(25);
+    expect(b.matchedNotified).toBeNull();
+    expect(b.explanation).toMatch(/could not confirm/i);
+    expect(b.explanation).toMatch(/does not mean it is fake or unregistered/);
+    // The only mention of "unregistered"/"fake" is the negation.
+    const stripped = JSON.stringify([b.explanation, b.checks]).replace(
+      /does not mean it is (?:fake or )?unregistered/g,
+      '',
+    );
+    expect(stripped).not.toMatch(/unregistered|not registered|\bfake\b/i);
+  });
+
+  it('an expired label fails even when its ingredient is on the DPP list', async () => {
+    const b = (await post('/pesticide-checks', { mediaAssetId: media.dppExpired }).expect(201))
+      .body;
+    const code = (c: string): { status: string; detailEn: string } =>
+      b.checks.find((x: { code: string }) => x.code === c) as { status: string; detailEn: string };
+    expect(code('expiry_date').status).toBe('fail');
+    expect(code('ingredient_notified').status).toBe('pass');
+    expect(b.verdict).toBe('SUSPICIOUS');
   });
 
   it('a banned ingredient forces HIGH_RISK; an expired label fails; noise is UNREADABLE', async () => {
@@ -385,6 +575,48 @@ integration('Dawai Check on PostgreSQL', () => {
 
   it('requires authentication', async () => {
     await request(app.getHttpServer()).get('/pesticide-checks').expect(401);
+  });
+
+  it('migration 1755000048000 is reversible: down drops the DPP tables and columns, up restores them', async () => {
+    const qr = db.createQueryRunner();
+    const exists = async (t: string) =>
+      (await qr.query(`SELECT to_regclass($1) r`, [t]))[0].r !== null;
+    try {
+      expect(await exists('dpp_notified_products')).toBe(true);
+      await new DppReferenceData1755000048000().down(qr);
+      expect(await exists('dpp_notified_products')).toBe(false);
+      expect(await exists('banned_pesticide_products')).toBe(false);
+      const cols = await qr.query(
+        `SELECT column_name FROM information_schema.columns WHERE table_name IN('banned_pesticide_ingredients','pesticide_checks')`,
+      );
+      const names = cols.map((c: { column_name: string }) => c.column_name);
+      for (const gone of [
+        'position_in_pakistan',
+        'notification_number',
+        'list_coverage',
+        'banned_match',
+      ])
+        expect(names).not.toContain(gone);
+      // The demo tables keep working while the DPP tables are absent.
+      expect(Number((await qr.query(`SELECT count(*)::int c FROM pesticide_products`))[0].c)).toBe(
+        20,
+      );
+      await new DppReferenceData1755000048000().up(qr);
+      expect(await exists('dpp_notified_products')).toBe(true);
+      const idx = await qr.query(
+        `SELECT indexdef FROM pg_indexes WHERE indexname='idx_banned_products_brand_trgm'`,
+      );
+      expect(idx[0].indexdef).toMatch(/gin/i);
+    } finally {
+      await qr.release();
+    }
+    const reseeded = await seedPesticideData(db, SEED_DIR);
+    expect(reseeded).toMatchObject({ notified: 139, banned: 26, bannedPremixes: 9, skipped: [] });
+    // Saving works again after the round trip.
+    const old = (
+      await post('/pesticide-checks/manual', { brandName: 'DEMO Imidacloprid 20% SL' }).expect(201)
+    ).body;
+    expect(old.listCoverage).toBe('DPP_PARTIAL');
   });
 
   it('flag off: the routes do not exist', async () => {

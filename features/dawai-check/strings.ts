@@ -46,7 +46,7 @@ export const en = {
   analysingNote: "Please keep this page open. This usually takes a few seconds.",
   stageUploading: "Uploading photo",
   stageReading: "Reading the label",
-  stageMatching: "Matching the registry",
+  stageMatching: "Matching the reference lists",
   stageChecking: "Checking risks",
   stageDone: "Done",
   stageWorking: "In progress",
@@ -182,6 +182,46 @@ export const en = {
   howPrice: "Is the price you entered unusually low? (Only if you add a price.)",
   howRead: "How clearly could the label be read?",
   howBanned: "Is the ingredient on the banned list? If yes, the result is always High risk.",
+
+  /* Official Pakistani DPP (Department of Plant Protection) lists */
+  dppChip: "DPP LIST (PARTIAL, 2005)",
+  dppChipAria: "About the DPP lists",
+  dppChipNote:
+    "Results compare the label with lists from Pakistan's Department of Plant Protection (DPP): the banned pesticides list and a partial 2005 list of notified products. The notified list has no brand names and is incomplete, so a product that is not on it is not automatically a problem. A result only tells you whether the label is consistent with these lists.",
+  dppBadge: "DPP LIST (PARTIAL, 2005)",
+  dppBadgeNote: "Compared with the DPP banned list and the partial 2005 notified list. This is not a registration check.",
+  verdictDppTitle: "Consistent with the DPP notified list",
+  verdictDppSummary:
+    "The active ingredient matches a product on the DPP notified list (a partial 2005 list). This is not a registration check and not proof of quality, so still keep your receipt.",
+  verdictUnconfirmedTitle: "Could not confirm on the list we hold",
+  verdictUnconfirmedSummary:
+    "Not found on the partial list we hold: this does not mean the product is fake. Check with the dealer or the DPP.",
+  verdictBannedTitle: "Listed in the DPP banned pesticides list",
+  verdictBannedSummary:
+    "An ingredient on this label is on the Department of Plant Protection banned pesticides list. Do not buy or spray this product. Keep the pack and receipt and report it to the agriculture helpline.",
+  verdictBannedPremixTitle: "Listed as a banned pre-mixture by the DPP",
+  verdictBannedPremixSummary:
+    "This brand is on the Department of Plant Protection list of banned pre-mixtures. Do not buy or spray this product. Keep the pack and receipt and report it to the agriculture helpline.",
+  bannedRefLabel: "Official reference",
+  notifiedMatchTitle: "DPP notified list entry",
+  notifiedCategory: "Category",
+  notifiedWho: "WHO class",
+  notifiedNotification: "Notification",
+  notFoundPlain:
+    "Not found on the partial list we hold: this does not mean the product is fake. Check with the dealer or the DPP.",
+  stepDpp: "Check with the dealer or the Department of Plant Protection (DPP).",
+  howIntroDpp:
+    "We compare what we read on the label with the DPP lists and add risk points for every problem we find. A higher score means higher risk. Not being on a list is never treated as proof that a product is fake.",
+  howBannedDpp:
+    "Is an ingredient on the DPP banned pesticides list (26 chemicals)? If yes, the result is always High risk.",
+  howPremix: "Is the brand on the DPP banned pre-mixture list (9 brands)? If yes, the result is always High risk.",
+  howNotified:
+    "Is the active ingredient on the DPP notified list (139 products, 2005, partial)? We also compare the strength and formulation.",
+  howNotFound:
+    "If it is not on that list we say we could not confirm it. The list is partial and has no brand names, so we never call a product fake because it is missing.",
+  dppSourcePrefix: "Source: Department of Plant Protection lists, retrieved",
+  dppSourceSuffix: "The notified list dates from 2005 and is partial. The banned list is the official notification.",
+  sourceLinks: "Sources",
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -231,7 +271,7 @@ export const ur: Record<StringKey, string> = {
   analysingNote: "براہِ کرم یہ صفحہ کھلا رکھیں۔ عموماً چند سیکنڈ لگتے ہیں۔",
   stageUploading: "تصویر اپ لوڈ ہو رہی ہے",
   stageReading: "لیبل پڑھا جا رہا ہے",
-  stageMatching: "رجسٹری سے ملایا جا رہا ہے",
+  stageMatching: "حوالہ فہرستوں سے ملایا جا رہا ہے",
   stageChecking: "خطرات جانچے جا رہے ہیں",
   stageDone: "مکمل",
   stageWorking: "جاری ہے",
@@ -367,6 +407,46 @@ export const ur: Record<StringKey, string> = {
   howPrice: "کیا آپ کی بتائی گئی قیمت غیر معمولی طور پر کم ہے؟ (صرف جب آپ قیمت لکھیں۔)",
   howRead: "لیبل کتنی صفائی سے پڑھا جا سکا؟",
   howBanned: "کیا جزو ممنوعہ فہرست میں ہے؟ اگر ہاں تو نتیجہ ہمیشہ زیادہ خطرہ ہوتا ہے۔",
+
+  dppChip: "ڈی پی پی فہرست (جزوی، 2005)",
+  dppChipAria: "ڈی پی پی فہرستوں کے بارے میں",
+  dppChipNote:
+    "نتیجہ لیبل کا موازنہ پاکستان کے محکمہ تحفظِ نباتات (ڈی پی پی) کی فہرستوں سے کرتا ہے: ممنوعہ زرعی ادویات کی فہرست اور 2005 کی مطلع شدہ مصنوعات کی جزوی فہرست۔ مطلع شدہ فہرست میں برانڈ کے نام نہیں اور وہ نامکمل ہے، اس لیے جو مصنوعات اس میں نہ ہو وہ خود بخود مسئلہ نہیں۔ نتیجہ صرف یہ بتاتا ہے کہ لیبل ان فہرستوں سے مطابقت رکھتا ہے یا نہیں۔",
+  dppBadge: "ڈی پی پی فہرست (جزوی، 2005)",
+  dppBadgeNote: "ڈی پی پی کی ممنوعہ فہرست اور 2005 کی جزوی مطلع شدہ فہرست سے موازنہ۔ یہ رجسٹریشن کی جانچ نہیں۔",
+  verdictDppTitle: "ڈی پی پی کی مطلع شدہ فہرست سے مطابقت",
+  verdictDppSummary:
+    "فعال جزو ڈی پی پی کی مطلع شدہ فہرست (2005 کی جزوی فہرست) کی ایک مصنوعات سے ملتا ہے۔ یہ رجسٹریشن کی جانچ یا معیار کا ثبوت نہیں، اس لیے اپنی رسید سنبھال کر رکھیں۔",
+  verdictUnconfirmedTitle: "ہمارے پاس موجود فہرست میں تصدیق نہیں ہو سکی",
+  verdictUnconfirmedSummary:
+    "ہمارے پاس موجود جزوی فہرست میں نہیں ملا: اس کا مطلب یہ نہیں کہ مصنوعات جعلی ہے۔ ڈیلر یا ڈی پی پی سے تصدیق کریں۔",
+  verdictBannedTitle: "ڈی پی پی کی ممنوعہ زرعی ادویات کی فہرست میں شامل",
+  verdictBannedSummary:
+    "اس لیبل پر موجود ایک جزو محکمہ تحفظِ نباتات کی ممنوعہ زرعی ادویات کی فہرست میں شامل ہے۔ یہ مصنوعات نہ خریدیں اور نہ سپرے کریں۔ پیک اور رسید سنبھال کر رکھیں اور زرعی ہیلپ لائن کو اطلاع دیں۔",
+  verdictBannedPremixTitle: "ڈی پی پی کے ممنوعہ پری مکسچر کے طور پر درج",
+  verdictBannedPremixSummary:
+    "یہ برانڈ محکمہ تحفظِ نباتات کی ممنوعہ پری مکسچر فہرست میں شامل ہے۔ یہ مصنوعات نہ خریدیں اور نہ سپرے کریں۔ پیک اور رسید سنبھال کر رکھیں اور زرعی ہیلپ لائن کو اطلاع دیں۔",
+  bannedRefLabel: "سرکاری حوالہ",
+  notifiedMatchTitle: "ڈی پی پی مطلع شدہ فہرست کا اندراج",
+  notifiedCategory: "زمرہ",
+  notifiedWho: "ڈبلیو ایچ او کلاس",
+  notifiedNotification: "نوٹیفکیشن",
+  notFoundPlain:
+    "ہمارے پاس موجود جزوی فہرست میں نہیں ملا: اس کا مطلب یہ نہیں کہ مصنوعات جعلی ہے۔ ڈیلر یا ڈی پی پی سے تصدیق کریں۔",
+  stepDpp: "ڈیلر یا محکمہ تحفظِ نباتات (ڈی پی پی) سے تصدیق کریں۔",
+  howIntroDpp:
+    "ہم لیبل پر پڑھی گئی تفصیل کو ڈی پی پی کی فہرستوں سے ملاتے ہیں اور ہر مسئلے پر خطرے کے پوائنٹ جوڑتے ہیں۔ زیادہ اسکور کا مطلب زیادہ خطرہ ہے۔ کسی فہرست میں نہ ہونے کو ہم کبھی جعلی ہونے کا ثبوت نہیں مانتے۔",
+  howBannedDpp:
+    "کیا کوئی جزو ڈی پی پی کی ممنوعہ زرعی ادویات کی فہرست (26 کیمیکل) میں ہے؟ اگر ہاں تو نتیجہ ہمیشہ زیادہ خطرہ ہوتا ہے۔",
+  howPremix:
+    "کیا برانڈ ڈی پی پی کی ممنوعہ پری مکسچر فہرست (9 برانڈ) میں ہے؟ اگر ہاں تو نتیجہ ہمیشہ زیادہ خطرہ ہوتا ہے۔",
+  howNotified:
+    "کیا فعال جزو ڈی پی پی کی مطلع شدہ فہرست (139 مصنوعات، 2005، جزوی) میں ہے؟ ہم مقدار اور فارمولیشن کا موازنہ بھی کرتے ہیں۔",
+  howNotFound:
+    "اگر وہ اس فہرست میں نہ ہو تو ہم کہتے ہیں کہ تصدیق نہیں ہو سکی۔ فہرست جزوی ہے اور اس میں برانڈ کے نام نہیں، اس لیے ہم فہرست میں نہ ہونے پر کسی مصنوعات کو جعلی نہیں کہتے۔",
+  dppSourcePrefix: "ماخذ: محکمہ تحفظِ نباتات کی فہرستیں، حاصل کردہ",
+  dppSourceSuffix: "مطلع شدہ فہرست 2005 کی ہے اور جزوی ہے۔ ممنوعہ فہرست سرکاری نوٹیفکیشن ہے۔",
+  sourceLinks: "ماخذ",
 };
 
 export const dictionaries: Record<Lang, Record<StringKey, string>> = { en, ur };
