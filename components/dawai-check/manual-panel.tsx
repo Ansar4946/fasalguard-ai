@@ -4,9 +4,12 @@ import { useEffect, useId, useRef, useState } from "react";
 import { searchProducts } from "@/features/dawai-check/client";
 import type { EditableFields } from "@/features/dawai-check/manual";
 import type { ProductSuggestion } from "@/features/dawai-check/types";
-import { ErrorBanner, inputClass, primaryButton, Spinner, type T } from "./parts";
+import { highlightMatch } from "@/features/dawai-check/ui";
+import { ErrorBanner, GlyphIcon, inputClass, primaryButton, Spinner, type T } from "./parts";
 
 type SearchState = { query: string; items: ProductSuggestion[]; failed: boolean } | null;
+
+const EXAMPLE_NAME = "DEMO Imidacloprid 20% SL";
 
 export function ManualPanel({
   t,
@@ -96,33 +99,50 @@ export function ManualPanel({
           <label htmlFor={`${listId}-brand`} className="mb-1 block text-xs font-bold text-muted">
             {t("brandLabel")}
           </label>
-          <input
-            id={`${listId}-brand`}
-            role="combobox"
-            aria-expanded={expanded && items.length > 0}
-            aria-controls={listId}
-            aria-autocomplete="list"
-            aria-activedescendant={active >= 0 ? `${listId}-opt-${active}` : undefined}
-            autoComplete="off"
-            maxLength={160}
-            placeholder={t("brandPlaceholder")}
-            className={inputClass}
-            value={fields.brandName}
-            onChange={(e) => {
-              onFields({ ...fields, brandName: e.target.value });
-              setOpen(true);
-              setActive(-1);
-            }}
-            onFocus={() => setOpen(true)}
-            onBlur={() => setTimeout(() => setOpen(false), 150)}
-            onKeyDown={onKeyDown}
-          />
+          <div className="relative">
+            <GlyphIcon kind="search" className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-muted" />
+            <input
+              id={`${listId}-brand`}
+              role="combobox"
+              aria-expanded={expanded && items.length > 0}
+              aria-controls={listId}
+              aria-autocomplete="list"
+              aria-activedescendant={active >= 0 ? `${listId}-opt-${active}` : undefined}
+              autoComplete="off"
+              maxLength={160}
+              placeholder={t("brandPlaceholder")}
+              className={`${inputClass} !min-h-12 ps-9 pe-11`}
+              value={fields.brandName}
+              onChange={(e) => {
+                onFields({ ...fields, brandName: e.target.value });
+                setOpen(true);
+                setActive(-1);
+              }}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setTimeout(() => setOpen(false), 150)}
+              onKeyDown={onKeyDown}
+            />
+            {fields.brandName && (
+              <button
+                type="button"
+                aria-label={t("clearField")}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onFields({ ...fields, brandName: "" });
+                  setActive(-1);
+                }}
+                className="dc-press dc-focus absolute inset-y-0 end-0 my-auto grid size-11 place-items-center rounded-xl text-muted hover:text-brand-dark"
+              >
+                <GlyphIcon kind="x" className="size-4" />
+              </button>
+            )}
+          </div>
           <ul
             id={listId}
             role="listbox"
             aria-label={t("suggestionsLabel")}
             hidden={!(expanded && items.length > 0)}
-            className="absolute inset-x-0 z-20 mt-1 max-h-64 overflow-auto rounded-xl border border-border bg-white shadow-lg"
+            className="dc-view-in absolute inset-x-0 z-20 mt-1 max-h-64 overflow-auto rounded-xl border border-border bg-white shadow-xl ring-1 ring-black/5"
           >
             {items.map((item, index) => (
               <li
@@ -132,9 +152,19 @@ export function ManualPanel({
                 aria-selected={index === active}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(item)}
-                className={`min-h-11 cursor-pointer px-3 py-2 text-sm ${index === active ? "bg-brand-soft" : "hover:bg-surface-soft"}`}
+                className={`min-h-11 cursor-pointer border-s-4 px-3 py-2 text-sm transition-colors ${index === active ? "border-s-brand bg-brand-soft/70" : "border-s-transparent hover:bg-surface-soft"}`}
               >
-                <span className="block font-bold text-foreground">{item.brandName}</span>
+                <span className="block font-bold text-foreground">
+                  {highlightMatch(item.brandName, query).map((part, i) =>
+                    part.match ? (
+                      <mark key={i} className="rounded bg-brand-soft px-0.5 text-brand-dark">
+                        {part.text}
+                      </mark>
+                    ) : (
+                      <span key={i}>{part.text}</span>
+                    ),
+                  )}
+                </span>
                 <span className="block text-xs text-muted">
                   {[item.activeIngredient, item.company].filter(Boolean).join(" · ")}
                 </span>
@@ -145,8 +175,25 @@ export function ManualPanel({
             {loading && <Spinner className="size-3" />}
             {status}
           </p>
+          {!status && <p className="mt-1 text-xs text-muted">{t("manualHelper")}</p>}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-muted">{t("manualExampleLabel")}</span>
+            <button
+              type="button"
+              dir="ltr"
+              onClick={() => {
+                onFields({ ...fields, brandName: EXAMPLE_NAME });
+                setOpen(false);
+                setActive(-1);
+              }}
+              className="dc-press dc-focus inline-flex min-h-11 items-center gap-1.5 rounded-full border border-brand/30 bg-brand-soft/60 px-3 text-xs font-bold text-brand-dark hover:bg-brand-soft"
+            >
+              <GlyphIcon kind="flask" className="size-4" /> {EXAMPLE_NAME}
+            </button>
+          </div>
         </div>
 
+        <p className="-mb-1 text-xs font-extrabold uppercase tracking-wide text-muted">{t("optionalDetails")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold text-muted">
             {t("ingredientLabel")}
@@ -182,13 +229,17 @@ export function ManualPanel({
 
       {error && <ErrorBanner message={error} actionLabel={t("retry")} onAction={onSubmit} />}
 
-      <button type="button" onClick={onBack} className="min-h-11 w-full text-center text-sm font-bold text-brand underline underline-offset-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="dc-press dc-focus min-h-11 w-full rounded-xl text-center text-sm font-bold text-brand underline underline-offset-4"
+      >
         {t("backToPhoto")}
       </button>
 
       <div className="sticky bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-30 -mx-4 border-t border-border bg-white/95 p-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 lg:bottom-0">
         <button type="button" onClick={onSubmit} disabled={offline || !fields.brandName.trim()} className={`${primaryButton} w-full`}>
-          {t("checkName")}
+          <GlyphIcon kind="search" className="size-5" /> {t("checkName")}
         </button>
       </div>
     </section>

@@ -1,10 +1,13 @@
 import type { HistoryItem, Lang, Verdict } from "./types";
+import { formatRelativeTime } from "./ui";
 
 export interface HistoryRow {
   id: string;
   /** null when the brand is unknown; the UI shows a localized fallback. */
   title: string | null;
   dateLabel: string;
+  /** "5 minutes ago" for recent checks, empty when older than a week. */
+  relativeLabel: string;
   verdict: Verdict;
   score: number;
   demoDataset: boolean;
@@ -30,7 +33,7 @@ export function formatDate(iso: string, lang: Lang): string {
 }
 
 /** Newest first; unusable rows dropped. */
-export function formatHistory(items: readonly HistoryItem[], lang: Lang): HistoryRow[] {
+export function formatHistory(items: readonly HistoryItem[], lang: Lang, nowMs: number = Date.now()): HistoryRow[] {
   return items
     .filter((item) => item && typeof item.id === "string")
     .slice()
@@ -39,6 +42,7 @@ export function formatHistory(items: readonly HistoryItem[], lang: Lang): Histor
       id: item.id,
       title: item.brandName?.trim() || null,
       dateLabel: formatDate(item.createdAt, lang),
+      relativeLabel: formatRelativeTime(item.createdAt, lang, nowMs),
       verdict: item.verdict,
       score: Math.min(100, Math.max(0, Math.round(Number(item.score) || 0))),
       demoDataset: Boolean(item.demoDataset),

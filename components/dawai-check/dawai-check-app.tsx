@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import {
   createCheck,
   createManualCheck,
@@ -17,11 +17,12 @@ import { AnalysingPanel, type AnalysisStage } from "./analysing-panel";
 import { CapturePanel, type PhotoState } from "./capture-panel";
 import { HistoryPanel } from "./history-panel";
 import { ManualPanel } from "./manual-panel";
-import { Disclaimer, ErrorBanner, GlyphIcon } from "./parts";
+import { Disclaimer, Emblem, ErrorBanner, GlyphIcon, Segmented } from "./parts";
 import { ResultView } from "./result-view";
 
 type Tab = "check" | "history";
 type View = "capture" | "manual" | "analysing" | "result";
+type Mode = "photo" | "manual";
 
 const LANG_KEY = "fg-dawai-lang";
 
@@ -69,9 +70,11 @@ export function DawaiCheckApp() {
     error: "",
   });
   const [opening, setOpening] = useState(false);
+  const [demoNote, setDemoNote] = useState(false);
   const mediaIdRef = useRef<{ file: File; id: string } | null>(null);
   const runRef = useRef(0);
   const online = useOnline();
+  const demoNoteId = useId();
   const t = useCallback((key: string) => translate(lang, key), [lang]);
 
   useEffect(() => {
@@ -240,41 +243,67 @@ export function DawaiCheckApp() {
     }
   }
 
+  function chooseMode(next: Mode): void {
+    setError("");
+    setView(next === "manual" ? "manual" : "capture");
+  }
+
   const dir = lang === "ur" ? "rtl" : "ltr";
-  const tabClass = (active: boolean) =>
-    `min-h-11 flex-1 rounded-xl px-3 text-sm font-extrabold transition ${active ? "bg-brand text-white shadow-sm" : "text-brand-dark hover:bg-brand-soft/60"}`;
+  const wide = tab === "check" && view === "result" && Boolean(result);
+  const showModes = tab === "check" && (view === "capture" || view === "manual");
 
   return (
     <div className="page-container">
-      <div lang={lang} dir={dir} className="mx-auto max-w-3xl space-y-4">
-        <header className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="flex items-center gap-2 text-sm font-bold text-success">
-              <GlyphIcon kind="pill" className="size-4" />
-              <span>FasalGuard AI</span>
-            </p>
-            <h1 className="mt-1 text-2xl font-extrabold text-foreground sm:text-3xl">{t("title")}</h1>
-            <p className="mt-1 text-sm text-muted">{t("subtitle")}</p>
+      <div lang={lang} dir={dir} className={`mx-auto space-y-3 transition-[max-width] duration-300 ${wide ? "max-w-5xl" : "max-w-2xl"}`}>
+        <header
+          className="relative isolate overflow-hidden rounded-3xl p-3.5 text-white shadow-[0_12px_30px_rgb(3_69_44/28%)] sm:p-6"
+          style={{ backgroundImage: "linear-gradient(135deg, #075f3d 0%, #04472e 52%, #022b1b 100%)" }}
+        >
+          <div aria-hidden="true" className="dc-hero-pattern pointer-events-none absolute inset-0 -z-10" />
+          <div aria-hidden="true" className="dc-glow pointer-events-none absolute -end-12 -top-16 -z-10 size-56 rounded-full bg-[#7ee2a8]/30 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-10 start-1/4 -z-10 size-40 rounded-full bg-[#d9f5c7]/10 blur-3xl" />
+          <div className="flex items-center gap-3">
+            <span className="dc-float grid size-14 shrink-0 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/25 backdrop-blur-sm">
+              <Emblem className="size-10" />
+            </span>
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#d9f5c7]">
+                <GlyphIcon kind="pill" className="size-3.5" />
+                <span>FasalGuard AI</span>
+              </p>
+              <h1 className="text-2xl font-extrabold leading-tight sm:text-3xl">{t("title")}</h1>
+            </div>
           </div>
-          <div role="group" aria-label={t("langToggleAria")} className="flex shrink-0 overflow-hidden rounded-xl border border-brand/30 bg-white">
+          <p className="mt-2 max-w-xl text-sm font-medium leading-5 text-white">{t("subtitle")}</p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
-              lang="ur"
-              aria-pressed={lang === "ur"}
-              onClick={() => changeLang("ur")}
-              className={`min-h-11 min-w-14 px-3 text-sm font-extrabold ${lang === "ur" ? "bg-brand text-white" : "text-brand-dark"}`}
+              aria-expanded={demoNote}
+              aria-controls={demoNoteId}
+              aria-label={`${t("demoChip")}. ${t("demoChipAria")}`}
+              onClick={() => setDemoNote((v) => !v)}
+              className="dc-press dc-focus inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[#ffe14d] bg-[#111] px-3 text-xs font-black tracking-wide text-[#ffe14d]"
             >
-              اردو
+              <GlyphIcon kind="info" className="size-4" />
+              {t("demoChip")}
             </button>
-            <button
-              type="button"
-              lang="en"
-              aria-pressed={lang === "en"}
-              onClick={() => changeLang("en")}
-              className={`min-h-11 min-w-14 px-3 text-sm font-extrabold ${lang === "en" ? "bg-brand text-white" : "text-brand-dark"}`}
-            >
-              English
-            </button>
+            <Segmented<Lang>
+              onDark
+              compact
+              mode="toggle"
+              ariaLabel={t("langToggleAria")}
+              value={lang}
+              onChange={changeLang}
+              options={[
+                { value: "ur", label: "اردو", lang: "ur" },
+                { value: "en", label: "English", lang: "en" },
+              ]}
+            />
+          </div>
+          <div id={demoNoteId} className="dc-collapse" data-open={demoNote}>
+            <div>
+              <p className="mt-3 rounded-xl bg-black/25 p-3 text-xs font-semibold leading-5">{t("demoChipNote")}</p>
+            </div>
           </div>
         </header>
 
@@ -284,95 +313,113 @@ export function DawaiCheckApp() {
           </p>
         )}
 
-        <nav aria-label={t("title")} className="flex gap-1 rounded-2xl border border-border bg-white p-1">
-          <button type="button" aria-current={tab === "check" ? "page" : undefined} onClick={() => openTab("check")} className={tabClass(tab === "check")}>
-            {t("tabCheck")}
-          </button>
-          <button type="button" aria-current={tab === "history" ? "page" : undefined} onClick={() => openTab("history")} className={tabClass(tab === "history")}>
-            {t("tabHistory")}
-          </button>
+        <nav aria-label={t("title")}>
+          <Segmented<Tab>
+            mode="tabs"
+            ariaLabel={t("title")}
+            value={tab}
+            onChange={openTab}
+            options={[
+              { value: "check", label: t("tabCheck"), icon: "scan" },
+              { value: "history", label: t("tabHistory"), icon: "history" },
+            ]}
+          />
         </nav>
 
         <div className="min-h-[40vh]">
-          {tab === "history" ? (
-            <HistoryPanel
-              t={t}
-              rows={history.rows}
-              loading={history.loading || opening}
-              error={history.error}
-              onRetry={() => void loadHistory()}
-              onOpen={(id) => void openHistoryItem(id)}
-              onNew={() => openTab("check")}
-            />
-          ) : view === "analysing" ? (
-            <AnalysingPanel t={t} stage={stage} withUpload={withUpload} />
-          ) : view === "result" && result ? (
-            <ResultView
-              t={t}
-              lang={lang}
-              result={result}
-              rechecking={rechecking}
-              recheckError={recheckError}
-              offline={!online}
-              onRecheck={(fields) => void recheck(fields)}
-              onNew={reset}
-              onRetake={reset}
-            />
-          ) : view === "manual" ? (
-            <ManualPanel
-              t={t}
-              fields={manualFields}
-              onFields={setManualFields}
-              onSubmit={() => void submitManual()}
-              onBack={() => {
-                setError("");
-                setView("capture");
-              }}
-              error={error}
-              offline={!online}
-            />
-          ) : (
-            <>
-              <div role="group" aria-label={t("modeAria")} className="mb-4 flex gap-1 rounded-2xl bg-surface-soft p-1">
-                <button type="button" aria-pressed className={tabClass(true)}>
-                  {t("modePhoto")}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={false}
-                  onClick={() => {
-                    setError("");
-                    setView("manual");
-                  }}
-                  className={tabClass(false)}
-                >
-                  {t("modeManual")}
-                </button>
-              </div>
-              <CapturePanel
+          <div>
+            {tab === "history" ? (
+              <div key="history" className="dc-view-in">
+              <HistoryPanel
                 t={t}
-                photo={photo}
-                onPhoto={(next) => {
-                  if (photo) URL.revokeObjectURL(photo.previewUrl);
-                  mediaIdRef.current = null;
-                  setError("");
-                  setPhoto(next);
-                }}
-                onClear={clearPhoto}
-                price={price}
-                onPrice={setPrice}
-                packSize={packSize}
-                onPackSize={setPackSize}
-                onSubmit={() => void submitPhoto()}
-                onManual={() => {
-                  setError("");
-                  setView("manual");
-                }}
-                error={error}
-                offline={!online}
+                rows={history.rows}
+                loading={history.loading || opening}
+                error={history.error}
+                onRetry={() => void loadHistory()}
+                onOpen={(id) => void openHistoryItem(id)}
+                onNew={() => openTab("check")}
               />
-            </>
-          )}
+              </div>
+            ) : view === "analysing" ? (
+              <div key="analysing" className="dc-view-in">
+              <AnalysingPanel
+                t={t}
+                stage={stage}
+                withUpload={withUpload}
+                photoUrl={withUpload ? photo?.previewUrl : undefined}
+                subject={withUpload ? undefined : manualFields.brandName}
+              />
+              </div>
+            ) : view === "result" && result ? (
+              <div key="result" className="dc-view-in">
+              <ResultView
+                t={t}
+                lang={lang}
+                result={result}
+                rechecking={rechecking}
+                recheckError={recheckError}
+                offline={!online}
+                onRecheck={(fields) => void recheck(fields)}
+                onNew={reset}
+                onRetake={reset}
+              />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {showModes && (
+                  <Segmented<Mode>
+                    mode="toggle"
+                    ariaLabel={t("modeAria")}
+                    value={view === "manual" ? "manual" : "photo"}
+                    onChange={chooseMode}
+                    options={[
+                      { value: "photo", label: t("modePhoto"), icon: "camera" },
+                      { value: "manual", label: t("modeManual"), icon: "type" },
+                    ]}
+                  />
+                )}
+                <div key={view} className="dc-view-in">
+                {view === "manual" ? (
+                  <ManualPanel
+                    t={t}
+                    fields={manualFields}
+                    onFields={setManualFields}
+                    onSubmit={() => void submitManual()}
+                    onBack={() => {
+                      setError("");
+                      setView("capture");
+                    }}
+                    error={error}
+                    offline={!online}
+                  />
+                ) : (
+                  <CapturePanel
+                    t={t}
+                    photo={photo}
+                    onPhoto={(next) => {
+                      if (photo) URL.revokeObjectURL(photo.previewUrl);
+                      mediaIdRef.current = null;
+                      setError("");
+                      setPhoto(next);
+                    }}
+                    onClear={clearPhoto}
+                    price={price}
+                    onPrice={setPrice}
+                    packSize={packSize}
+                    onPackSize={setPackSize}
+                    onSubmit={() => void submitPhoto()}
+                    onManual={() => {
+                      setError("");
+                      setView("manual");
+                    }}
+                    error={error}
+                    offline={!online}
+                  />
+                )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {view !== "result" && <Disclaimer t={t} />}
