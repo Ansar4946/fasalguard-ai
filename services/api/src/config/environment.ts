@@ -107,7 +107,7 @@ export const environmentSchema = Joi.object({
   PUSH_PROVIDER: Joi.string().valid('development', 'firebase').default('development'),
   FIREBASE_SERVICE_ACCOUNT_BASE64: Joi.string().allow('').default(''),
   PUSH_TOKEN_STALE_DAYS: Joi.number().integer().min(7).max(365).default(90),
-  ASSISTANT_PROVIDER: Joi.string().valid('fake', 'qwen', 'gemini').default('fake'),
+  ASSISTANT_PROVIDER: Joi.string().valid('fake', 'qwen', 'gemini', 'extractive').default('fake'),
   RATE_LIMIT_PER_MINUTE: Joi.number().integer().min(30).max(10_000).default(120),
   ASSISTANT_TIMEOUT_MS: Joi.number().integer().min(2_000).max(60_000).default(20_000),
   ASSISTANT_MAX_CONTEXT_MESSAGES: Joi.number().integer().min(0).max(20).default(10),

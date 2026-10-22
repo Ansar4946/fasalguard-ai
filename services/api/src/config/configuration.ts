@@ -82,7 +82,7 @@ export interface AppConfiguration {
   pushProvider: 'development' | 'firebase';
   firebaseServiceAccountBase64: string;
   pushTokenStaleDays: number;
-  assistantProvider: 'fake' | 'qwen' | 'gemini';
+  assistantProvider: 'fake' | 'qwen' | 'gemini' | 'extractive';
   rateLimitPerMinute: number;
   assistantTimeoutMs: number;
   assistantMaxContextMessages: number;
@@ -225,7 +225,8 @@ export default function configuration(): AppConfiguration {
     pushProvider: (process.env.PUSH_PROVIDER ?? 'development') as 'development' | 'firebase',
     firebaseServiceAccountBase64: process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 ?? '',
     pushTokenStaleDays: Number(process.env.PUSH_TOKEN_STALE_DAYS ?? 90),
-    assistantProvider: (process.env.ASSISTANT_PROVIDER ?? 'fake') as 'fake' | 'qwen' | 'gemini',
+    assistantProvider: (process.env.ASSISTANT_PROVIDER ?? 'fake') as
+      'fake' | 'qwen' | 'gemini' | 'extractive',
     rateLimitPerMinute: Number(process.env.RATE_LIMIT_PER_MINUTE ?? 120),
     assistantTimeoutMs: Number(process.env.ASSISTANT_TIMEOUT_MS ?? 20000),
     assistantMaxContextMessages: Number(process.env.ASSISTANT_MAX_CONTEXT_MESSAGES ?? 10),

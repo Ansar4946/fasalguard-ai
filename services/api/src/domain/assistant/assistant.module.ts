@@ -11,6 +11,7 @@ import { AGRICULTURE_ASSISTANT_PROVIDER } from './providers/agriculture-assistan
 import { FakeAssistantProvider } from './providers/fake-assistant.provider';
 import { FakeSpeechProvider } from './providers/fake-speech.provider';
 import { QwenAssistantProvider } from './providers/qwen-assistant.provider';
+import { ExtractiveAssistantProvider } from './providers/extractive-assistant.provider';
 import { GeminiAssistantProvider } from './providers/gemini-assistant.provider';
 import { KnowledgeRetrievalService } from './knowledge-retrieval.service';
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
@@ -28,6 +29,7 @@ import { SPEECH_TO_TEXT_PROVIDER, TEXT_TO_SPEECH_PROVIDER } from './providers/sp
     FakeSpeechProvider,
     QwenAssistantProvider,
     GeminiAssistantProvider,
+    ExtractiveAssistantProvider,
     KnowledgeRetrievalService,
     QwenSpeechProvider,
     AzureSpeechProvider,
@@ -39,15 +41,17 @@ import { SPEECH_TO_TEXT_PROVIDER, TEXT_TO_SPEECH_PROVIDER } from './providers/sp
         FakeAssistantProvider,
         QwenAssistantProvider,
         GeminiAssistantProvider,
+        ExtractiveAssistantProvider,
       ],
       useFactory: (
         c: ConfigService,
         f: FakeAssistantProvider,
         q: QwenAssistantProvider,
         g: GeminiAssistantProvider,
+        x: ExtractiveAssistantProvider,
       ) => {
         const choice = c.get<string>('assistantProvider', 'fake');
-        return choice === 'qwen' ? q : choice === 'gemini' ? g : f;
+        return choice === 'qwen' ? q : choice === 'gemini' ? g : choice === 'extractive' ? x : f;
       },
     },
     {
