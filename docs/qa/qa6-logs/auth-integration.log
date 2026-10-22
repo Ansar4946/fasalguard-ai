@@ -1,0 +1,77 @@
+FAIL test/auth.integration-spec.ts (168.344 s)
+  Authentication and authorization API
+    × registers only a farmer and records versioned consent (9 ms)
+    × authenticates, returns the current user, and enforces RBAC (1 ms)
+    × rotates refresh tokens and revokes the family on reuse (5 ms)
+    × lists, revokes one, and revokes all device sessions
+
+  ● Authentication and authorization API › registers only a farmer and records versioned consent
+
+    thrown: "Exceeded timeout of 30000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 29 |[39m   [36mconst[39m password [33m=[39m [32m'A-strong-test-password-123!'[39m[33m;[39m
+     [90m 30 |[39m
+    [31m[1m>[22m[39m[90m 31 |[39m   beforeAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 32 |[39m     process[33m.[39menv[33m.[39m[33mNODE_ENV[39m [33m=[39m [32m'test'[39m[33m;[39m
+     [90m 33 |[39m     process[33m.[39menv[33m.[39m[33mJWT_ACCESS_SECRET[39m [33m=[39m [32m'integration-test-secret-at-least-32-characters'[39m[33m;[39m
+     [90m 34 |[39m     process[33m.[39menv[33m.[39m[33mJWT_ISSUER[39m [33m=[39m [32m'fasalguard-api'[39m[33m;[39m[0m
+
+      at test/auth.integration-spec.ts:31:3
+      at Object.<anonymous> (test/auth.integration-spec.ts:25:1)
+
+  ● Authentication and authorization API › authenticates, returns the current user, and enforces RBAC
+
+    thrown: "Exceeded timeout of 30000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 29 |[39m   [36mconst[39m password [33m=[39m [32m'A-strong-test-password-123!'[39m[33m;[39m
+     [90m 30 |[39m
+    [31m[1m>[22m[39m[90m 31 |[39m   beforeAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 32 |[39m     process[33m.[39menv[33m.[39m[33mNODE_ENV[39m [33m=[39m [32m'test'[39m[33m;[39m
+     [90m 33 |[39m     process[33m.[39menv[33m.[39m[33mJWT_ACCESS_SECRET[39m [33m=[39m [32m'integration-test-secret-at-least-32-characters'[39m[33m;[39m
+     [90m 34 |[39m     process[33m.[39menv[33m.[39m[33mJWT_ISSUER[39m [33m=[39m [32m'fasalguard-api'[39m[33m;[39m[0m
+
+      at test/auth.integration-spec.ts:31:3
+      at Object.<anonymous> (test/auth.integration-spec.ts:25:1)
+
+  ● Authentication and authorization API › rotates refresh tokens and revokes the family on reuse
+
+    thrown: "Exceeded timeout of 30000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 29 |[39m   [36mconst[39m password [33m=[39m [32m'A-strong-test-password-123!'[39m[33m;[39m
+     [90m 30 |[39m
+    [31m[1m>[22m[39m[90m 31 |[39m   beforeAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 32 |[39m     process[33m.[39menv[33m.[39m[33mNODE_ENV[39m [33m=[39m [32m'test'[39m[33m;[39m
+     [90m 33 |[39m     process[33m.[39menv[33m.[39m[33mJWT_ACCESS_SECRET[39m [33m=[39m [32m'integration-test-secret-at-least-32-characters'[39m[33m;[39m
+     [90m 34 |[39m     process[33m.[39menv[33m.[39m[33mJWT_ISSUER[39m [33m=[39m [32m'fasalguard-api'[39m[33m;[39m[0m
+
+      at test/auth.integration-spec.ts:31:3
+      at Object.<anonymous> (test/auth.integration-spec.ts:25:1)
+
+  ● Authentication and authorization API › lists, revokes one, and revokes all device sessions
+
+    thrown: "Exceeded timeout of 30000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 29 |[39m   [36mconst[39m password [33m=[39m [32m'A-strong-test-password-123!'[39m[33m;[39m
+     [90m 30 |[39m
+    [31m[1m>[22m[39m[90m 31 |[39m   beforeAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 32 |[39m     process[33m.[39menv[33m.[39m[33mNODE_ENV[39m [33m=[39m [32m'test'[39m[33m;[39m
+     [90m 33 |[39m     process[33m.[39menv[33m.[39m[33mJWT_ACCESS_SECRET[39m [33m=[39m [32m'integration-test-secret-at-least-32-characters'[39m[33m;[39m
+     [90m 34 |[39m     process[33m.[39menv[33m.[39m[33mJWT_ISSUER[39m [33m=[39m [32m'fasalguard-api'[39m[33m;[39m[0m
+
+      at test/auth.integration-spec.ts:31:3
+      at Object.<anonymous> (test/auth.integration-spec.ts:25:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 4 total
+Snapshots:   0 total
+Time:        173.941 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

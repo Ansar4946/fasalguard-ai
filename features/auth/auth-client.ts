@@ -24,7 +24,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       throw new AuthClientError(
         body.error?.message ??
           (response.status === 401
-            ? "No account found for that email or phone number."
+            ? "The email, phone number or password is incorrect."
             : "Unable to complete the request."),
         response.status,
         body.error?.code ?? "REQUEST_FAILED",
@@ -48,10 +48,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 export const authClient = {
-  login: (identifier: string) =>
+  login: (identifier: string, password: string) =>
     request<{ user: CurrentUser }>("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ identifier }),
+      body: JSON.stringify({ identifier, password }),
     }),
   completeOnboarding: (input: {
     fullName: string;

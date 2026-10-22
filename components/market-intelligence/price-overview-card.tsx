@@ -10,7 +10,7 @@ export function PriceOverviewCard({
   weeklyChange,
 }: {
   price: MarketPrice;
-  weeklyChange: number;
+  weeklyChange: number | null;
 }) {
   return (
     <article className="relative overflow-hidden rounded-[20px] bg-brand-dark p-4 text-white shadow-[0_22px_55px_rgba(0,58,38,.2)] sm:rounded-[24px] sm:p-7">
@@ -25,13 +25,13 @@ export function PriceOverviewCard({
           </span>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[.16em] text-white/55">
-              Latest Punjab average
+              Latest reporting-market average
             </p>
             <h2 className="mt-1 text-xl font-extrabold">{price.commodity}</h2>
           </div>
         </div>
         <span className="rounded-full border border-amber-200/30 bg-amber-300/15 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-amber-100">
-          {price.freshness === "STALE" ? "Stale AMIS data" : "Live AMIS data"}
+          {price.freshness === "STALE" ? "Stale AMIS data" : "Recent AMIS observation"}
         </span>
       </div>
       <div className="relative mt-6 grid gap-4 sm:mt-7 md:grid-cols-[1fr_auto] md:items-end md:gap-6">
@@ -45,11 +45,10 @@ export function PriceOverviewCard({
         </div>
         <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm md:min-w-56">
           <p className="text-[9px] uppercase tracking-wider text-white/55">
-            Latest observed movement
+            Same-market weekly change
           </p>
           <p className="mt-1 text-lg font-extrabold text-[#c9f4ad]">
-            {weeklyChange > 0 ? "+" : ""}
-            {weeklyChange.toFixed(1)}%
+            {weeklyChange === null ? "Unavailable" : `${weeklyChange > 0 ? "+" : ""}${weeklyChange.toFixed(1)}%`}
           </p>
           <p className="mt-2 text-xs text-white/70">
             {price.market} · {price.district}
@@ -75,14 +74,17 @@ export function PriceOverviewCard({
               {formatMarketPrice(item.value)}
             </dd>
             <span className="text-[7px] text-white/45 sm:text-[8px]">
-              / 40 KG
+              / {price.quantity} {price.unit}
             </span>
           </div>
         ))}
       </dl>
       <div className="relative mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-4 text-[9px] text-white/55">
-        <span>Source: {price.source}</span>
-        <span>Official price date: {formatMarketDate(price.observedAt)}</span>
+        <span>{price.sourceUrl ? <a href={price.sourceUrl} target="_blank" rel="noopener noreferrer">Source: {price.source}</a> : `Source: ${price.source}`}</span>
+        <span>Official price date: {formatMarketDate(price.priceDate ?? price.observedAt)}</span>
+        {price.sourceQuantityKg && <span>Source: PKR/{price.sourceQuantityKg} kg · display: PKR/{price.quantity} kg</span>}
+        {price.variety && <span>Source commodity: {price.variety}</span>}
+        {price.ingestedAt && <span>Collected: {formatMarketDate(price.ingestedAt)}</span>}
       </div>
     </article>
   );

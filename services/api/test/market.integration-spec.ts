@@ -1,16 +1,18 @@
-import type { DataSource, QueryRunner } from 'typeorm';
+import { DataSource, type QueryRunner } from 'typeorm';
 
-const integration = process.env.DATABASE_URL ? describe : describe.skip;
+const url = process.env.F07_TEST_DATABASE_URL;
+if (url && !['f07_test', 'f03_test', 'f03_runtime_test'].includes(new URL(url).pathname.slice(1)))
+  throw new Error('An explicitly allowed disposable F07 test database is required.');
+const integration = url ? describe : describe.skip;
 
 integration('Market price persistence', () => {
   let source: DataSource;
   let runner: QueryRunner;
 
   beforeAll(async () => {
-    const imported = await import('../src/infrastructure/database/data-source');
-    source = imported.default;
+    source = new DataSource({ type: 'postgres', url, connectTimeoutMS: 5000 });
     await source.initialize();
-    await source.runMigrations();
+    // Uses the explicitly provisioned disposable test schema; never loads .env or runs application migrations.
     runner = source.createQueryRunner();
     await runner.connect();
     await runner.startTransaction();

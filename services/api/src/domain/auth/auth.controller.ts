@@ -12,7 +12,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentPrincipal } from './decorators/current-user.decorator';
@@ -79,7 +79,11 @@ export class AuthController {
   ): Promise<void> {
     await this.auth.logout(user.userId, dto.refreshToken);
   }
-  @Get('me') me(@CurrentPrincipal() user: AuthPrincipal): Promise<CurrentUser> {
+  // The web proxy validates the session with this call on every protected request, including
+  // prefetches, so it must not share the general per-user budget (a 429 here signed users out).
+  @SkipThrottle()
+  @Get('me')
+  me(@CurrentPrincipal() user: AuthPrincipal): Promise<CurrentUser> {
     return this.auth.me(user);
   }
   @Get('sessions') sessions(@CurrentPrincipal() user: AuthPrincipal): Promise<unknown[]> {

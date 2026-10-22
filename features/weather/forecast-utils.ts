@@ -1,6 +1,16 @@
-import type { DayCondition, DaySummary, WeatherPoint } from "./types";
+import type { DayCondition, DaySummary, ForecastResponse, WeatherPoint } from "./types";
 
 const DAY_MS = 86_400_000;
+
+/** Legacy providers may return UTC+5 rather than an Intl-compatible timezone. */
+export function weatherTimezone(value: string): string {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value }).format();
+    return value;
+  } catch {
+    return "Asia/Karachi";
+  }
+}
 
 /** Groups hourly forecast points into calendar-day summaries using the point's own `time` value. */
 export function groupHourlyByDay(hourly: WeatherPoint[]): DaySummary[] {
@@ -25,9 +35,10 @@ export function pointCondition(point: WeatherPoint): DayCondition {
 }
 
 export function conditionLabel(condition: DayCondition): string {
+  if (condition === "unknown") return "Not available";
   if (condition === "rain-likely") return "Rain likely";
   if (condition === "chance-of-rain") return "Chance of rain";
-  return "Clear";
+  return "No rain indicated";
 }
 
 function summarizeDay(key: string, points: WeatherPoint[], todayKey: string): DaySummary {
@@ -57,13 +68,14 @@ function summarizeDay(key: string, points: WeatherPoint[], todayKey: string): Da
 }
 
 function conditionFrom(rainProbabilityPercent: number | null, precipitationMm: number | null): DayCondition {
+  if (rainProbabilityPercent == null && precipitationMm == null) return "unknown";
   if ((rainProbabilityPercent ?? 0) >= 60 || (precipitationMm ?? 0) >= 2) return "rain-likely";
   if ((rainProbabilityPercent ?? 0) >= 30 || (precipitationMm ?? 0) > 0) return "chance-of-rain";
   return "clear";
 }
 
 function dayKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 }
 
 function dayDelta(fromKey: string, toKey: string): number {
@@ -73,7 +85,7 @@ function dayDelta(fromKey: string, toKey: string): number {
 }
 
 function numbers(points: WeatherPoint[], field: keyof WeatherPoint): number[] {
-  return points.map((point) => point[field]).filter((value): value is number => typeof value === "number");
+  return points.map((point) => point[field]).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
 }
 
 function sum(values: number[]): number {
@@ -86,4 +98,19 @@ function avg(values: number[]): number {
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+/** Native provider daily aggregates avoid treating partial hourly coverage as a full day. */
+export function forecastDays(forecast: ForecastResponse): DaySummary[] {
+  if (!forecast.daily) return groupHourlyByDay(forecast.hourly);
+  const today = dayKey(new Date());
+  const hourlyDays = groupHourlyByDay(forecast.hourly);
+  return forecast.daily.map((day) => {
+    const date = new Date(`${day.key}T12:00:00+05:00`);
+    const delta = dayDelta(today, day.key);
+    return { ...day, label: delta === 0 ? "Today" : delta === 1 ? "Tomorrow" : date.toLocaleDateString("en", { weekday: "short", timeZone: "Asia/Karachi" }),
+      dateLabel: date.toLocaleDateString("en", { day: "numeric", month: "short", timeZone: "Asia/Karachi" }),
+      avgHumidityPercent: hourlyDays.find((entry) => entry.key === day.key)?.avgHumidityPercent ?? null,
+      condition: conditionFrom(day.maxRainProbabilityPercent, day.totalPrecipitationMm) };
+  });
 }

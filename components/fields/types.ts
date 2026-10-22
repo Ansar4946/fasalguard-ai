@@ -12,6 +12,7 @@ export interface FieldCropCycleSummary {
 
 /** Shape returned by POST /api/farms/:farmId/fields and GET /api/fields/:id. */
 export interface FieldSummary {
+  version?: number;
   id: string;
   farmId: string;
   name: string;

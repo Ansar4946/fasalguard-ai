@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
-import { conditionLabel, groupHourlyByDay, pointCondition } from "@/features/weather/forecast-utils";
+import { conditionLabel, forecastDays, pointCondition, weatherTimezone } from "@/features/weather/forecast-utils";
 import { categoryLabel, suitabilityLabel, suitabilityTone, toneBadgeClass } from "@/features/weather/risk-labels";
 import type {
   CurrentWeatherResponse,
@@ -27,14 +27,11 @@ async function readJson<T>(response: Response): Promise<T> {
   return body as T;
 }
 
-function fetchWeatherBundle(fieldId: string): Promise<WeatherBundle> {
-  return Promise.all([
-    fetch(`/api/fields/${fieldId}/weather/current`).then((response) => readJson<CurrentWeatherResponse>(response)),
-    fetch(`/api/fields/${fieldId}/weather/forecast`).then((response) => readJson<ForecastResponse>(response)),
-    fetch(`/api/fields/${fieldId}/weather/risks`)
-      .then((response) => (response.ok ? (response.json() as Promise<WeatherRisksResponse>) : null))
-      .catch(() => null),
-  ]).then(([current, forecast, risks]) => ({ current, forecast, risks }));
+async function fetchWeatherBundle(fieldId: string): Promise<WeatherBundle> {
+  const forecast = await fetch(`/api/fields/${fieldId}/weather/forecast`).then((r) => readJson<ForecastResponse & { current?: CurrentWeatherResponse["weather"] }>(r));
+  const current = forecast.current ? { fieldId, provider: forecast.provider, observedAt: forecast.current.time, weather: forecast.current, cachePolicy: forecast.cachePolicy } : await fetch(`/api/fields/${fieldId}/weather/current`).then((r) => readJson<CurrentWeatherResponse>(r));
+  const risks = await fetch(`/api/fields/${fieldId}/weather/risks`).then((r) => r.ok ? r.json() as Promise<WeatherRisksResponse> : null).catch(() => null);
+  return { current, forecast, risks };
 }
 
 export function WeatherIntelligence({ fields }: { fields: FieldOption[] }) {
@@ -88,6 +85,28 @@ function WeatherPane({ field }: { field: FieldOption }) {
   const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
+    if (state.status !== "ready" || !state.bundle.forecast.expiresAt) return;
+    const delay = Math.max(state.bundle.forecast.freshness === "STALE" ? 60_000 : 1,
+      new Date(state.bundle.forecast.expiresAt).getTime() - Date.now());
+    const invalidate = () => {
+      setState((previous) => previous.status !== "ready" ? previous : { status: "ready", bundle: {
+        ...previous.bundle, forecast: { ...previous.bundle.forecast, freshness: "STALE" },
+        risks: previous.bundle.risks ? { ...previous.bundle.risks, productionAssessment: null,
+          recommendationAllowed: false, matches: previous.bundle.risks.matches.map((m) => ({ ...m, recommendationAllowed: false })) } : null,
+      } });
+    };
+    const timer = setTimeout(() => { invalidate(); setRetryToken((value) => value + 1); }, delay);
+    const focus = () => {
+      if (Date.now() >= new Date(state.bundle.forecast.expiresAt!).getTime()) invalidate();
+      setRetryToken((value) => value + 1);
+    };
+    const visibility = () => { if (document.visibilityState === "visible") focus(); };
+    window.addEventListener("focus", focus);
+    document.addEventListener("visibilitychange", visibility);
+    return () => { clearTimeout(timer); window.removeEventListener("focus", focus); document.removeEventListener("visibilitychange", visibility); };
+  }, [state]);
+
+  useEffect(() => {
     // setState only ever happens inside these async callbacks, never synchronously in the
     // effect body — `key={selectedFieldId}` on the caller remounts this component (and its
     // "loading" initial state) on field change, and retry() below sets "loading" itself
@@ -118,19 +137,28 @@ function WeatherPane({ field }: { field: FieldOption }) {
   if (state.status === "error") return <ErrorCard message={state.message} onRetry={retry} />;
 
   const { current, forecast, risks } = state.bundle;
-  const days = groupHourlyByDay(forecast.hourly);
+  const days = forecastDays(forecast);
+  const timezone = weatherTimezone(forecast.timezone);
   const today = days.find((day) => day.label === "Today") ?? days[0] ?? null;
   const point = current.weather;
   const condition = conditionLabel(pointCondition(point));
 
   return (
     <>
+      <div role="status" className="rounded-xl border border-border bg-white p-4 text-xs leading-5">
+        <strong>{forecast.freshness === "STALE" ? "Stale forecast: provider refresh unavailable" : "Forecast freshness"}</strong>
+        {" · "}{forecast.freshness ?? "Freshness unknown"}{" · "}Retrieved {new Date(forecast.fetchedAt ?? forecast.generatedAt).toLocaleString("en-GB", { timeZone: timezone })}
+        {" · "}{timezone}. Model estimates; field conditions may differ.
+        {forecast.expiresAt && <> Cache expires {new Date(forecast.expiresAt).toLocaleTimeString("en-GB", { timeZone: timezone })}.</>}
+        {" "}<a href="https://open-meteo.com/" target="_blank" rel="noreferrer" className="underline">Weather data attribution</a>
+        <button type="button" onClick={retry} className="ml-3 font-bold underline">Refresh forecast</button>
+      </div>
       <section className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
         <article className="overflow-hidden rounded-[20px] bg-brand p-6 text-white shadow-[0_18px_50px_rgba(11,81,55,.18)]">
           <div className="flex flex-col gap-5 sm:flex-row sm:justify-between">
             <div>
               <span className="rounded-full bg-white/12 px-3 py-1 text-[10px] font-bold">
-                {field.growthStage ? `Growth stage: ${field.growthStage}` : "No active crop cycle"}
+                {field.growthStage ? `Growth stage: ${field.growthStage}` : field.cropCycleStatus === "active" ? "Growth stage not set" : "No active crop cycle"}
               </span>
               <h2 className="mt-5 text-5xl font-extrabold">{formatValue(point.temperatureC, "°C", 0)}</h2>
               <p className="mt-2 text-sm text-white/75">
@@ -150,16 +178,16 @@ function WeatherPane({ field }: { field: FieldOption }) {
           <div className="mt-6 rounded-2xl bg-white/10 p-4">
             <div className="flex items-center justify-between">
               <strong>Crop-weather suitability</strong>
-              {risks?.assessment ? (
-                <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${toneBadgeClass(suitabilityTone(risks.assessment))}`}>
-                  {suitabilityLabel(risks.assessment)}
+              {risks?.productionAssessment ? (
+                <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${toneBadgeClass(suitabilityTone(risks.productionAssessment))}`}>
+                  {suitabilityLabel(risks.productionAssessment)}
                 </span>
               ) : (
                 <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white/80">Not assessed</span>
               )}
             </div>
             <p className="mt-3 text-sm leading-6 text-white/80">
-              {risks?.matches[0]?.message ??
+              {risks?.matches.find((m) => m.recommendationAllowed)?.message ??
                 risks?.disclaimer ??
                 "Set an active crop cycle for this field to see crop-specific weather suitability."}
             </p>
@@ -177,18 +205,23 @@ function WeatherPane({ field }: { field: FieldOption }) {
           </dl>
           <div className="mt-5 rounded-xl bg-brand-soft p-4 text-xs leading-5 text-brand-dark">
             <strong>Provider:</strong> {current.provider === "OPEN_METEO" ? "Open-Meteo" : "OpenWeatherMap"} · updated{" "}
-            {new Date(current.observedAt).toLocaleString(undefined, { hour: "numeric", minute: "2-digit", day: "numeric", month: "short" })}
+            {new Date(current.observedAt).toLocaleString(undefined, { timeZone: timezone, hour: "numeric", minute: "2-digit", day: "numeric", month: "short" })}
           </div>
         </article>
       </section>
 
       <RiskSignals risks={risks} />
+      <details className="card p-4">
+        <summary className="cursor-pointer font-bold">Hourly forecast ({forecast.resolutionMinutes ?? 60}-minute intervals)</summary>
+        <div className="mt-3 max-h-80 overflow-auto"><table className="w-full text-left text-xs"><thead><tr><th>Time ({timezone})</th><th>Temperature °C</th><th>Rain mm</th><th>Wind km/h</th></tr></thead>
+          <tbody>{forecast.hourly.map((p) => <tr key={p.time}><td>{new Date(p.time).toLocaleString("en-GB", { timeZone: timezone })}</td><td>{p.temperatureC ?? "Not available"}</td><td>{p.precipitationMm ?? "Not available"}</td><td>{p.windSpeedKph ?? "Not available"}</td></tr>)}</tbody></table></div>
+      </details>
 
       <section>
         <div className="flex items-end justify-between">
           <div>
             <h2 className="text-xl font-extrabold">{days.length}-day outlook</h2>
-            <p className="mt-1 text-xs text-muted">Grouped from the live hourly forecast for {field.name}.</p>
+            <p className="mt-1 text-xs text-muted">Daily forecast for {field.name}.</p>
           </div>
         </div>
         {days.length === 0 ? (
@@ -229,6 +262,7 @@ function DayCard({ day }: { day: DaySummary }) {
       <div className="mt-3 space-y-1 text-[10px] text-muted">
         <p>
           Rain {day.maxRainProbabilityPercent ?? "—"}% · Humidity {day.avgHumidityPercent ?? "—"}%
+          <span className="block">Rain total {day.totalPrecipitationMm == null ? "Not available" : `${day.totalPrecipitationMm} mm`}</span>
         </p>
         <p>Wind {day.maxWindKph ?? "—"} km/h</p>
       </div>
@@ -258,7 +292,7 @@ function RiskSignals({ risks }: { risks: WeatherRisksResponse | null }) {
               </div>
               <p className="mt-3 text-xs leading-5">{match.message}</p>
               <p className="mt-3 text-[9px] font-bold uppercase tracking-wide text-muted">
-                {match.isExpertApproved ? "Expert-approved rule" : "Demo rule · illustrative only"}
+                {match.recommendationAllowed ? "Expert-approved rule" : match.isExpertApproved ? "Forecast expired — guidance unavailable" : "Demo rule · illustrative only"}
               </p>
             </article>
           ))}

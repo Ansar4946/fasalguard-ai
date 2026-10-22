@@ -15,6 +15,7 @@ const cropCycleSchema = z.object({
 const updateFieldSchema = z.object({
   name: z.string().trim().min(2).max(160).optional(),
   boundary: polygonSchema.optional(),
+  expectedVersion: z.number().int().positive().optional(),
   currentCropCycle: cropCycleSchema.optional(),
 });
 

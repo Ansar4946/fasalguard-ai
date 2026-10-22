@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { BoundaryPicker } from "@/components/farms/boundary-picker";
-import { fromGeoJsonPolygon, toGeoJsonPolygon, type GeoJsonPolygon } from "@/lib/geo/polygon";
+import { fromGeoJsonPolygon, polygonRings, toGeoJsonPolygon, type GeoJsonPolygon } from "@/lib/geo/polygon";
 
 const inputClass =
   "h-10 w-full rounded-lg border border-[#ccd6cf] bg-[#f7f8fc] px-3 text-[11px] outline-none focus:border-brand";
 
 export interface EditFarmFormData {
+  version: number;
   id: string;
   name: string;
   province: string | null;
@@ -54,7 +55,8 @@ export function EditFarmForm({ farm }: { farm: EditFarmFormData }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          boundary: toGeoJsonPolygon(points),
+          expectedVersion: farm.version,
+          boundary: toGeoJsonPolygon(points, polygonRings(farm.boundary).slice(1)),
           province: province.trim() || undefined,
           district: district.trim() || undefined,
           tehsil: tehsil.trim() || undefined,
@@ -83,7 +85,7 @@ export function EditFarmForm({ farm }: { farm: EditFarmFormData }) {
           Adjust the corners on the map to update the farm boundary.
         </p>
         <div className="mt-4">
-          <BoundaryPicker
+          <BoundaryPicker holes={polygonRings(farm.boundary).slice(1)}
             points={points}
             onChange={setPoints}
             center={mapCenter}

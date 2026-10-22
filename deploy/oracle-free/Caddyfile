@@ -1,0 +1,68 @@
+# Caddy: automatic HTTPS (Let's Encrypt) and single-domain routing. DOMAIN and ACME_EMAIL come from
+# the container environment (docker-compose.yml). Caddy gets/renews certificates by itself; it needs
+# ports 80 and 443 reachable from the internet (HTTP-01 challenge) and DNS pointing at this VM.
+{
+	# Certificate notice email is optional: set ACME_EMAIL and add `email {$ACME_EMAIL}` here if you want expiry warnings.
+	# Admin API stays inside the container (used only by the compose healthcheck).
+	admin 127.0.0.1:2019
+	# HTTP/1.1 + HTTP/2 only, so no UDP/443 (HTTP/3) rule is needed in the firewall or Oracle VCN.
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Defaults only (the "?" prefix sets a header if the upstream did not). The web app already sends
+	# its own CSP / HSTS / X-Frame-Options from next.config.ts; Caddy must NOT override them, because
+	# that CSP carries the STORAGE_UPLOAD_ORIGINS connect-src entry.
+	header {
+		?Strict-Transport-Security "max-age=63072000; includeSubDomains"
+		?X-Content-Type-Options "nosniff"
+		?X-Frame-Options "DENY"
+		?Referrer-Policy "strict-origin-when-cross-origin"
+		?Permissions-Policy "microphone=(self), camera=(self), geolocation=(self), payment=(), usb=()"
+		-Server
+		defer
+	}
+
+	# Core API. Includes presigned local-disk uploads: PUT /api/v1/media/local-upload/<token>
+	# (images and voice notes; the API caps the body at 100 MB, Caddy caps it a bit lower).
+	handle /api/v1/* {
+		# JSON only: a locked-down CSP for API responses (the web UI is not served from here).
+		header ?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		request_body {
+			max_size 30MB
+		}
+		reverse_proxy api:4000 {
+			# Caddy replaces any client-supplied X-Forwarded-For with the real peer address
+			# (trusted_proxies is empty), so the API (TRUST_PROXY=1) sees the real client IP.
+			transport http {
+				response_header_timeout 60s
+			}
+		}
+	}
+
+	# Everything else: Next.js web app (UI + BFF route handlers under /api/<name>, not /api/v1).
+	handle {
+		request_body {
+			max_size 30MB
+		}
+		reverse_proxy web:3000
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# Optional (mobile app / external callers of platform-api, which also uses the /api/v1 prefix and so
+# needs its own hostname): add a DNS A record for platform.<domain>, then uncomment and redeploy.
+# Not needed for the web app, which reaches platform-api over the private Docker network.
+#
+# platform.{$DOMAIN} {
+# 	encode zstd gzip
+# 	reverse_proxy platform-api:8000
+# }

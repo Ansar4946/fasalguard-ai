@@ -1,0 +1,6 @@
+PASS AUTH-01 identifier-only login rejected (no password field) -> 400/401, no session row :: 
+PASS AUTH-02 wrong password and unknown user give the same 401 (no account enumeration) :: 
+PASS AUTH-03 correct password -> tokens; token works on a protected F01-F05 endpoint (GET /crop-scans?fieldId needs auth) ; refresh rotates :: 
+FAIL AUTH-05 browser login form (email + password) sets session cookies and reaches the farmer area; wrong password shows an error :: wrong password for an existing account shows 'No account found for that email or phone number. |' (misleading: the account exists; API says 'email, phone number or password is incorrect'); correct pas
+PASS AUTH-04 brute force: 12 wrong passwords -> throttled with 429 before the limit of attempts is unbounded :: 401,401,401,401,401,429,429,429,429,429,429,429
+SUMMARY pass=4 fail=1 blocked=0

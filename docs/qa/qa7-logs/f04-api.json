@@ -1,0 +1,121 @@
+[
+ {
+  "id": "F04-01",
+  "name": "unauthenticated forecast/current/risks/suitability -> 401 (platform, core, BFF)",
+  "status": "PASS",
+  "detail": "",
+  "ms": 51
+ },
+ {
+  "id": "F04-02",
+  "name": "invalid / unknown field id, foreign farmer -> 422/400 / 404 (no data leak)",
+  "status": "PASS",
+  "detail": "bad=400",
+  "ms": 141
+ },
+ {
+  "id": "F04-03",
+  "name": "REAL Open-Meteo forecast via platform: 168 hourly, 7 daily, provider, tz, freshness FRESH",
+  "status": "PASS",
+  "detail": "fetchedAt=2026-10-16T09:06:33.409695+00:00 current.temp=27.7C grid=31.458698,72.47312 attribution=Weather data by Open-Meteo.com (CC BY 4.0)",
+  "ms": 270
+ },
+ {
+  "id": "F04-04",
+  "name": "physical plausibility of real data: temp -10..55C Punjab, RH 0..100, precip>=0, daily high>=low, ET0 0..10",
+  "status": "PASS",
+  "detail": "",
+  "ms": 2
+ },
+ {
+  "id": "F04-05",
+  "name": "DB persistence: weather_forecasts row, 168 points, matches API fetchedAt",
+  "status": "PASS",
+  "detail": "",
+  "ms": 34
+ },
+ {
+  "id": "F04-06",
+  "name": "cache reuse + idempotency: 15 concurrent requests -> one fetchedAt, <=1 new DB row",
+  "status": "PASS",
+  "detail": "",
+  "ms": 1188
+ },
+ {
+  "id": "F04-07",
+  "name": "current endpoint shape + shared cell for 2nd field of same farmer (maize) persisted separately",
+  "status": "PASS",
+  "detail": "maize fetchedAt 2026-10-16T09:06:36.859870+00:00",
+  "ms": 264
+ },
+ {
+  "id": "F04-08",
+  "name": "risks/suitability: crop-specific, only EXPERT_APPROVED rules may allow recommendations (demo rules not actionable)",
+  "status": "PASS",
+  "detail": "wheat: matches=0 assessment=null productionAssessment=null; no-crop field matches=0",
+  "ms": 274
+ },
+ {
+  "id": "F04-09",
+  "name": "field with no crop cycle: forecast still works, rules empty",
+  "status": "PASS",
+  "detail": "",
+  "ms": 54
+ },
+ {
+  "id": "F04-10",
+  "name": "location change invalidates forecast (PATCH boundary moves field ~100 km): new grid cell / new fetch",
+  "status": "PASS",
+  "detail": "",
+  "ms": 382
+ },
+ {
+  "id": "F04-11",
+  "name": "core API legacy weather (OpenWeatherMap with real key): current",
+  "status": "PASS",
+  "detail": "{\"fieldId\":\"99c3d17c-e71e-45ac-8927-4272e6f9c02e\",\"provider\":\"OPENWEATHERMAP\",\"observedAt\":\"2026-10-16T12:00:00.000Z\",\"weather\":{\"time\":\"2026-10-16T12:00:00.000Z\",\"temperatureC\":31.82,\"relativeHumidityPercent\":21,\"precipitationMm\":0,\"precipitationPro",
+  "ms": 33
+ },
+ {
+  "id": "F04-12",
+  "name": "Redis outage: forecast for a new field still 200 and persisted (cache is best-effort)",
+  "status": "PASS",
+  "detail": "served + persisted with Redis down",
+  "ms": 15951
+ },
+ {
+  "id": "F04-13",
+  "name": "provider connection refused (DNS to 127.0.0.1) with fresh cache -> still served FRESH from cache/DB; new cell -> typed 503, no fabricated data",
+  "status": "PASS",
+  "detail": "new cell -> 503 WEATHER_PROVIDER_UNAVAILABLE",
+  "ms": 1173
+ },
+ {
+  "id": "F04-14",
+  "name": "provider timeout (blackhole address) for new cell -> 503 within a bounded time",
+  "status": "PASS",
+  "detail": "503 WEATHER_PROVIDER_UNAVAILABLE after 6330 ms",
+  "ms": 7098
+ },
+ {
+  "id": "F04-15",
+  "name": "stale fallback: 20-minute-old stored bundle + provider down -> served STALE with ageSeconds; 3-hour-old -> 503",
+  "status": "PASS",
+  "detail": "stale served (age 1200s, risks recommendationAllowed=false); 3h old -> 503 WEATHER_PROVIDER_UNAVAILABLE",
+  "ms": 6374
+ },
+ {
+  "id": "F04-16",
+  "name": "web BFF forecast endpoint with auth returns same shape; DB down gives typed error not hang",
+  "status": "PASS",
+  "detail": "BFF 200 keys=daily,hourly,current,provider,timezone,fetchedAt,rawMetadata,providerIssuedAt",
+  "ms": 100
+ },
+ {
+  "id": "F04-17",
+  "name": "rate/abuse: 60 sequential forecast calls -> no 5xx, one provider fetch (fetchedAt stable)",
+  "status": "PASS",
+  "detail": "statuses 200",
+  "ms": 2666
+ }
+]

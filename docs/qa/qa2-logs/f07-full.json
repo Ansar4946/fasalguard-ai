@@ -1,0 +1,62 @@
+[
+ {
+  "name": "F07-01 unauthenticated /market/prices and /history -> 401 (API and BFF)",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F07-02 real AMIS rows persisted: Wheat/Maize/Rice/Cotton/Sugarcane, source AMIS, PKR, 100 kg basis",
+  "status": "PASS",
+  "detail": "[{\"crop\":\"Cotton\",\"n\":8,\"qmin\":100,\"qmax\":100,\"src\":[\"AMIS\"],\"cur\":[\"KG\"]},{\"crop\":\"Maize\",\"n\":12,\"qmin\":100,\"qmax\":100,\"src\":[\"AMIS\"],\"cur\":[\"KG\"]},{\"crop\":\"Rice\",\"n\":10,\"qmin\":100,\"qmax\":100,\"src\":[\"AMIS\"],\"cur\":[\"KG\"]},{\"crop\":\"Sugarcane\",\"n\":35,\"qmin\":100,\"qmax\":100,\"src\":[\"AMIS\"],\"cur\":[\"KG\"]},{\"crop\":\"Wheat\",\"n\":11,\"qmin\":100,\"qmax\":100,\"src\":[\"AMIS\"],\"cur\":[\"KG\"]}]"
+ },
+ {
+  "name": "F07-03 API prices: records match DB, average within [min,max], dates not in the future",
+  "status": "PASS",
+  "detail": "api=11 db=11 meta=[\"source\",\"freshness\",\"freshnessPolicy\",\"generatedAt\",\"cache\",\"forecast\"]"
+ },
+ {
+  "name": "F07-04 API validation: limit 0/101/abc, days 0/366, missing crop, crop>120 chars -> 400",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F07-05 injection-style crop strings are inert (200 empty or 400, never 500)",
+  "status": "PASS",
+  "detail": "Wheat'; DROP:200/0 %:200/0 _:200/0 Wheat\" OR 1=:200/0 <script>aler:200/0"
+ },
+ {
+  "name": "F07-06 unknown crop / province -> honest empty list",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F07-07 history: chronological, window respected, one row per market/date",
+  "status": "PASS",
+  "detail": "records=11"
+ },
+ {
+  "name": "F07-08 browser: farmer A sees DB-backed Wheat data, official date, reporting count, PKR/40kg conversion, no error/empty card",
+  "status": "PASS",
+  "detail": "latest=2026-10-14 reporting=11 expected40kg=4529"
+ },
+ {
+  "name": "F07-09 browser: farmer B (separate session) sees the same public observations",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F07-10 browser: switching crop (Rice/Maize/Cotton/Sugarcane) re-queries and never shows another crop's price",
+  "status": "PASS",
+  "detail": "Cotton:8:8669 Rice:10:4195 Maize:12:2815 Sugarcane:35:3430 Wheat:11:4529"
+ },
+ {
+  "name": "F07-11 browser 375px mobile viewport: no horizontal overflow",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "name": "F07-12 freshness labels: data 2 days old is STALE; shifting the same rows to today flips to Recent",
+  "status": "PASS",
+  "detail": ""
+ }
+]

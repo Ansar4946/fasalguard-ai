@@ -1,0 +1,33 @@
+PASS F01-01 unauthenticated create/get/analyse/list -> 401 (API) :: 
+PASS F01-02 unauthenticated BFF /api/crop-scans* -> 401 :: 
+PASS F01-03 expired token and revoked session -> 401 :: 
+PASS F01-04 wrong role (AGRICULTURE_EXPERT) -> 403 :: 
+PASS F01-05 create: malformed fieldId / non-v4 / extra props :: extra props rejected 400
+PASS F01-06 create on foreign / nonexistent field -> 403 (no scan row) :: foreign=403, nonexistent=403 (F01.md AT04 plans 404 for foreign resources; actual is 403)
+PASS F01-07 presign validation: bad mime, svg/html/pdf, >15MB, zero/negative/float size, bad purpose, empty name, long name, bad checksum :: {"svg":400,"html":400,"pdf":400,"big":400,"zero":400,"neg":400,"flt":400,"purpose":400,"noname":400,"longname":400,"badsum":400,"symbols":201} (path-traversal name sanitised, not an error)
+FAIL F01-08 REAL: wheat field, real leaf image -> upload -> attach -> analyse 202 -> terminal state with real provider :: real-image scan ended status=NEEDS_FOLLOW_UP failureCode='sharp is not a function' (internal TypeError in the compiled worker: sharp default import); no screening produced
+BLOCKED F01-09 result contract: not a firm diagnosis, disclaimer, alternatives, confidence in [0,1], DB matches API :: BLOCKED_BY_DEFECT F01-D1: worker failed with failureCode 'sharp is not a function' (status NEEDS_FOLLOW_UP); behaviour under test could not be exercised
+PASS F01-11 farmer B cannot read/attach/analyse/list farmer A scan or media :: get=404 analyse=404 attach-A-media=400 access-url=404 list-A-field-as-B=200 []
+PASS F01-12 analyse validation: no image -> 400; bad uuid -> 400; unknown id -> 404 :: 
+PASS F01-13 empty history: new field with no scans -> [] ; list requires fieldId (400) :: 
+FAIL F01-14 attach: bad category, non-uuid media, other-purpose media, pending media, many images :: image-count cap missing: 7 images attached to one scan (codes 201,201,201,201,201,201,201); F01.md says <=3, platform router says <=5
+PASS F01-15 upload completion: never-uploaded media, HTML bytes labelled png, PNG bytes labelled jpeg :: neverUploaded->complete=404; html-as-png: put=204 complete=400 {"error":{"code":"INVALID_IMAGE_CONTENT","message":"Uploaded image content is co; png-as-jpeg: put=204 complete=400
+PASS F01-16 declared size vs actual bytes mismatch (declare 1000, send ~2.7MB) :: presign=201 put=204 complete=400 {"error":{"code":"MEDIA_VERIFICATION_FAILED","message":"Uploaded object metadata does not match its 
+FAIL F01-17 PUT upload URL after complete: replay must not overwrite a verified object (TOCTOU) :: verified object was overwritten after completion (PUT replay=204); media status still 'ready'
+PASS F01-18 corrupt image (valid PNG header + garbage) -> typed failure, no prediction :: rejected before analysis: presign=201 complete=400 attach=400 {"error":{"code":"INVALID_SCAN_MEDIA","message":"Image must be a completed private crop-scan upload 
+PASS F01-19 tiny image 100x100 -> IMAGE_DIMENSIONS_TOO_SMALL, no prediction :: status=NEEDS_FOLLOW_UP failure=IMAGE_DIMENSIONS_TOO_SMALL diagnoses=0 predictions=0
+BLOCKED F01-20 solid black 800x800 (TOO_DARK) -> follow-up, no prediction :: BLOCKED_BY_DEFECT F01-D1: worker failed with failureCode 'sharp is not a function' (status NEEDS_FOLLOW_UP); behaviour under test could not be exercised
+PASS F01-21 HTML bytes uploaded as image/png -> must not reach provider :: rejected before analysis: presign=201 complete=400 attach=400 {"error":{"code":"INVALID_SCAN_MEDIA","message":"Image must be a completed private crop-scan upload 
+PASS F01-22 huge-pixel image 20000x20000 uniform PNG (small file, 400 MP) :: rejected before analysis: presign=201 complete=400 attach=400 {"error":{"code":"INVALID_SCAN_MEDIA","message":"Image must be a completed private crop-scan upload 
+BLOCKED F01-23 maize field screened with the real provider: unsupported crop must not receive another crop model labels :: BLOCKED_BY_DEFECT F01-D1: worker failed with failureCode 'sharp is not a function' (status NEEDS_FOLLOW_UP); behaviour under test could not be exercised
+BLOCKED F01-24 field without crop cycle: must not be screened with a generic crop model :: BLOCKED_BY_DEFECT F01-D1: worker failed with failureCode 'sharp is not a function' (status NEEDS_FOLLOW_UP); behaviour under test could not be exercised
+PASS F01-25 concurrent analyse x6 on one scan -> exactly one accepted job and <=1 prediction :: codes=202,400,400,400,400,400 rows={"p":0,"d":0}
+PASS F01-26 analyse rate limit: >10 analyses/hour per farmer -> 429 :: 202,202,202,202,202,202,202,202,202,202,429,429
+PASS F01-30 platform capabilities (configured models, no secrets in response) :: {"provider":"roboflow","configured":true,"supportedCrops":["cotton","rice","wheat"],"models":[{"crop":"wheat","modelId":"wheat-disease-detection-zsn0p-unjeb","version":"1"},{"crop":"rice","modelId":"r
+FAIL F01-31 REAL platform path: create -> attach (shared media) -> analyse 202 -> Celery -> provider -> terminal :: POST analyse returned 500 {"error":{"code":"INTERNAL_ERROR","message":"Something went wrong. Try again."}, although the task was queued and finished: status=DIAGNOSED failure=null cond=HealthyLeaf con
+PASS F01-31b platform result persisted: model provenance, DB rows, firm=false, disclaimer, alternatives :: cond=HealthyLeaf conf=0.999412 alts=3 ai_runs=1 model=wheat-disease-detection-zsn0p-unjeb@1
+PASS F01-10 idempotency: analyse again on a DIAGNOSED scan (platform) -> 400 SCAN_NOT_READY; still one diagnosis & prediction row :: 
+PASS F01-32 platform: B cannot read A scan (404), foreign field create 403 :: list-A-field-as-B=200 []
+PASS F01-33 platform: validation (extra fields, bad uuid, no token, wrong role) and repeat analyse :: repeat-analyse=400
+PASS F01-34 platform: maize field -> CROP_NOT_SUPPORTED, no fabricated prediction :: status=NEEDS_FOLLOW_UP failure=CROP_NOT_SUPPORTED predictions=0
+SUMMARY pass=24 fail=4 blocked=4

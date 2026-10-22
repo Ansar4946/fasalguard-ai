@@ -21,3 +21,10 @@ export const ALLOWED_QUESTION_LIBRARY: readonly AllowedQuestion[] = Object.freez
     tags: ['general', 'satellite'],
   },
 ]);
+/** Library keys a farmer may answer directly in the scan wizard, without LLM question selection. */
+export const FARMER_OBSERVATION_KEYS = [
+  'SPREADING',
+  'FIELD_PERCENT',
+  'INSECTS_VISIBLE',
+  'SYMPTOM_ONSET',
+] as const;

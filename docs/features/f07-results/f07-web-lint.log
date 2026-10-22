@@ -1,0 +1,3 @@
+COMMAND: node node_modules/eslint/bin/eslint.js features/market-intelligence components/market-intelligence app/api/market scripts/verify-f07-provider.cjs
+
+EXIT: null SIGNAL: SIGTERM

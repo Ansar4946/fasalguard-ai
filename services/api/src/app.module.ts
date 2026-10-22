@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import configuration from './config/configuration';
@@ -37,8 +37,14 @@ import { GrowthModule } from './domain/growth/growth.module';
 import { AiOpsModule } from './domain/ai-ops/ai-ops.module';
 import { ImpactModule } from './domain/impact/impact.module';
 import { MarketModule } from './domain/market/market.module';
+import { YieldModule } from './domain/yield/yield.module';
+import { DashboardModule } from './domain/dashboard/dashboard.module';
+import { FarmFinanceModule } from './domain/farm-finance/farm-finance.module';
+import { JwtModule } from '@nestjs/jwt';
+import { ClientThrottlerGuard } from './common/guards/client-throttler.guard';
 @Module({
   imports: [
+    JwtModule.register({}),
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
@@ -61,6 +67,17 @@ import { MarketModule } from './domain/market/market.module';
               'req.headers.x-api-key',
               'res.headers["set-cookie"]',
               'req.body.password',
+              'req.body.otp',
+              'req.body.code',
+              'req.body.email',
+              'req.body.phone',
+              'req.body.newPassword',
+              'req.body.confirmPassword',
+              'req.body.passwordConfirmation',
+              'req.body.currentPassword',
+              'req.body.pin',
+              'req.body.phoneNumber',
+              'req.body.input',
               'req.body.refreshToken',
               'req.body.token',
               'req.body.apiKey',
@@ -71,6 +88,16 @@ import { MarketModule } from './domain/market/market.module';
               '*.secret',
               '*.privateKey',
               '*.apiKey',
+              '*.otp',
+              '*.email',
+              '*.phone',
+              '*.phoneNumber',
+              '*.newPassword',
+              '*.currentPassword',
+              '*.passwd',
+              '*.token',
+              '*.accessToken',
+              '*.refreshToken',
             ],
             censor: '[REDACTED]',
           },
@@ -81,7 +108,12 @@ import { MarketModule } from './domain/market/market.module';
     RedisModule,
     HealthModule,
     GeospatialModule,
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [
+        { ttl: 60_000, limit: config.get<number>('rateLimitPerMinute', 120) },
+      ],
+    }),
     AuthModule,
     FarmManagementModule,
     MediaModule,
@@ -105,10 +137,13 @@ import { MarketModule } from './domain/market/market.module';
     AiOpsModule,
     ImpactModule,
     MarketModule,
+    YieldModule,
+    DashboardModule,
+    FarmFinanceModule,
   ],
   providers: [
     ApiExceptionFilter,
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: ClientThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

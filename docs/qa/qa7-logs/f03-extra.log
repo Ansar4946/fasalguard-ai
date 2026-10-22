@@ -1,0 +1,4 @@
+PASS F03-17 archive run inputs equal an independent Open-Meteo archive request (same lat/lon/dates) within 0.05 mm :: 25 days 2026-09-21..2026-10-15; max|dET0|=0.0000 max|dRain|=0.0000
+PASS F03-18 season without sowing date -> 409 SEASON_INPUTS_REQUIRED on profile save (no row written) :: 
+PASS F03-19 two seasons on one field: B-owned cycle id cannot be used on A field; deleted season rejected :: 
+SUMMARY pass=3 fail=0 blocked=0

@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type sharpFactory from 'sharp';
 import type {
   VisionDiagnosisProvider,
   VisionInput,
   VisionPrediction,
   VisionQuality,
 } from './vision-diagnosis.provider';
+
+// sharp is CommonJS and the build has no esModuleInterop, so a dynamic import() has no usable .default.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const sharp = require('sharp') as typeof sharpFactory;
 
 interface RoboflowPrediction {
   class?: string;
@@ -34,7 +39,6 @@ export class RoboflowVisionProvider implements VisionDiagnosisProvider {
   constructor(private readonly config: ConfigService) {}
 
   async assessQuality(input: VisionInput): Promise<VisionQuality> {
-    const { default: sharp } = await import('sharp');
     const sample = await sharp(input.image)
       .rotate()
       .resize(256, 256, { fit: 'inside', withoutEnlargement: true })

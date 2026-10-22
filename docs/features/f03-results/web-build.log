@@ -1,0 +1,163 @@
+▲ Next.js 16.2.12 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 33.5s
+  Running TypeScript ...
+  Finished TypeScript in 25.1s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/98) ...
+  Generating static pages using 3 workers (24/98) 
+  Generating static pages using 3 workers (48/98) 
+  Generating static pages using 3 workers (73/98) 
+✓ Generating static pages using 3 workers (98/98) in 2.3s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin/ai-operations
+├ ○ /admin/billing
+├ ○ /admin/feedback
+├ ○ /admin/funnel
+├ ○ /admin/impact
+├ ○ /admin/pilot
+├ ○ /alerts
+├ ○ /analytics
+├ ƒ /api/admin/ai-operations
+├ ƒ /api/admin/ai-operations/export.csv
+├ ƒ /api/admin/billing/payments
+├ ƒ /api/admin/billing/payments/[id]/reject
+├ ƒ /api/admin/billing/payments/[id]/verify
+├ ƒ /api/admin/billing/plans
+├ ƒ /api/admin/billing/plans/[code]/stripe-price
+├ ƒ /api/admin/billing/revenue
+├ ƒ /api/admin/billing/stripe-status
+├ ƒ /api/admin/feedback
+├ ƒ /api/admin/feedback/[id]/publish
+├ ƒ /api/admin/feedback/[id]/unpublish
+├ ƒ /api/admin/feedback/report
+├ ƒ /api/admin/feedback/testimonial-candidates
+├ ƒ /api/admin/funnel
+├ ƒ /api/admin/impact
+├ ƒ /api/admin/pilot/enrollments
+├ ƒ /api/admin/pilot/enrollments/[id]/complete
+├ ƒ /api/admin/pilot/enrollments/[id]/drop
+├ ƒ /api/admin/pilot/summary
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/me
+├ ƒ /api/auth/onboarding
+├ ƒ /api/auth/password/setup
+├ ƒ /api/billing/plans
+├ ƒ /api/billing/stripe/checkout-session
+├ ƒ /api/billing/subscription
+├ ƒ /api/billing/upgrade-request
+├ ƒ /api/billing/usage
+├ ƒ /api/crop-scans
+├ ƒ /api/crop-scans/[id]
+├ ƒ /api/crop-scans/[id]/analyse
+├ ƒ /api/crop-scans/[id]/images
+├ ƒ /api/crop-scans/[id]/observations
+├ ƒ /api/crop-scans/[id]/severity
+├ ƒ /api/crops
+├ ƒ /api/farms
+├ ƒ /api/farms/[farmId]
+├ ƒ /api/farms/[farmId]/digital-twin
+├ ƒ /api/farms/[farmId]/fields
+├ ƒ /api/farms/[farmId]/geojson
+├ ƒ /api/farms/[farmId]/impact-summary
+├ ƒ /api/farms/[farmId]/incidents/[incidentId]/confirm
+├ ƒ /api/farms/[farmId]/incidents/[incidentId]/follow-up
+├ ƒ /api/fields/[id]
+├ ƒ /api/fields/[id]/geojson
+├ ƒ /api/fields/[id]/satellite-comparison
+├ ƒ /api/fields/[id]/satellite-scans
+├ ƒ /api/fields/[id]/summary
+├ ƒ /api/fields/[id]/weather/current
+├ ƒ /api/fields/[id]/weather/forecast
+├ ƒ /api/fields/[id]/weather/risks
+├ ƒ /api/fields/[id]/weather/suitability
+├ ƒ /api/geocode
+├ ƒ /api/geocode/reverse
+├ ƒ /api/growth/feedback/events
+├ ƒ /api/growth/landing-view
+├ ƒ /api/growth/pilot-leads
+├ ƒ /api/growth/referral
+├ ƒ /api/growth/testimonials
+├ ƒ /api/irrigation/[...path]
+├ ƒ /api/market/history
+├ ƒ /api/market/prices
+├ ƒ /api/media/[id]/access-url
+├ ƒ /api/satellite-scans/[id]
+├ ƒ /api/satellite-scans/[id]/evidence
+├ ƒ /api/satellite-scans/[id]/layers
+├ ƒ /api/satellite-scans/[id]/layers/[type]/content
+├ ƒ /api/satellite-scans/[id]/statistics
+├ ƒ /api/satellite-scans/[id]/stress-zones
+├ ƒ /api/tasks/[id]/complete
+├ ƒ /api/uploads/complete
+├ ƒ /api/uploads/presign
+├ ○ /assistant
+├ ○ /billing/upgrade
+├ ○ /consultations
+├ ƒ /crop-health/[assessmentId]
+├ ƒ /dashboard
+├ ○ /expert
+├ ○ /expert/cases
+├ ● /expert/cases/[caseId]
+│ ├ /expert/cases/FG-8821
+│ ├ /expert/cases/FG-8819
+│ ├ /expert/cases/FG-8816
+│ └ /expert/cases/FG-8812
+├ ○ /expert/consultations
+├ ○ /expert/outbreaks
+├ ○ /expert/reports
+├ ƒ /farms
+├ ƒ /farms/[farmId]
+├ ƒ /farms/[farmId]/edit
+├ ƒ /farms/[farmId]/fields
+├ ○ /farms/new
+├ ○ /feedback
+├ ○ /fields
+├ ○ /government
+├ ○ /government/advisories
+├ ○ /government/districts
+├ ○ /government/impact
+├ ○ /government/reports
+├ ○ /irrigation
+├ ○ /join
+├ ○ /learning
+├ ● /learning/[slug]
+│ ├ /learning/cotton-leaf-curl
+│ ├ /learning/whitefly-monitoring
+│ ├ /learning/nitrogen-deficiency
+│ └ [+2 more paths]
+├ ƒ /login
+├ ○ /market-intelligence
+├ ○ /onboarding
+├ ○ /onboarding/complete
+├ ○ /onboarding/farm
+├ ○ /onboarding/personal
+├ ○ /onboarding/setup
+├ ○ /pricing
+├ ○ /radar
+├ ○ /satellite
+├ ○ /scan
+├ ○ /scan/analysis
+├ ƒ /scan/results
+├ ○ /scan/symptoms
+├ ○ /scan/upload
+├ ƒ /set-password
+├ ○ /tasks
+├ ƒ /testimonials
+└ ƒ /weather
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+
+exit=0

@@ -1,0 +1,29 @@
+{
+  "status": "RUN_PASS",
+  "fields": [
+    {
+      "id": "78d04471-779c-44f1-a625-889e2930e716",
+      "version": 2,
+      "valid": true,
+      "srid": 4326,
+      "rings": 2,
+      "hectares": 0.37059580283015964,
+      "area_m2": 3705.9580283015966,
+      "source": "MAP_DRAWN",
+      "gps_samples": 0
+    },
+    {
+      "id": "75f791b1-aee1-437a-a00b-d1fe34018600",
+      "version": 2,
+      "valid": true,
+      "srid": 4326,
+      "rings": 1,
+      "hectares": 0.09529543097615242,
+      "area_m2": 952.9543097615242,
+      "source": "GPS_CAPTURE",
+      "gps_samples": 4
+    }
+  ],
+  "importReceipts": 1,
+  "coordinatesOmitted": true
+}

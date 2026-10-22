@@ -1,4 +1,5 @@
 import type { MarketPriceObservation } from './market-price.provider';
+import { dateAgeDays } from '../market-data-policy';
 
 export class AmisParseError extends Error {}
 
@@ -31,7 +32,9 @@ function decodeHtml(value: string): string {
 }
 
 function textContent(value: string): string {
-  return decodeHtml(value.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  return decodeHtml(value.replace(/<[^>]*>/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export function normalizeCropName(value: string): string {
@@ -45,11 +48,20 @@ export function normalizeCropName(value: string): string {
     ricebasmatisupernew: 'Rice',
     sugarcane: 'Sugarcane',
   };
-  return aliases[key] ?? value.replace(/\s+/g, ' ').trim().replace(/\b\w/g, (x) => x.toUpperCase());
+  return (
+    aliases[key] ??
+    value
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\b\w/g, (x) => x.toUpperCase())
+  );
 }
 
 export function normalizeMarketName(value: string): string {
-  const cleaned = value.replace(/^\d+\s*/, '').replace(/\s+/g, ' ').trim();
+  const cleaned = value
+    .replace(/^\d+\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   const key = cleaned.toLocaleLowerCase('en').replace(/[^a-z]/g, '');
   return MARKET_NAMES[key] ?? cleaned.replace(/\b\w/g, (x) => x.toUpperCase());
 }
@@ -83,7 +95,27 @@ export function parseAmisCommodityPage(
   cropName: string,
   sourceUrl: string,
 ): MarketPriceObservation[] {
+  const heading = /<span\b[^>]*\bid=["']ctl00_cphPage_lblMsg["'][^>]*>([\s\S]*?)<\/span>/i.exec(
+    html,
+  );
+  const identity = (value: string): string =>
+    textContent(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+  if (!heading || identity(heading[1] ?? '') !== identity(cropName))
+    throw new AmisParseError('AMIS selected commodity does not match the requested commodity.');
+  const units = [
+    ...textContent(html).matchAll(/\b(?:Rs\.?|PKR|Rupees)\s*(?:\/|per)\s*(\d+)\s*kg\b/gi),
+  ];
+  if (!units.length || units.some((match) => Number(match[1]) !== 100))
+    throw new AmisParseError(
+      'AMIS quantity unit is missing or unsupported; expected PKR per 100 KG.',
+    );
   const priceDate = parsePriceDate(html);
+  if (dateAgeDays(priceDate) === null)
+    throw new AmisParseError('AMIS price date is invalid or in the future.');
+  if (!/\bGraph\s+Min\s+Max\s+FQP\b/i.test(textContent(html)))
+    throw new AmisParseError('AMIS price table column contract is missing.');
   const records: MarketPriceObservation[] = [];
   const rows = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi) ?? [];
   for (const row of rows) {
@@ -96,12 +128,17 @@ export function parseAmisCommodityPage(
     const averagePrice = parsePrice(cells[4] ?? '');
     if (minimumPrice === null || maximumPrice === null || averagePrice === null) continue;
     const market = normalizeMarketName(cells[0] ?? '');
-    if (!market || minimumPrice > maximumPrice || averagePrice < minimumPrice || averagePrice > maximumPrice)
+    if (
+      !market ||
+      minimumPrice > maximumPrice ||
+      averagePrice < minimumPrice ||
+      averagePrice > maximumPrice
+    )
       continue;
     records.push({
       crop: normalizeCropName(cropName),
       market,
-      district: market,
+      district: 'Unknown',
       province: 'Punjab',
       minimumPrice,
       maximumPrice,
@@ -110,10 +147,10 @@ export function parseAmisCommodityPage(
       unit: 'KG',
       source: 'AMIS',
       priceDate,
-      sourceIdentifier: `AMIS:${cropName}:${market}:${priceDate}`,
+      sourceIdentifier: `AMIS:${textContent(heading[1] ?? '')}:${market}:${priceDate}`,
       sourceUrl,
     });
   }
-  if (!records.length) throw new AmisParseError(`AMIS returned no usable prices for ${cropName}`);
+
   return records;
 }

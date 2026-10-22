@@ -1,0 +1,25 @@
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+  /usr/local/lib/python3.12/site-packages/rasterio/transform.py:178: PendingDeprecationWarning: Use `@` matmul instead of `*` mul operator for matrix multiplication
+    return Affine.translation(west, north) * Affine.scale(xsize, -ysize)
+
+tests/satellite/test_raster.py: 24 warnings
+  /usr/local/lib/python3.12/site-packages/rasterio/windows.py:360: PendingDeprecationWarning: Use `@` matmul instead of `*` mul operator for matrix multiplication
+    x, y = transform * (window.col_off or 0.0, window.row_off or 0.0)
+
+tests/satellite/test_raster.py: 24 warnings
+  /usr/local/lib/python3.12/site-packages/rasterio/windows.py:361: PendingDeprecationWarning: Use `@` matmul instead of `*` mul operator for matrix multiplication
+    return Affine.translation(
+
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+tests/satellite/test_raster.py::test_actual_geotiff_processing_aligns_scl_and_masks_all_outputs
+  /usr/local/lib/python3.12/site-packages/rasterio/transform.py:189: PendingDeprecationWarning: Use `@` matmul instead of `*` mul operator for matrix multiplication
+    return Affine.translation(west, north) * Affine.scale(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+215 passed, 6 skipped, 40 deselected, 78 warnings in 27.16s

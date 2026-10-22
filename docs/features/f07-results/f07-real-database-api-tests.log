@@ -1,0 +1,16 @@
+COMMAND: docker exec isolated-f07-core jest market-workflow integration
+PASS test/market-workflow.integration-spec.ts (61.811 s)
+  F07 actual PostgreSQL and authenticated API workflow
+    ✓ concurrent identical retries persist one observation (433 ms)
+    ✓ conflicts are explicit and leave the original persisted quote unchanged (58 ms)
+    ✓ an invalid second record rolls back the entire batch (54 ms)
+    ✓ unauthenticated, disallowed and revoked sessions cannot read prices (125 ms)
+    ✓ bad limits reject and unknown crops have a truthful empty response (47 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        62.151 s
+Ran all test suites.
+
+EXIT: 0 ERROR: none

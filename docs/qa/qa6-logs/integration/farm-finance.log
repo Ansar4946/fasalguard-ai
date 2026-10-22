@@ -1,0 +1,17 @@
+PASS test/farm-finance.integration-spec.ts (15.91 s)
+  F09 signed USSD expense workflow
+    √ rejects unsigned callbacks and does not write a ledger entry (176 ms)
+    √ replays an identical callback and rejects event-id payload substitution (145 ms)
+    √ persists exactly one confirmed expense and exposes the same receipt to its owner (1235 ms)
+    √ cancels and expires sessions without creating an expense (203 ms)
+    √ audits phone mismatch and invalidates confirmation after a PIN change (934 ms)
+    √ runs the authenticated web simulator through the same state machine and ledger (665 ms)
+    √ locks repeated wrong PIN attempts without writing an expense (789 ms)
+    √ returns the stored receipt, not a 500, when a confirm outwaits the session lock (4274 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        16.097 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

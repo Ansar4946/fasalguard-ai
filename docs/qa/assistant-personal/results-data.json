@@ -1,0 +1,115 @@
+{
+  "phase": "data",
+  "at": "2026-10-17T04:55:40.469Z",
+  "results": [
+    {
+      "name": "[desktop] \"Warnings for you\" card appears on open with the unread count and top 3 titles",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] \"Read my warnings\" speaks only after a click, using the browser voice",
+      "status": "PASS",
+      "detail": {
+        "spoken": "You have 4 unread warnings. Latest: QA9 FIXTURE Heavy rain expected tomorrow; QA9 FIXTURE Leaf blight reported near your area; QA9 FIXTURE Irrigation task due today."
+      }
+    },
+    {
+      "name": "[desktop] typed English \"which farms do I have\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT You have 1 farm: Golden rice (1 field). From your account Your farms Listen"
+      }
+    },
+    {
+      "name": "[desktop] typed English \"how much did I spend this month\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT Your confirmed expenses this month: PKR 8,262.00 in 4 entries. From your account Your confirmed expenses Listen"
+      }
+    },
+    {
+      "name": "[desktop] typed English \"do I have any warnings\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT You have 4 unread notifications. By type: Outbreak 1; System 1; Task 1; Weather 1. Latest: \"QA9 FIXTURE Heavy rain expected tomorrow\"; \"QA9 FIXTURE Le"
+      }
+    },
+    {
+      "name": "[desktop] fields, crop seasons, category and latest expenses",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] Urdu script, Roman Urdu and Hindi questions are answered in the question language",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] knowledge question is unchanged: no approved guidance -> abstention, no account chip",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] mixed advice question with the stub model: facts plus a note that advice needs approved knowledge",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] answers are stored with their source type and survive a reload",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] dismissing the card hides it; the assistant never marks notifications read",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] Listen on an account answer speaks that answer after a click",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] VOICE path (synthetic English clip + fake mic): record -> real transcription -> Ask -> account answer",
+      "status": "PASS",
+      "detail": {
+        "transcript": "Which farms do I have? Please tell me, which farms do I have? Which farms do I have?",
+        "answer": "ASSISTANT You have 1 farm: Golden rice (1 field). From your account Your farms Listen"
+      }
+    },
+    {
+      "name": "[phone] \"Warnings for you\" card appears on open with the unread count and top 3 titles",
+      "status": "PASS"
+    },
+    {
+      "name": "[phone] \"Read my warnings\" speaks only after a click, using the browser voice",
+      "status": "PASS",
+      "detail": {
+        "spoken": "You have 4 unread warnings. Latest: QA9 FIXTURE Heavy rain expected tomorrow; QA9 FIXTURE Leaf blight reported near your area; QA9 FIXTURE Irrigation task due today."
+      }
+    },
+    {
+      "name": "[phone] typed English \"which farms do I have\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT You have 1 farm: Golden rice (1 field). From your account Your farms Listen"
+      }
+    },
+    {
+      "name": "[phone] typed English \"how much did I spend this month\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT Your confirmed expenses this month: PKR 8,262.00 in 4 entries. From your account Your confirmed expenses Listen"
+      }
+    },
+    {
+      "name": "[phone] typed English \"do I have any warnings\" -> deterministic account answer with the \"From your account\" chip",
+      "status": "PASS",
+      "detail": {
+        "answer": "ASSISTANT You have 4 unread notifications. By type: Outbreak 1; System 1; Task 1; Weather 1. Latest: \"QA9 FIXTURE Heavy rain expected tomorrow\"; \"QA9 FIXTURE Le"
+      }
+    },
+    {
+      "name": "[phone] fields, crop seasons, category and latest expenses",
+      "status": "FAIL",
+      "detail": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "name": "[desktop] a second farmer sees none of the demo farmer data in answers or the card",
+      "status": "PASS"
+    }
+  ]
+}

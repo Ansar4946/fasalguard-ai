@@ -1,0 +1,16 @@
+✔ missing rain stays unknown (2.8304ms)
+✔ rain condition threshold boundaries (0.5195ms)
+✔ hourly fallback uses Pakistan calendar dates rather than browser timezone (64.178ms)
+✔ provider daily aggregate takes precedence over partial hourly values (4.3989ms)
+✔ invalid timestamps and nonfinite measurements cannot produce numbers (7.2202ms)
+✔ legacy fixed-offset provider metadata cannot crash Intl formatting (1.2379ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1227.6652
+
+exit=0

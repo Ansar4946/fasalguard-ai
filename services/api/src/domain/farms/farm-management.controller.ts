@@ -31,6 +31,11 @@ import { FarmManagementService } from './farm-management.service';
 export class FarmManagementController {
   constructor(private readonly farms: FarmManagementService) {}
 
+  @Get('crops')
+  crops(): Promise<unknown[]> {
+    return this.farms.listCrops();
+  }
+
   @Get('farms')
   list(@CurrentPrincipal() principal: AuthPrincipal): Promise<unknown[]> {
     return this.farms.listFarms(principal.userId);

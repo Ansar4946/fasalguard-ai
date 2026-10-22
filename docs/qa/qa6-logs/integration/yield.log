@@ -1,0 +1,70 @@
+FAIL test/yield.integration-spec.ts (6.92 s)
+  F13 yield reference on PostgreSQL
+    √ runtime starts empty: nothing is seeded by migrations (27 ms)
+    √ requires authentication and an allowed role (114 ms)
+    √ rejects missing or oversized query parameters (36 ms)
+    √ unknown district returns insufficient_data with no prediction (20 ms)
+    √ rejects the whole file when any row lacks provenance and writes nothing (6 ms)
+    × imports with conversion, aggregates, and re-import is idempotent (136 ms)
+    × serves reference ranges for n>=5 with provenance and licence caveat (39 ms)
+    √ returns insufficient_data without any range when n < 5 (24 ms)
+    √ never overwrites: a different value for an existing key rejects the whole file (36 ms)
+    √ database constraints independently refuse rows without provenance (107 ms)
+
+  ● F13 yield reference on PostgreSQL › imports with conversion, aggregates, and re-import is idempotent
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "created_by": "f13-test",
+        "import_batch_id": "f16fad34-2b85-4293-9957-7edd45ef9f4e",
+    -   "kg": 2965.157,
+    +   "kg": 2965.159,
+        "pu": "maund_per_acre",
+        "pv": 30,
+      }
+
+    [0m [90m 156 |[39m       [32m`SELECT published_value::float pv,published_unit pu,yield_kg_per_ha::float kg,created_by,import_batch_id FROM yield_observations WHERE district='alpha' AND year=2015`[39m[33m,[39m
+     [90m 157 |[39m     )[33m;[39m
+    [31m[1m>[22m[39m[90m 158 |[39m     expect(stored[[35m0[39m])[33m.[39mtoMatchObject({
+     [90m     |[39m                       [31m[1m^[22m[39m
+     [90m 159 |[39m       pv[33m:[39m [35m30[39m[33m,[39m
+     [90m 160 |[39m       pu[33m:[39m [32m'maund_per_acre'[39m[33m,[39m
+     [90m 161 |[39m       kg[33m:[39m [35m2965.157[39m[33m,[39m[0m
+
+      at Object.<anonymous> (test/yield.integration-spec.ts:158:23)
+
+  ● F13 yield reference on PostgreSQL › serves reference ranges for n>=5 with provenance and licence caveat
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+    -   "maxKgPerHa": 2965.157,
+    +   "maxKgPerHa": 2965.159,
+        "minKgPerHa": 2000,
+        "n": 6,
+        "season": "RABI",
+      }
+
+    [0m [90m 169 |[39m     expect(res[33m.[39mbody)[33m.[39mtoMatchObject({ status[33m:[39m [32m'reference_available'[39m[33m,[39m predictionAvailable[33m:[39m [36mfalse[39m })[33m;[39m
+     [90m 170 |[39m     [36mconst[39m s [33m=[39m res[33m.[39mbody[33m.[39mseasons[[35m0[39m][33m;[39m
+    [31m[1m>[22m[39m[90m 171 |[39m     expect(s)[33m.[39mtoMatchObject({ season[33m:[39m [32m'RABI'[39m[33m,[39m n[33m:[39m [35m6[39m[33m,[39m minKgPerHa[33m:[39m [35m2000[39m[33m,[39m maxKgPerHa[33m:[39m [35m2965.157[39m })[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 172 |[39m     expect(s[33m.[39mmedianKgPerHa)[33m.[39mtoBeCloseTo([35m2250[39m[33m,[39m [35m3[39m)[33m;[39m
+     [90m 173 |[39m     expect(s[33m.[39mp25KgPerHa)[33m.[39mtoBeCloseTo([35m2125[39m[33m,[39m [35m3[39m)[33m;[39m
+     [90m 174 |[39m     expect(s[33m.[39mp75KgPerHa)[33m.[39mtoBeCloseTo([35m2425[39m[33m,[39m [35m3[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (test/yield.integration-spec.ts:171:15)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 8 passed, 10 total
+Snapshots:   0 total
+Time:        7.212 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

@@ -1,0 +1,5 @@
+PASS DB-01 baseline: all probes 200 with the session :: 
+PASS DB-02 PostgreSQL stopped: every endpoint answers quickly with 503/5xx JSON (not 401 logout, not hang); BFF keeps the session cookie :: {"core GET /crop-scans?fieldId":"503/3621ms/SESSION_STORE_UNAVAILABLE","core GET /farms":"503/3353ms/SESSION_STORE_UNAVAILABLE","platform GET weather forecast":"500/5924ms/INTERNAL_ERROR","platform GE
+PASS DB-03 recovery: after PostgreSQL is back (within 60 s) the same session works again on every endpoint without re-login :: recovered after ~10 s
+PASS DB-04 Redis stopped: farm/field/geometry/irrigation reads still work; analyse/satellite queue endpoints give typed errors, no data loss :: {"core GET /crop-scans?fieldId":200,"core GET /farms":200,"platform GET weather forecast":200,"platform GET satellite scans":200,"platform GET irrigation context":200,"platform GET farm geojson export
+SUMMARY pass=4 fail=0 blocked=0

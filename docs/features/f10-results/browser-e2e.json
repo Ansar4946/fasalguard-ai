@@ -1,0 +1,67 @@
+{
+  "status": "RUN_PASS",
+  "passed": 15,
+  "failed": 0,
+  "results": [
+    {
+      "name": "unauthenticated page redirects to login; BFF routes return 401",
+      "status": "PASS"
+    },
+    {
+      "name": "empty state is shown for a farmer with no questions; farm list loads",
+      "status": "PASS"
+    },
+    {
+      "name": "cross-origin mutation is rejected by the BFF",
+      "status": "PASS"
+    },
+    {
+      "name": "question with matching approved fixture reaches retrieval; fake provider cannot cite so the UI shows \"no approved guidance\"",
+      "status": "PASS"
+    },
+    {
+      "name": "question with no approved match abstains without calling a provider (language-matched message)",
+      "status": "PASS"
+    },
+    {
+      "name": "Urdu and Hindi questions retrieve language-specific approved fixtures (provider called)",
+      "status": "PASS"
+    },
+    {
+      "name": "a draft article is never retrieved",
+      "status": "PASS"
+    },
+    {
+      "name": "reload restores the saved conversation history",
+      "status": "PASS"
+    },
+    {
+      "name": "RENDERING ONLY (stand-in reply): a grounded answer shows its sources; Urdu text is rendered right-to-left",
+      "status": "PASS"
+    },
+    {
+      "name": "provider outage (HTTP 503) shows an error, keeps the typed question, and Retry reuses the same idempotency key",
+      "status": "PASS"
+    },
+    {
+      "name": "malformed reply and network abort are errors and append nothing",
+      "status": "PASS"
+    },
+    {
+      "name": "farmer B sees none of A history and cannot read A conversation through the BFF",
+      "status": "PASS"
+    },
+    {
+      "name": "input validation at the BFF: bad language, empty and oversized messages",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile viewport (375px): no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "revoked session: history shows session-ended and sending is disabled",
+      "status": "PASS"
+    }
+  ]
+}

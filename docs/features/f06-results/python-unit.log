@@ -1,0 +1,10 @@
+..............                                                           [100%]
+============================== warnings summary ===============================
+..\..\..\f06-tools\python312\Lib\site-packages\fastapi\testclient.py:1
+  D:\Fasal Guard Development Workspace\f06-tools\python312\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+14 passed, 4 deselected, 1 warning in 8.24s
+
+exit=0

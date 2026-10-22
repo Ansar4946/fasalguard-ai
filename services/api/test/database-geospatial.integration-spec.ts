@@ -70,7 +70,7 @@ integration('PostgreSQL/PostGIS foundation', () => {
       [`spatial-${Date.now()}@test.invalid`],
     )) as Array<{ id: string }>;
     const farmer = (await runner.query(
-      `INSERT INTO farmer_profiles(user_id,full_name) VALUES($1,'Spatial Test Farmer') RETURNING id`,
+      `INSERT INTO farmer_profiles(user_id,full_name,referral_code) VALUES($1,'Spatial Test Farmer',left(replace(gen_random_uuid()::text,'-',''),12)) RETURNING id`,
       [user[0]?.id],
     )) as Array<{ id: string }>;
     const metrics = await service.inspectPolygon(farmBoundary, runner.manager);

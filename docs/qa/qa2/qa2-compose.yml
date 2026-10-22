@@ -1,0 +1,80 @@
+name: qa2
+x-env: &env
+  NODE_ENV: development
+  PORT: 4022
+  DATABASE_URL: postgresql://qa2:${QA2_PG}@postgres:5432/qa2
+  DATABASE_SSL: "false"
+  REDIS_URL: redis://redis:6379
+  LOG_LEVEL: info
+  CORS_ORIGINS: http://localhost:3022
+  ENFORCE_FIELD_WITHIN_FARM: "true"
+  JWT_ACCESS_SECRET: ${QA2_JWT}
+  JWT_ISSUER: fasalguard-api
+  JWT_AUDIENCE: fasalguard-clients
+  ACCESS_TOKEN_TTL_SECONDS: "3600"
+  REFRESH_TOKEN_TTL_DAYS: "1"
+  OTP_PROVIDER: development
+  WEB_APP_URL: http://localhost:3022
+  OBJECT_STORAGE_PROVIDER: local-disk
+  MEDIA_LOCAL_DIR: /data/media
+  API_PUBLIC_URL: http://localhost:4022/api/v1
+  SPEECH_PROVIDER: fake
+  SPEECH_STT_PROVIDER: assemblyai
+  ASSEMBLYAI_API_KEY: ${ASSEMBLYAI_API_KEY}
+  ASSISTANT_PROVIDER: fake
+  AMIS_SYNC_ENABLED: "true"
+  AMIS_BASE_URL: http://www.amis.pk
+services:
+  postgres:
+    image: postgis/postgis:17-3.5-alpine
+    container_name: qa2-postgres
+    environment: { POSTGRES_DB: qa2, POSTGRES_USER: qa2, POSTGRES_PASSWORD: "${QA2_PG}" }
+    ports: ["127.0.0.1:55442:5432"]
+    healthcheck: { test: ["CMD-SHELL","pg_isready -U qa2 -d qa2"], interval: 3s, retries: 30 }
+  redis:
+    image: redis:7.4-alpine
+    container_name: qa2-redis
+    ports: ["127.0.0.1:56442:6379"]
+    healthcheck: { test: ["CMD","redis-cli","ping"], interval: 3s, retries: 20 }
+  media-init:
+    image: node:22-alpine
+    container_name: qa2-media-init
+    command: ["sh","-c","mkdir -p /data/media && chown -R node:node /data/media"]
+    volumes: ["qa2_media:/data/media"]
+    restart: "no"
+  migrate:
+    build: { context: "D:/Fasal Guard Development Workspace/fasalguard-ai/services/api", dockerfile: "C:/Users/Penta Squad/AppData/Local/Temp/claude/d--Fasal-Guard-Development-Workspace/cb1a9047-d050-42b5-8334-4d2b713f4456/scratchpad/qa2-api.Dockerfile", target: production }
+    image: qa2-api:latest
+    container_name: qa2-migrate
+    command: ["npm","run","migration:run:prod"]
+    environment: { DATABASE_URL: "postgresql://qa2:${QA2_PG}@postgres:5432/qa2", DATABASE_SSL: "false" }
+    depends_on: { postgres: { condition: service_healthy } }
+    restart: "no"
+  api:
+    image: qa2-api:latest
+    container_name: qa2-api
+    environment: *env
+    ports: ["127.0.0.1:4022:4022"]
+    volumes: ["qa2_media:/data/media"]
+    depends_on:
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      media-init: { condition: service_completed_successfully }
+  worker:
+    image: qa2-api:latest
+    container_name: qa2-worker
+    command: ["node","dist/worker.js"]
+    environment: { <<: *env, PROCESS_ROLE: worker }
+    volumes: ["qa2_media:/data/media"]
+    depends_on: { api: { condition: service_started } }
+  web:
+    build: { context: "D:/Fasal Guard Development Workspace/fasalguard-ai", dockerfile: Dockerfile.web }
+    image: qa2-web:latest
+    container_name: qa2-web
+    environment:
+      FASALGUARD_API_URL: http://api:4022/api/v1
+      NODE_ENV: development # QA: production mode requires an HTTPS canonical WEB_APP_URL (origin-policy.ts); isolated HTTP stack
+      WEB_APP_URL: http://localhost:3022
+    ports: ["127.0.0.1:3022:3000"]
+    depends_on: { api: { condition: service_started } }
+volumes: { qa2_media: {} }

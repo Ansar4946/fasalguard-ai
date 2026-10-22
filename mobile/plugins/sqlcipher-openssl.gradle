@@ -1,0 +1,24 @@
+// expo-sqlite built with SQLCipher links libexpo-sqlite.so against OpenSSL (libcrypto.so), but it
+// declares the OpenSSL AAR `compileOnly`, and AGP does not package prefab shared libraries that no
+// app-level native build consumes. The result was 'dlopen failed: library "libcrypto.so" not found'
+// at runtime and an unopenable encrypted store. This extracts the per-ABI .so files from the same AAR
+// (keep the version equal to node_modules/expo-sqlite/android/build.gradle) into the APK.
+// Applied from android/app/build.gradle by plugins/with-sqlcipher-openssl.js.
+configurations { sqlcipherOpenssl }
+dependencies { sqlcipherOpenssl 'io.github.ronickg:openssl:3.3.2-1@aar' }
+
+def sqlcipherJniDir = layout.buildDirectory.dir('sqlcipher-openssl-jni')
+tasks.register('extractSqlcipherOpenssl', Copy) {
+  from({ zipTree(configurations.sqlcipherOpenssl.singleFile) }) {
+    include 'prefab/modules/*/libs/android.*/*.so'
+    eachFile { f ->
+      // prefab/modules/<module>/libs/android.<abi>/<lib>.so -> <abi>/<lib>.so
+      def abi = f.relativePath.segments[4].replace('android.', '')
+      f.relativePath = new RelativePath(true, abi, f.name)
+    }
+  }
+  includeEmptyDirs = false
+  into sqlcipherJniDir
+}
+android.sourceSets.main.jniLibs.srcDir(sqlcipherJniDir)
+tasks.matching { it.name == 'preBuild' }.configureEach { dependsOn 'extractSqlcipherOpenssl' }

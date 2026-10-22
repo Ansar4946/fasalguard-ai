@@ -1,0 +1,6 @@
+API regression check runner used 180000ms maximum per process.
+TypeScript check: exit0.
+Migration/index scoped ESLint: exit0.
+Full Jest run: exitnull/no completed result within bound; not a passing test result.
+Nest build: exitnull/no completed result within bound; not a successful build.
+Independent F05 results must not be used as F06 regression evidence.

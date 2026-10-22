@@ -1,0 +1,20 @@
+# Exact pins (Phase B blocker B1: floor-only pins resolved SQLAlchemy 2.1 and broke OpenFarm).
+fastapi==0.143.0
+starlette==1.8.0
+uvicorn[standard]==0.34.2
+pydantic==2.11.4
+pydantic-settings==2.9.1
+SQLAlchemy==2.0.40
+psycopg2-binary==2.9.10
+celery[redis]==5.5.2
+redis==5.2.1
+httpx==0.28.1
+PyJWT==2.15.1
+structlog==25.3.0
+Pillow==12.3.0
+numpy==2.2.5
+rasterio==1.4.3
+shapely==2.1.0
+pyfao56==1.4.3
+pandas==2.2.3
+matplotlib==3.10.3

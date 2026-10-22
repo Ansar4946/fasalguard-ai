@@ -1,0 +1,30 @@
+[
+ {
+  "id": "DB-01",
+  "name": "baseline: all probes 200 with the session",
+  "status": "PASS",
+  "detail": "",
+  "ms": 6365
+ },
+ {
+  "id": "DB-02",
+  "name": "PostgreSQL stopped: every endpoint answers quickly with 503/5xx JSON (not 401 logout, not hang); BFF keeps the session cookie",
+  "status": "PASS",
+  "detail": "{\"core GET /crop-scans?fieldId\":\"503/3621ms/SESSION_STORE_UNAVAILABLE\",\"core GET /farms\":\"503/3353ms/SESSION_STORE_UNAVAILABLE\",\"platform GET weather forecast\":\"500/5924ms/INTERNAL_ERROR\",\"platform GET satellite scans\":\"500/3521ms/INTERNAL_ERROR\",\"platform GET irrigation context\":\"500/3484ms/INTERNAL_ERROR\",\"platform GET farm geojson export\":\"500/3481ms/INTERNAL_ERROR\",\"BFF GET /api/farms\":\"503/3365ms/SESSION_STORE_UNAVAILABLE\",\"BFF GET weather forecast\":\"500/3363ms/INTERNAL_ERROR\",\"BFF GET satellite scans\":\"503/17ms/SATELLITE_UNAVAILABLE\"}",
+  "ms": 48673
+ },
+ {
+  "id": "DB-03",
+  "name": "recovery: after PostgreSQL is back (within 60 s) the same session works again on every endpoint without re-login",
+  "status": "PASS",
+  "detail": "recovered after ~10 s",
+  "ms": 11173
+ },
+ {
+  "id": "DB-04",
+  "name": "Redis stopped: farm/field/geometry/irrigation reads still work; analyse/satellite queue endpoints give typed errors, no data loss",
+  "status": "PASS",
+  "detail": "{\"core GET /crop-scans?fieldId\":200,\"core GET /farms\":200,\"platform GET weather forecast\":200,\"platform GET satellite scans\":200,\"platform GET irrigation context\":200,\"platform GET farm geojson export\":200,\"BFF GET /api/farms\":200,\"BFF GET weather forecast\":200,\"BFF GET satellite scans\":200,\"platform POST satellite scan\":\"503/QUEUE_UNAVAILABLE\"}",
+  "ms": 15274
+ }
+]

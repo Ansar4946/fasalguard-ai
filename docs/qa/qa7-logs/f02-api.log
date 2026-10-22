@@ -1,0 +1,19 @@
+PASS F02-01 unauthenticated create/list/get/statistics/layers/comparison -> 401 (platform + BFF); wrong role 403 :: 
+PASS F02-02 foreign / unknown / malformed field -> 404/400, no capture row created :: 
+FAIL F02-03 date/cloud validation: from>=to, >90 days, future end, naive timestamp, cloud -1/101/NaN/"x"/true, unknown props, null body fields :: accepted/5xx: [["cloudBool",202]]
+PASS F02-04 malformed JSON / oversize body -> 400/413/422, no 5xx :: malformed=400 oversize=400
+PASS F02-05 REAL Sentinel Hub: create scan (30-day window, <=30% cloud) -> 202 QUEUED, DB capture + outbox row :: status=QUEUED provider=EARTHSEARCH_STAC
+PASS F02-06 REAL pipeline: beat outbox -> Celery -> STAC catalog search -> raster process -> terminal state (up to 5 min) :: final=COMPLETED acquisition=2026-10-01T06:00:28.594000+00:00 cloud=0.013129 sceneId=S2B_43RBQ_20261001_0_L2A reason=""
+PASS F02-07 indices NDVI/EVI/NDWI: values in physical range, valid-pixel coverage reported, stored in DB, matches API :: [["EVI","0.560",418],["NDMI","0.283",418],["NDVI","0.685",418],["NDWI","-0.630",418]]
+PASS F02-08 layers: owner gets authenticated same-origin URLs; content is a real PNG/TIFF; B gets 404; traversal / unknown type 404 :: types=EVI,EVI_PREVIEW,NDMI,NDMI_PREVIEW,NDVI,NDVI_PREVIEW,NDWI,NDWI_PREVIEW,TRUE_COLOR bytes=3006 magic=49492a00
+PASS F02-09 farmer B cannot read A scan, statistics, layers, list; A list excludes B :: evidence-as-B=404
+PASS F02-10 idempotency: second scan of the same window/field does not duplicate an already published scene (NO_VALID_SCENE, 1 completed capture per scene) :: second=COMPLETED reason=""
+PASS F02-11 cloud filter honesty: maxCloudCoverage=0 on a 3-day window yields NO_VALID_SCENE/CLOUD_BLOCKED (no stats fabricated) :: final=NO_VALID_SCENE stats=0
+PASS F02-12 empty state: field with no captures -> [] list and comparison INSUFFICIENT_HISTORY :: 
+PASS F02-13 boundary change after capture: comparison excludes captures with a different geometry hash (no false trend) :: observations before=2 after-move=2 basis=PREVIOUS_VALID_OBSERVATION (captures keep their own geometry hash)
+PASS F02-14 rate limit: >10 satellite requests/hour per farmer -> 429 :: 202,202,202,202,202,202,202,202,202,202,429,429
+PASS F02-15 web BFF satellite (browser contract): authenticated list + scan JSON reachable through Next :: list=2 B=404
+PASS F02-16 REAL provider outage (Earth Search STAC host unreachable from the worker) -> bounded retries -> FAILED with sanitised code, no statistics, no provider URL/secret leak :: FAILED failureCode=undefined stats=0
+PASS F02-17 recovery: after worker restored, new scan processes again (queue not poisoned) :: COMPLETED
+FAIL F02-18 two scans on one field submitted back-to-back: both reach a terminal state promptly (no 15-minute stall) :: after 150 s states=COMPLETED/QUEUED (second task returned ALREADY_RUNNING and its outbox row was pushed 15 minutes ahead)
+SUMMARY pass=16 fail=2 blocked=0

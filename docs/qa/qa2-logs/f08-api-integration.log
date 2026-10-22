@@ -1,0 +1,38 @@
+FAIL test/media.integration-spec.ts (28.749 s)
+  ● Private direct media uploads › creates short-lived direct private upload authorization and normalizes filenames
+
+
+
+
+
+  ● Private direct media uploads › completes verified uploads and returns only temporary owner access URLs
+
+
+
+
+
+  ● Private direct media uploads › conceals assets from non-owners for completion and access
+
+
+
+
+
+  ● Private direct media uploads › rejects unsupported MIME, excessive size, invalid purpose and unsafe metadata
+
+
+
+
+
+  ● Private direct media uploads › requires authentication
+
+
+
+
+
+PASS test/voice-assistant.integration-spec.ts
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       5 failed, 3 passed, 8 total
+Snapshots:   0 total
+Time:        32.381 s
+Ran all test suites.

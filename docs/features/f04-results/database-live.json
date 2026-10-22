@@ -1,0 +1,12 @@
+{
+  "status": "RUN_PASS",
+  "database": "disposable f03_runtime_test",
+  "fieldId": "59dbe2a8-55c5-4522-8c33-cb19e8526218",
+  "provider": "OPEN_METEO",
+  "generatedAt": "2026-10-14T03:20:39.180931+00:00",
+  "validFrom": "2026-10-13T19:00:00+00:00",
+  "validTo": "2026-10-20T18:00:00+00:00",
+  "hourlyPoints": 168,
+  "dailyPoints": 7,
+  "dataKind": "MODEL_FORECAST"
+}

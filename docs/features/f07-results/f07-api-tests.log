@@ -1,0 +1,31 @@
+COMMAND: node node_modules/jest/bin/jest.js --config jest.config.cjs --runInBand --runTestsByPath test/market-data-policy.spec.ts test/amis-html.parser.spec.ts test/amis-market-price.provider.spec.ts test/market.scheduler.spec.ts
+CWD: services/api
+PASS test/market-data-policy.spec.ts (100.985 s)
+[Nest] 21320  - 10/14/2026, 3:00:00 PM    WARN [MarketService] Market read cache unavailable; reading PostgreSQL.
+[Nest] 21320  - 10/14/2026, 3:00:00 PM    WARN [MarketService] Market database read failed or timed out.
+PASS test/market.scheduler.spec.ts
+FAIL test/amis-market-price.provider.spec.ts
+  ● Test suite failed to run
+
+    [96msrc/domain/market/providers/amis-html.parser.ts[0m:[93m105[0m:[93m28[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | undefined' is not assignable to parameter of type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+
+    [7m105[0m   if (!heading || identity(heading[1]) !== identity(cropName))
+    [7m   [0m [91m                           ~~~~~~~~~~[0m
+
+FAIL test/amis-html.parser.spec.ts
+  ● Test suite failed to run
+
+    [96msrc/domain/market/providers/amis-html.parser.ts[0m:[93m105[0m:[93m28[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | undefined' is not assignable to parameter of type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+
+    [7m105[0m   if (!heading || identity(heading[1]) !== identity(cropName))
+    [7m   [0m [91m                           ~~~~~~~~~~[0m
+
+Test Suites: 2 failed, 2 passed, 4 total
+Tests:       15 passed, 15 total
+Snapshots:   0 total
+Time:        103.662 s
+Ran all test suites within paths "test/market-data-policy.spec.ts", "test/amis-html.parser.spec.ts", "test/amis-market-price.provider.spec.ts", "test/market.scheduler.spec.ts".
+
+EXIT: 1 SIGNAL: null

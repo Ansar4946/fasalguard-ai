@@ -19,6 +19,7 @@ function makeService(opts: {
     priority: number;
     message: string;
   }>;
+  approved?: boolean;
   consentGranted: boolean;
   upsertReturnsRow: boolean;
 }): { service: WeatherAlertService; sendWeatherAlert: jest.Mock; query: jest.Mock } {
@@ -45,9 +46,9 @@ function makeService(opts: {
       conditions: {},
       message: m.message,
       source: 'test',
-      validationStatus: 'DEMO_UNVERIFIED',
-      isExpertApproved: false,
-      recommendationAllowed: false,
+      validationStatus: 'EXPERT_APPROVED',
+      isExpertApproved: opts.approved !== false,
+      recommendationAllowed: opts.approved !== false,
     })),
     recommendationAllowed: false,
     disclaimer: 'demo',
@@ -63,6 +64,23 @@ function makeService(opts: {
 }
 
 describe('WeatherAlertService', () => {
+  it('never emails unverified demo rules even with consent', async () => {
+    const { service, sendWeatherAlert } = makeService({
+      matches: [
+        {
+          category: 'HEAT',
+          suitability: WeatherSuitability.Critical,
+          priority: 1,
+          message: 'Synthetic demo',
+        },
+      ],
+      approved: false,
+      consentGranted: true,
+      upsertReturnsRow: true,
+    });
+    expect(await service.dispatchAlerts()).toEqual({ evaluated: 1, alerted: 0 });
+    expect(sendWeatherAlert).not.toHaveBeenCalled();
+  });
   it('does not alert when the worst match is only CAUTION-level', async () => {
     const { service, sendWeatherAlert } = makeService({
       matches: [
@@ -168,12 +186,12 @@ describe('WeatherAlertService', () => {
             conditions: {},
             message: 'Extreme heat expected.',
             source: 'test',
-            validationStatus: 'DEMO_UNVERIFIED',
-            isExpertApproved: false,
-            recommendationAllowed: false,
+            validationStatus: 'EXPERT_APPROVED',
+            isExpertApproved: true,
+            recommendationAllowed: true,
           },
         ],
-        recommendationAllowed: false,
+        recommendationAllowed: true,
         disclaimer: 'demo',
         ruleProvenance: { hasExpertApprovedRules: false, demoRuleCount: 1 },
       });

@@ -1,0 +1,208 @@
+{
+  "status": "PASS",
+  "captureId": "99477595-b04d-4a34-85a8-80b8519361b1",
+  "acquisitionDate": "2025-01-09T06:00:27.940000+00:00",
+  "provider": "EARTHSEARCH_STAC",
+  "statistics": [
+    {
+      "index": "EVI",
+      "statistics": {
+        "max": 0.7035126686096191,
+        "min": 0.06339830160140991,
+        "mean": 0.34824493527412415,
+        "fieldPixelCount": 428,
+        "validPixelCount": 428,
+        "processingVersion": "f02-reflectance-scl-v2",
+        "validPixelPercentage": 100,
+        "maskedCloudPercentage": 0,
+        "maskedPixelPercentage": 0
+      },
+      "createdAt": "2026-10-13T17:57:38.850045+00:00"
+    },
+    {
+      "index": "NDMI",
+      "statistics": {
+        "max": 0.46959343552589417,
+        "min": -0.05888567492365837,
+        "mean": 0.2038014531135559,
+        "fieldPixelCount": 428,
+        "validPixelCount": 428,
+        "processingVersion": "f02-reflectance-scl-v2",
+        "validPixelPercentage": 100,
+        "maskedCloudPercentage": 0,
+        "maskedPixelPercentage": 0
+      },
+      "createdAt": "2026-10-13T17:57:38.850045+00:00"
+    },
+    {
+      "index": "NDVI",
+      "statistics": {
+        "max": 0.869978129863739,
+        "min": 0.10758379846811295,
+        "mean": 0.5139939785003662,
+        "fieldPixelCount": 428,
+        "validPixelCount": 428,
+        "processingVersion": "f02-reflectance-scl-v2",
+        "validPixelPercentage": 100,
+        "maskedCloudPercentage": 0,
+        "maskedPixelPercentage": 0
+      },
+      "createdAt": "2026-10-13T17:57:38.850045+00:00"
+    },
+    {
+      "index": "NDWI",
+      "statistics": {
+        "max": -0.15884245932102203,
+        "min": -0.7478837966918945,
+        "mean": -0.4953218996524811,
+        "fieldPixelCount": 428,
+        "validPixelCount": 428,
+        "processingVersion": "f02-reflectance-scl-v2",
+        "validPixelPercentage": 100,
+        "maskedCloudPercentage": 0,
+        "maskedPixelPercentage": 0
+      },
+      "createdAt": "2026-10-13T17:57:38.850045+00:00"
+    }
+  ],
+  "privateLayers": 9,
+  "comparison": {
+    "fieldId": "da51b9d3-a52e-48b3-a6e6-b85d7bfa5c57",
+    "comparisonBasis": "PREVIOUS_VALID_OBSERVATION",
+    "observations": [
+      {
+        "captureId": "401e29a9-1f24-4e6b-b897-f5a39e037e08",
+        "acquisitionDate": "2026-10-01T06:00:28.594000+00:00",
+        "geometry_hash": "e176a83b06c652e120002d1fabef56b8643b0b1c127fc70aeb2e483aa1c9083d",
+        "grid": {
+          "crs": "EPSG:32643",
+          "width": 21,
+          "height": 23,
+          "transform": [
+            10,
+            0,
+            213530,
+            0,
+            -10,
+            3433690
+          ]
+        },
+        "statistics": {
+          "EVI": {
+            "max": 0.7193987369537354,
+            "min": 0.20625938475131989,
+            "mean": 0.5692752599716187,
+            "fieldPixelCount": 428,
+            "validPixelCount": 428,
+            "processingVersion": "f02-reflectance-scl-v2",
+            "validPixelPercentage": 100,
+            "maskedCloudPercentage": 0,
+            "maskedPixelPercentage": 0
+          },
+          "NDMI": {
+            "max": 0.3966836631298065,
+            "min": 0.013684946112334728,
+            "mean": 0.314510315656662,
+            "fieldPixelCount": 428,
+            "validPixelCount": 428,
+            "processingVersion": "f02-reflectance-scl-v2",
+            "validPixelPercentage": 100,
+            "maskedCloudPercentage": 0,
+            "maskedPixelPercentage": 0
+          },
+          "NDVI": {
+            "max": 0.7864724397659302,
+            "min": 0.261456698179245,
+            "mean": 0.6905285716056824,
+            "fieldPixelCount": 428,
+            "validPixelCount": 428,
+            "processingVersion": "f02-reflectance-scl-v2",
+            "validPixelPercentage": 100,
+            "maskedCloudPercentage": 0,
+            "maskedPixelPercentage": 0
+          },
+          "NDWI": {
+            "max": -0.32234853506088257,
+            "min": -0.7224938869476318,
+            "mean": -0.624642014503479,
+            "fieldPixelCount": 428,
+            "validPixelCount": 428,
+            "processingVersion": "f02-reflectance-scl-v2",
+            "validPixelPercentage": 100,
+            "maskedCloudPercentage": 0,
+            "maskedPixelPercentage": 0
+          }
+        },
+        "healthScore": null
+      },
+      {
+        "captureId": "99477595-b04d-4a34-85a8-80b8519361b1",
+        "acquisitionDate": "2025-01-09T06:00:27.940000+00:00",
+        "geometry_hash": "e176a83b06c652e120002d1fabef56b8643b0b1c127fc70aeb2e483aa1c9083d",
+        "grid": {
+          "crs": "EPSG:32643",
+          "width": 21,
+          "height": 23,
+          "transform": [
+            10,
+            0,
+            213530,
+            0,
+            -10,
+            3433690
+          ]
+        },
+        "statistics": {
+          "EVI": {
+            "max": 0.7035126686096191,
+            "min": 0.06339830160140991,
+            "mean": 0.34824493527412415,
+            "fieldPixelCount": 428,
+            "validPixelCount": 428,
+            "processingVersion": "f02-reflectance-scl-v2",
+            "validPixelPercentage": 100,
+            "maskedCloudPercentage": 0,
+            "maskedPixelPercentage": 0
+          },
+          "NDMI": {
+            "max": 0.46959343552589417,
+            "min": -0.05888567492365837,
+            "mean": 0.2038014531135559,
+            "fieldPixelCount": 428,
+            "validPixelCount": 428,
+            "processingVersion": "f02-reflectance-scl-v2",
+            "validPixelPercentage": 100,
+            "maskedCloudPercentage": 0,
+            "maskedPixelPercentage": 0
+          },
+          "NDVI": {
+            "max": 0.869978129863739,
+            "min": 0.10758379846811295,
+            "mean": 0.5139939785003662,
+            "fieldPixelCount": 428,
+            "validPixelCount": 428,
+            "processingVersion": "f02-reflectance-scl-v2",
+            "validPixelPercentage": 100,
+            "maskedCloudPercentage": 0,
+            "maskedPixelPercentage": 0
+          },
+          "NDWI": {
+            "max": -0.15884245932102203,
+            "min": -0.7478837966918945,
+            "mean": -0.4953218996524811,
+            "fieldPixelCount": 428,
+            "validPixelCount": 428,
+            "processingVersion": "f02-reflectance-scl-v2",
+            "validPixelPercentage": 100,
+            "maskedCloudPercentage": 0,
+            "maskedPixelPercentage": 0
+          }
+        },
+        "healthScore": null
+      }
+    ]
+  },
+  "legacyLayerFallback": true,
+  "otherUserCaptureAndMediaDenied": true,
+  "trendUiVerified": true
+}

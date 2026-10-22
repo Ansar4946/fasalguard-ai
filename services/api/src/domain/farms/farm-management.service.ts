@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { Feature, Point, Polygon } from 'geojson';
 import { DataSource, type EntityManager } from 'typeorm';
@@ -25,6 +30,7 @@ interface FarmRow {
   boundary: Polygon;
   centroid: Point;
   areaHectares: number;
+  version: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +42,7 @@ interface FieldRow {
   boundary: Polygon;
   centroid: Point;
   areaHectares: number;
+  version: number;
   createdAt: Date;
   updatedAt: Date;
   currentCropCycle: unknown;
@@ -49,6 +56,15 @@ export class FarmManagementService {
     private readonly entitlements: EntitlementService,
   ) {}
 
+  /** Active reference crops with their active varieties, for crop-cycle pickers. */
+  listCrops(): Promise<unknown[]> {
+    return this.db.query(
+      `SELECT c.id,c.slug,c.name,COALESCE(jsonb_agg(jsonb_build_object('id',v.id,'name',v.name) ORDER BY v.name) FILTER(WHERE v.id IS NOT NULL),'[]') varieties
+       FROM crops c LEFT JOIN crop_varieties v ON v.crop_id=c.id AND v.is_active=true
+       WHERE c.is_active=true GROUP BY c.id ORDER BY c.name`,
+    );
+  }
+
   async listFarms(userId: string): Promise<FarmRow[]> {
     return this.db.query(this.farmSelect(`fp.user_id=$1`), [userId]);
   }
@@ -57,7 +73,7 @@ export class FarmManagementService {
     await this.requireFarm(userId, farmId, this.db.manager);
     return this.db.query(
       `SELECT fi.id,fi.farm_id AS "farmId",fi.name,ST_AsGeoJSON(fi.boundary)::json AS boundary,ST_AsGeoJSON(fi.centroid)::json AS centroid,
-       fi.area_hectares AS "areaHectares",fi.created_at AS "createdAt",fi.updated_at AS "updatedAt",
+       fi.area_hectares AS "areaHectares",fi.version,fi.created_at AS "createdAt",fi.updated_at AS "updatedAt",
        CASE WHEN cc.id IS NULL THEN NULL ELSE json_build_object('id',cc.id,'cropId',cc.crop_id,'varietyId',cc.crop_variety_id,'sowingDate',cc.sowing_date,'expectedHarvestDate',cc.expected_harvest_date,'growthStage',cc.growth_stage,'status',cc.status) END AS "currentCropCycle"
        FROM fields fi
        LEFT JOIN LATERAL (SELECT * FROM crop_cycles x WHERE x.field_id=fi.id AND x.deleted_at IS NULL AND x.status IN ('planned','active') ORDER BY x.created_at DESC LIMIT 1) cc ON true
@@ -111,7 +127,9 @@ export class FarmManagementService {
 
   async updateFarm(userId: string, id: string, dto: UpdateFarmDto): Promise<FarmRow> {
     return this.db.transaction(async (manager) => {
+      await this.lockFarm(manager, id);
       const current = await this.requireFarm(userId, id, manager);
+      this.assertVersion(dto, current.version);
       const boundary = dto.boundary ?? current.boundary;
       const metrics = await this.geo.inspectPolygon(boundary, manager);
       if (dto.boundary) {
@@ -149,6 +167,7 @@ export class FarmManagementService {
 
   async deleteFarm(userId: string, id: string): Promise<void> {
     await this.db.transaction(async (manager) => {
+      await this.lockFarm(manager, id);
       await this.requireFarm(userId, id, manager);
       await manager.query(
         `UPDATE crop_cycles SET deleted_at=now(),updated_at=now(),version=version+1 WHERE field_id IN (SELECT id FROM fields WHERE farm_id=$1 AND deleted_at IS NULL) AND deleted_at IS NULL`,
@@ -167,19 +186,30 @@ export class FarmManagementService {
 
   async createField(userId: string, farmId: string, dto: CreateFieldDto): Promise<FieldRow> {
     return this.db.transaction(async (manager) => {
+      await this.lockFarm(manager, farmId);
       await this.requireFarm(userId, farmId, manager);
       const metrics = await this.geo.inspectPolygon(dto.boundary, manager);
       await this.geo.assertFieldContainedByFarm(farmId, dto.boundary, manager);
-      const rows: Array<{ id: string }> = await manager.query(
-        `INSERT INTO fields(farm_id,name,boundary,centroid,area_hectares) VALUES($1,$2,ST_SetSRID(ST_GeomFromGeoJSON($3),4326),ST_SetSRID(ST_GeomFromGeoJSON($4),4326),$5) RETURNING id`,
-        [
-          farmId,
-          dto.name,
-          JSON.stringify(dto.boundary),
-          JSON.stringify(metrics.centroid),
-          metrics.areaHectares,
-        ],
-      );
+      let rows: Array<{ id: string }>;
+      try {
+        rows = await manager.query(
+          `INSERT INTO fields(farm_id,name,boundary,centroid,area_hectares) VALUES($1,$2,ST_SetSRID(ST_GeomFromGeoJSON($3),4326),ST_SetSRID(ST_GeomFromGeoJSON($4),4326),$5) RETURNING id`,
+          [
+            farmId,
+            dto.name,
+            JSON.stringify(dto.boundary),
+            JSON.stringify(metrics.centroid),
+            metrics.areaHectares,
+          ],
+        );
+      } catch (error) {
+        if ((error as { code?: string }).code === '23505')
+          throw new ConflictException({
+            code: 'FIELD_NAME_EXISTS',
+            message: 'A field with this name already exists on this farm.',
+          });
+        throw error;
+      }
       if (dto.currentCropCycle) {
         const existingSeasons: Array<{ count: string }> = await manager.query(
           `SELECT count(*)::text count FROM crop_cycles cc JOIN fields fi ON fi.id=cc.field_id JOIN farms f ON f.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=f.farmer_id WHERE fp.user_id=$1 AND cc.deleted_at IS NULL AND cc.status IN ('planned','active')`,
@@ -203,13 +233,16 @@ export class FarmManagementService {
 
   async updateField(userId: string, id: string, dto: UpdateFieldDto): Promise<FieldRow> {
     return this.db.transaction(async (manager) => {
+      const initial = await this.requireField(userId, id, manager);
+      await this.lockFarm(manager, initial.farmId);
       const current = await this.requireField(userId, id, manager);
+      this.assertVersion(dto, current.version);
       const boundary = dto.boundary ?? current.boundary;
       const metrics = await this.geo.inspectPolygon(boundary, manager);
       if (dto.boundary)
         await this.geo.assertFieldContainedByFarm(current.farmId, dto.boundary, manager);
       await manager.query(
-        `UPDATE fields SET name=$3,boundary=ST_SetSRID(ST_GeomFromGeoJSON($4),4326),centroid=ST_SetSRID(ST_GeomFromGeoJSON($5),4326),area_hectares=$6,updated_at=now(),version=version+1
+        `UPDATE fields SET name=$3,boundary=ST_SetSRID(ST_GeomFromGeoJSON($4),4326),centroid=ST_SetSRID(ST_GeomFromGeoJSON($5),4326),area_hectares=$6,boundary_metadata=CASE WHEN $7::boolean THEN '{"source":"MAP_DRAWN","isSurvey":false}'::jsonb ELSE boundary_metadata END,updated_at=now(),version=version+1
          WHERE id=$1 AND farm_id IN (SELECT f.id FROM farms f JOIN farmer_profiles fp ON fp.id=f.farmer_id WHERE fp.user_id=$2 AND f.deleted_at IS NULL)`,
         [
           id,
@@ -218,6 +251,7 @@ export class FarmManagementService {
           JSON.stringify(boundary),
           JSON.stringify(metrics.centroid),
           metrics.areaHectares,
+          dto.boundary !== undefined,
         ],
       );
       if (dto.currentCropCycle) await this.replaceCurrentCycle(manager, id, dto.currentCropCycle);
@@ -227,6 +261,8 @@ export class FarmManagementService {
 
   async deleteField(userId: string, id: string): Promise<void> {
     await this.db.transaction(async (manager) => {
+      const initial = await this.requireField(userId, id, manager);
+      await this.lockFarm(manager, initial.farmId);
       await this.requireField(userId, id, manager);
       await manager.query(
         `UPDATE crop_cycles SET deleted_at=now(),updated_at=now(),version=version+1 WHERE field_id=$1 AND deleted_at IS NULL`,
@@ -330,7 +366,7 @@ export class FarmManagementService {
   ): Promise<FieldRow> {
     const rows: FieldRow[] = await manager.query(
       `SELECT fi.id,fi.farm_id AS "farmId",fi.name,ST_AsGeoJSON(fi.boundary)::json AS boundary,ST_AsGeoJSON(fi.centroid)::json AS centroid,
-       fi.area_hectares AS "areaHectares",fi.created_at AS "createdAt",fi.updated_at AS "updatedAt",
+       fi.area_hectares AS "areaHectares",fi.version,fi.created_at AS "createdAt",fi.updated_at AS "updatedAt",
        CASE WHEN cc.id IS NULL THEN NULL ELSE json_build_object('id',cc.id,'cropId',cc.crop_id,'varietyId',cc.crop_variety_id,'sowingDate',cc.sowing_date,'expectedHarvestDate',cc.expected_harvest_date,'growthStage',cc.growth_stage,'status',cc.status) END AS "currentCropCycle"
        FROM fields fi JOIN farms f ON f.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=f.farmer_id
        LEFT JOIN LATERAL (SELECT * FROM crop_cycles WHERE field_id=fi.id AND deleted_at IS NULL AND status IN ('planned','active') ORDER BY created_at DESC LIMIT 1) cc ON true
@@ -343,8 +379,31 @@ export class FarmManagementService {
 
   private farmSelect(predicate: string): string {
     return `SELECT f.id,f.name,f.province,f.district,f.tehsil,f.soil_type AS "soilType",f.irrigation_type AS "irrigationType",f.water_source AS "waterSource",
-      ST_AsGeoJSON(f.boundary)::json AS boundary,ST_AsGeoJSON(f.centroid)::json AS centroid,f.area_hectares AS "areaHectares",f.created_at AS "createdAt",f.updated_at AS "updatedAt"
+      ST_AsGeoJSON(f.boundary)::json AS boundary,ST_AsGeoJSON(f.centroid)::json AS centroid,f.area_hectares AS "areaHectares",f.version,f.created_at AS "createdAt",f.updated_at AS "updatedAt"
       FROM farms f JOIN farmer_profiles fp ON fp.id=f.farmer_id WHERE ${predicate} AND f.deleted_at IS NULL ORDER BY f.created_at DESC`;
+  }
+
+  private async lockFarm(manager: EntityManager, farmId: string): Promise<void> {
+    await manager.query(`SET LOCAL lock_timeout='5s'`);
+    await manager.query(`SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, [
+      `farm-boundary:${farmId}`,
+    ]);
+  }
+
+  private assertVersion(
+    dto: { boundary?: Polygon; expectedVersion?: number },
+    current: number,
+  ): void {
+    if (dto.boundary && dto.expectedVersion === undefined)
+      throw new BadRequestException({
+        code: 'BOUNDARY_VERSION_REQUIRED',
+        message: 'Reload the boundary and supply its version.',
+      });
+    if (dto.expectedVersion !== undefined && dto.expectedVersion !== current)
+      throw new ConflictException({
+        code: 'BOUNDARY_VERSION_CONFLICT',
+        message: 'Boundary changed. Reload before saving.',
+      });
   }
 
   private notFound(resource: string): NotFoundException {

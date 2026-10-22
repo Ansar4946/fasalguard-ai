@@ -1,0 +1,128 @@
+[
+ {
+  "id": "F02-01",
+  "name": "unauthenticated create/list/get/statistics/layers/comparison -> 401 (platform + BFF); wrong role 403",
+  "status": "PASS",
+  "detail": "",
+  "ms": 89
+ },
+ {
+  "id": "F02-02",
+  "name": "foreign / unknown / malformed field -> 404/400, no capture row created",
+  "status": "PASS",
+  "detail": "",
+  "ms": 98
+ },
+ {
+  "id": "F02-03",
+  "name": "date/cloud validation: from>=to, >90 days, future end, naive timestamp, cloud -1/101/NaN/\"x\"/true, unknown props, null body fields",
+  "status": "FAIL",
+  "detail": "accepted/5xx: [[\"cloudBool\",202]]",
+  "ms": 280
+ },
+ {
+  "id": "F02-04",
+  "name": "malformed JSON / oversize body -> 400/413/422, no 5xx",
+  "status": "PASS",
+  "detail": "malformed=400 oversize=400",
+  "ms": 133
+ },
+ {
+  "id": "F02-05",
+  "name": "REAL Sentinel Hub: create scan (30-day window, <=30% cloud) -> 202 QUEUED, DB capture + outbox row",
+  "status": "PASS",
+  "detail": "status=QUEUED provider=EARTHSEARCH_STAC",
+  "ms": 42
+ },
+ {
+  "id": "F02-06",
+  "name": "REAL pipeline: beat outbox -> Celery -> STAC catalog search -> raster process -> terminal state (up to 5 min)",
+  "status": "PASS",
+  "detail": "final=COMPLETED acquisition=2026-10-01T06:00:28.594000+00:00 cloud=0.013129 sceneId=S2B_43RBQ_20261001_0_L2A reason=\"\"",
+  "ms": 70672
+ },
+ {
+  "id": "F02-07",
+  "name": "indices NDVI/EVI/NDWI: values in physical range, valid-pixel coverage reported, stored in DB, matches API",
+  "status": "PASS",
+  "detail": "[[\"EVI\",\"0.560\",418],[\"NDMI\",\"0.283\",418],[\"NDVI\",\"0.685\",418],[\"NDWI\",\"-0.630\",418]]",
+  "ms": 32
+ },
+ {
+  "id": "F02-08",
+  "name": "layers: owner gets authenticated same-origin URLs; content is a real PNG/TIFF; B gets 404; traversal / unknown type 404",
+  "status": "PASS",
+  "detail": "types=EVI,EVI_PREVIEW,NDMI,NDMI_PREVIEW,NDVI,NDVI_PREVIEW,NDWI,NDWI_PREVIEW,TRUE_COLOR bytes=3006 magic=49492a00",
+  "ms": 216
+ },
+ {
+  "id": "F02-09",
+  "name": "farmer B cannot read A scan, statistics, layers, list; A list excludes B",
+  "status": "PASS",
+  "detail": "evidence-as-B=404",
+  "ms": 136
+ },
+ {
+  "id": "F02-10",
+  "name": "idempotency: second scan of the same window/field does not duplicate an already published scene (NO_VALID_SCENE, 1 completed capture per scene)",
+  "status": "PASS",
+  "detail": "second=COMPLETED reason=\"\"",
+  "ms": 61103
+ },
+ {
+  "id": "F02-11",
+  "name": "cloud filter honesty: maxCloudCoverage=0 on a 3-day window yields NO_VALID_SCENE/CLOUD_BLOCKED (no stats fabricated)",
+  "status": "PASS",
+  "detail": "final=NO_VALID_SCENE stats=0",
+  "ms": 15452
+ },
+ {
+  "id": "F02-12",
+  "name": "empty state: field with no captures -> [] list and comparison INSUFFICIENT_HISTORY",
+  "status": "PASS",
+  "detail": "",
+  "ms": 448
+ },
+ {
+  "id": "F02-13",
+  "name": "boundary change after capture: comparison excludes captures with a different geometry hash (no false trend)",
+  "status": "PASS",
+  "detail": "observations before=2 after-move=2 basis=PREVIOUS_VALID_OBSERVATION (captures keep their own geometry hash)",
+  "ms": 229
+ },
+ {
+  "id": "F02-14",
+  "name": "rate limit: >10 satellite requests/hour per farmer -> 429",
+  "status": "PASS",
+  "detail": "202,202,202,202,202,202,202,202,202,202,429,429",
+  "ms": 783
+ },
+ {
+  "id": "F02-15",
+  "name": "web BFF satellite (browser contract): authenticated list + scan JSON reachable through Next",
+  "status": "PASS",
+  "detail": "list=2 B=404",
+  "ms": 158
+ },
+ {
+  "id": "F02-16",
+  "name": "REAL provider outage (Earth Search STAC host unreachable from the worker) -> bounded retries -> FAILED with sanitised code, no statistics, no provider URL/secret leak",
+  "status": "PASS",
+  "detail": "FAILED failureCode=undefined stats=0",
+  "ms": 241956
+ },
+ {
+  "id": "F02-17",
+  "name": "recovery: after worker restored, new scan processes again (queue not poisoned)",
+  "status": "PASS",
+  "detail": "COMPLETED",
+  "ms": 100994
+ },
+ {
+  "id": "F02-18",
+  "name": "two scans on one field submitted back-to-back: both reach a terminal state promptly (no 15-minute stall)",
+  "status": "FAIL",
+  "detail": "after 150 s states=COMPLETED/QUEUED (second task returned ALREADY_RUNNING and its outbox row was pushed 15 minutes ahead)",
+  "ms": 211843
+ }
+]

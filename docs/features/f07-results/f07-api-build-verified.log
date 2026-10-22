@@ -1,0 +1,4 @@
+COMMAND: node node_modules/typescript/bin/tsc -p tsconfig.build.json
+CWD: services/api
+
+EXIT: 0 ERROR: none

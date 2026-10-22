@@ -73,7 +73,12 @@ export class WeatherAlertService {
   private async evaluateAndNotify(field: DueField): Promise<boolean> {
     const assessment = await this.weather.assessField(field.fieldId);
     const risky = assessment.matches
-      .filter((m) => rank[m.suitability] >= rank[WeatherSuitability.Harmful])
+      .filter(
+        (m) =>
+          m.isExpertApproved &&
+          m.recommendationAllowed &&
+          rank[m.suitability] >= rank[WeatherSuitability.Harmful],
+      )
       .sort((a, b) => rank[b.suitability] - rank[a.suitability] || b.priority - a.priority);
     if (!risky.length) return false;
     const seenCategories = new Set<string>();

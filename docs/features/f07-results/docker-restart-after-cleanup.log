@@ -1,0 +1,3 @@
+COMMAND: docker desktop restart --timeout60
+
+EXIT: null ERROR: ETIMEDOUT

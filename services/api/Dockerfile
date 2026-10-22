@@ -12,6 +12,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
+COPY OPENFARM-LICENSE.txt ./licenses/OPENFARM.txt
 USER node
 EXPOSE 4000
 CMD ["node","dist/main.js"]

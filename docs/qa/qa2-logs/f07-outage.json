@@ -1,0 +1,27 @@
+[
+ {
+  "name": "F07-O1 Redis down: prices still served from PostgreSQL (cache degraded, not failed)",
+  "status": "PASS",
+  "detail": "HTTP 200 records=11 cache=MISS"
+ },
+ {
+  "name": "F07-O2 PostgreSQL down: API fails closed (no stale invention) and browser shows an error card with Try again; recovers after restart",
+  "status": "FAIL",
+  "detail": "no error card; API HTTP 401 INVALID_ACCESS_TOKEN | page url=/login errorCard=false login=trueAPI HTTP 401 INVALID_ACCESS_TOKEN | page url=/login errorCard=false login=true | cookiesAfter=NONE"
+ },
+ {
+  "name": "F07-O3 API rate limit (120/min) reached through the BFF without 5xx",
+  "status": "PASS",
+  "detail": "{\"200\":119,\"429\":16}"
+ },
+ {
+  "name": "F07-O4 after a rate-limit burst a valid session is NOT signed out (no redirect to login, cookie kept)",
+  "status": "PASS",
+  "detail": "url=/market-intelligence cookies=fg_access"
+ },
+ {
+  "name": "F07-O5 rate limit is per-user: farmer B unaffected by A burst",
+  "status": "FAIL",
+  "detail": "farmer B got HTTP 429 while only farmer A was bursting (limiter keyed on shared BFF IP)"
+ }
+]

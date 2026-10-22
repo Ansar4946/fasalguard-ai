@@ -126,3 +126,8 @@ The current insight is deterministic demo copy. A future AI recommendation must 
 weather and crop-health evidence, expose uncertainty, and be logged with model/version information.
 It must not promise a future price or present an unsupported confidence score. Farmers should still
 verify crop grade, commission, transport cost, buyer terms and current market rates.
+
+
+## F07 current contract and validation
+
+See [F07 evidence](features/F07.md) for actual checks and blockers. The active dashboard uses apiMarketRepository/getMarketSummary; legacy fixture methods are not a real-price source. Prices retain official observation dates, separate ingestion timestamps and source URLs. Overview means use one source date; weekly movement requires matching markets exactly7 days apart. Source PKR/100kg and displayed PKR/40kg are explicit. Missing forecasts and alert delivery remain unavailable/previews. Districts are not verified; API district:null/districtVerified:false and district filters return400. Automated AMIS synchronization is permission-gated.

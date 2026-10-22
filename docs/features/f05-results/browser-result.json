@@ -1,0 +1,42 @@
+{
+  "status": "RUN_PASS",
+  "checks": [
+    {
+      "name": "GeoJSON file import traverses real UI/BFF/API/PostGIS",
+      "status": "RUN_PASS"
+    },
+    {
+      "name": "Save preserves holes and reload persists version/area",
+      "status": "RUN_PASS"
+    },
+    {
+      "name": "Invalid topology is rejected with a visible retained import",
+      "status": "RUN_PASS"
+    },
+    {
+      "name": "Boundary service outage retains the selected geometry",
+      "status": "RUN_PASS"
+    },
+    {
+      "name": "Simulated GPS corners require confirmation and persist real metadata",
+      "status": "RUN_PASS"
+    },
+    {
+      "name": "GPS permission denial reports an error and adds no corner",
+      "status": "RUN_PASS"
+    },
+    {
+      "name": "Owner boundaries stay private; foreign origin and oversized requests fail",
+      "status": "RUN_PASS"
+    },
+    {
+      "name": "Unavailable map tiles do not block saved field loading",
+      "status": "RUN_PASS"
+    }
+  ],
+  "syntheticDeviceGps": true,
+  "importedFieldIds": [
+    "78d04471-779c-44f1-a625-889e2930e716",
+    "75f791b1-aee1-437a-a00b-d1fe34018600"
+  ]
+}

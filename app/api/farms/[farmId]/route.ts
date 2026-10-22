@@ -6,6 +6,7 @@ import { polygonSchema } from "@/lib/geo/polygon-schema";
 const updateFarmSchema = z.object({
   name: z.string().trim().min(2).max(160).optional(),
   boundary: polygonSchema.optional(),
+  expectedVersion: z.number().int().positive().optional(),
   province: z.string().trim().min(1).max(120).optional(),
   district: z.string().trim().min(1).max(120).optional(),
   tehsil: z.string().trim().min(1).max(120).optional(),

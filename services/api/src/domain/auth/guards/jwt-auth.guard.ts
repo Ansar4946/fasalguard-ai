@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
@@ -36,26 +42,39 @@ export class JwtAuthGuard implements CanActivate {
         code: 'AUTHENTICATION_REQUIRED',
         message: 'A valid bearer token is required.',
       });
+    const invalid = (): UnauthorizedException =>
+      new UnauthorizedException({
+        code: 'INVALID_ACCESS_TOKEN',
+        message: 'The access token is invalid or expired.',
+      });
+    let claims: Claims;
     try {
-      const claims = await this.jwt.verifyAsync<Claims>(header.slice(7), {
+      claims = await this.jwt.verifyAsync<Claims>(header.slice(7), {
         secret: this.config.getOrThrow<string>('jwtAccessSecret'),
         issuer: this.config.getOrThrow<string>('jwtIssuer'),
         audience: this.config.getOrThrow<string>('jwtAudience'),
       });
-      if (claims.type !== 'access') throw new Error('Wrong token type');
-      const rows: Array<{ user_id: string; role: UserRole }> = await this.dataSource.query(
+    } catch {
+      throw invalid();
+    }
+    if (claims.type !== 'access') throw invalid();
+    let rows: Array<{ user_id: string; role: UserRole }>;
+    try {
+      rows = await this.dataSource.query(
         `SELECT s.user_id,u.role FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.id=$1 AND s.user_id=$2 AND s.revoked_at IS NULL AND s.expires_at>now() AND u.status='active' AND u.deleted_at IS NULL`,
         [claims.sid, claims.sub],
       );
-      const active = rows[0];
-      if (!active) throw new Error('Session unavailable');
-      req.user = { userId: active.user_id, sessionId: claims.sid, role: active.role };
-      return true;
     } catch {
-      throw new UnauthorizedException({
-        code: 'INVALID_ACCESS_TOKEN',
-        message: 'The access token is invalid or expired.',
+      // A database failure is not an invalid credential: report it as unavailable
+      // so clients keep the session instead of signing the user out.
+      throw new ServiceUnavailableException({
+        code: 'SESSION_STORE_UNAVAILABLE',
+        message: 'Authentication is temporarily unavailable. Please retry.',
       });
     }
+    const active = rows[0];
+    if (!active) throw invalid();
+    req.user = { userId: active.user_id, sessionId: claims.sid, role: active.role };
+    return true;
   }
 }

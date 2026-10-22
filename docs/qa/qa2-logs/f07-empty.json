@@ -1,0 +1,12 @@
+[
+ {
+  "name": "F07-E1 API empty state is honest: 200 with zero records (no fabricated prices)",
+  "status": "PASS",
+  "detail": "{\"records\":[],\"source\":null,\"freshness\":\"UNAVAILABLE\",\"freshnessPolicy\":{\"timeZone\":\"Asia/Karachi\",\"maxAgeDays\":1},\"generatedAt\":\"2026-10-15T23:02:10.008Z\",\"cache\":\"MISS\",\"forecast\":{\"status\":\"UNAVAILABLE\",\"reason\":\"NO_VALIDATED_FORECAST\",\"message\":\"Historical observations are not price forecasts.\"}"
+ },
+ {
+  "name": "F07-E2 browser empty state: heading \"No AMIS market records\", no price numbers",
+  "status": "PASS",
+  "detail": ""
+ }
+]

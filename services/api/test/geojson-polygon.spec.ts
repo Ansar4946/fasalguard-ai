@@ -15,6 +15,17 @@ const valid: Polygon = {
   ],
 };
 describe('validateGeoJsonPolygon', () => {
+  it.each([null, 1, {}, [], [72], [72, 31, 4], [true, 31]])(
+    'rejects malformed 2D positions: %j',
+    (position) => {
+      expect(() =>
+        validateGeoJsonPolygon({
+          type: 'Polygon',
+          coordinates: [[position, [72.1, 31], [72.1, 31.1], position]],
+        }),
+      ).toThrow(InvalidPolygonError);
+    },
+  );
   it('accepts a closed polygon with valid WGS84 coordinates', () =>
     expect(() => validateGeoJsonPolygon(valid)).not.toThrow());
   it('rejects impossible longitude and latitude', () =>

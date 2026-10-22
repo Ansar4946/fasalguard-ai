@@ -1,0 +1,43 @@
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>if "Windows_NT" == "Windows_NT" setlocal
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>set DIRNAME=D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android\ 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>if "D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android\" == "" set DIRNAME=. 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>set APP_BASE_NAME=gradlew 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>set APP_HOME=D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android\ 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>for %i in ("D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android\") do set APP_HOME=%~fi 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>set APP_HOME=D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android\ 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m" 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>if defined JAVA_HOME goto findJavaFromJavaHome 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>set JAVA_HOME=D:/dev/jdk/jdk-17.0.20.1+1 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>set JAVA_EXE=D:/dev/jdk/jdk-17.0.20.1+1/bin/java.exe 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>if exist "D:/dev/jdk/jdk-17.0.20.1+1/bin/java.exe" goto execute 
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android>"D:/dev/jdk/jdk-17.0.20.1+1/bin/java.exe" "-Xmx64m" "-Xms64m"   "-Dorg.gradle.appname=gradlew" -jar "D:\Fasal Guard Development Workspace\fasalguard-ai\mobile\android\\gradle\wrapper\gradle-wrapper.jar" :app:assembleDebug -PreactNativeArchitectures=x86_64 --no-daemon 
+Downloading https://services.gradle.org/distributions/gradle-9.3.1-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+
+Welcome to Gradle 9.3.1!
+
+Here are the highlights of this release:
+ - Test reporting improvements
+ - Error and warning improvements
+ - Build authoring improvements
+
+For more details see https://docs.gradle.org/9.3.1/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+exit=null
+error=ETIMEDOUT

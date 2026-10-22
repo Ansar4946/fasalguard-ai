@@ -48,7 +48,21 @@ services/api/dist/
 services/api/coverage/
 
 # Python caches and local environments
+.wapor-credentials/
 **/__pycache__/
 **/.pytest_cache/
 **/.venv/
 **/*.pyc
+
+# F08 speech evaluation inputs are consented private research data. Keep the
+# manifest, recordings, and any per-sample output outside version control.
+/private/f08-speech/
+/docs/features/f08-results/private-*
+
+# Firebase service-account private keys must never be committed
+*firebase-adminsdk*.json
+*service-account*.json
+
+# Firebase client config (contains an API key); keep per-environment, never commit
+google-services.json
+GoogleService-Info.plist

@@ -93,10 +93,75 @@ jobs:
       - run: pytest -q
       - run: pip-audit -r requirements.txt
 
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:release
+      - run: node scripts/release-preflight.mjs --source
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=moderate
+
+  platform:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5-alpine
+        env:
+          POSTGRES_DB: f03_runtime_test
+          POSTGRES_USER: fasalguard
+          POSTGRES_PASSWORD: test-only-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fasalguard -d f03_runtime_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s
+          --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://fasalguard:test-only-password@localhost:5432/f03_runtime_test
+      DATABASE_SSL: "false"
+      REDIS_URL: redis://localhost:6379/9
+      PLATFORM_CELERY_BROKER_URL: redis://localhost:6379/6
+      JWT_ACCESS_SECRET: unit-test-secret-unit-test-secret-0123456789
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: npm ci
+        working-directory: services/api
+      - run: npm run migration:run
+        working-directory: services/api
+      - run: pip install -r requirements-dev.txt pip-audit
+        working-directory: services/platform-api
+      - run: ruff check app/weather tests/weather tests/test_production.py
+        working-directory: services/platform-api
+      - run: python -m pytest tests -m "not integration" -q
+        working-directory: services/platform-api
+      - run: python -m pytest tests/weather/test_integration.py tests/irrigation/test_integration.py -m integration -q
+        working-directory: services/platform-api
+      - run: pip-audit -r requirements.txt
+        working-directory: services/platform-api
+
   images:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    needs: [api, ai-service]
+    needs: [api, ai-service, web, platform]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -120,3 +185,17 @@ jobs:
           context: services/geospatial-ai
           push: false
           tags: fasalguard-ai-service:pr
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.web
+          push: false
+          tags: fasalguard-web:pr
+      - name: Build platform API and Celery image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/platform-api
+          target: production
+          push: false
+          tags: fasalguard-platform-api:pr

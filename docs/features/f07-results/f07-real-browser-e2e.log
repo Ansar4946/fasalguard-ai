@@ -1,0 +1,4 @@
+COMMAND: node tests/e2e/market-live.cjs with private isolatedfixture
+{"status":"RUN_PASS","workflow":"browser→Next BFF→API→persisted test observation","verified":["persisted UUID","source units","displayed market conversion","latest-date mean","official price date","reporting count","no error/empty card","unsigned401"],"credentialsLogged":false}
+
+EXIT: 0 ERROR: none

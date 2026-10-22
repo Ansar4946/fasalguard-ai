@@ -7,6 +7,16 @@ import { authClient, AuthClientError } from "@/features/auth/auth-client";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { BoundaryPicker } from "@/components/farms/boundary-picker";
 import { toGeoJsonPolygon } from "@/lib/geo/polygon";
+import { loadCrops } from "@/features/farms/crops";
+import { toE164 } from "@/features/onboarding/phone";
+
+type FinishStep = "account" | "farm" | "field" | "done";
+const finishSteps: Array<{ key: FinishStep; label: string }> = [
+  { key: "account", label: "Creating your secure account" },
+  { key: "farm", label: "Saving your farm boundary" },
+  { key: "field", label: "Adding your first field and crop" },
+  { key: "done", label: "Opening your dashboard" },
+];
 
 type Errors = {
   fieldName?: string;
@@ -16,7 +26,8 @@ type Errors = {
 };
 
 export function FarmSetup() {
-  const { data, updateSection, complete } = useOnboarding();
+  const { data, updateSection, reset } = useOnboarding();
+  const [finishStep, setFinishStep] = useState<FinishStep | null>(null);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string>();
@@ -43,12 +54,8 @@ export function FarmSetup() {
     if (submitting) return;
     setSubmitting(true);
     setFormError(undefined);
-    const digits = data.personal.phone.replace(/\D/g, "");
-    const phone = digits.startsWith("0")
-      ? `+92${digits.slice(1)}`
-      : digits.startsWith("92")
-        ? `+${digits}`
-        : `+${digits}`;
+    setFinishStep("account");
+    const phone = toE164(data.personal.phone);
     try {
       const result = await authClient.completeOnboarding({
         fullName: data.personal.fullName.trim(),
@@ -64,12 +71,13 @@ export function FarmSetup() {
         referralCode: data.referral.code || undefined,
         acquisitionSource: data.referral.source,
       });
-      complete();
       // The account (and session) now exists. Farm/field creation is a best-effort
       // follow-up: failure here must never block the user from reaching the
       // dashboard, since their account was already successfully created above.
       let farmError = false;
       try {
+        setFinishStep("farm");
+        const cropsPromise = loadCrops();
         const boundary = toGeoJsonPolygon(data.field.boundaryPoints);
         const farmResponse = await fetch("/api/farms", {
           method: "POST",
@@ -85,6 +93,10 @@ export function FarmSetup() {
         if (!farmResponse.ok || !farmBody?.id) {
           farmError = true;
         } else {
+          setFinishStep("field");
+          const crop = (await cropsPromise).find(
+            (option) => option.name.toLowerCase() === data.field.cropType.toLowerCase(),
+          );
           const fieldResponse = await fetch(
             `/api/farms/${farmBody.id}/fields`,
             {
@@ -93,6 +105,7 @@ export function FarmSetup() {
               body: JSON.stringify({
                 name: data.field.fieldName.trim(),
                 boundary,
+                currentCropCycle: crop ? { cropId: crop.id, status: "active" } : undefined,
               }),
             },
           );
@@ -106,6 +119,10 @@ export function FarmSetup() {
         email: result.emailDelivery,
       });
       if (farmError) query.set("farmError", "1");
+      setFinishStep("done");
+      // The draft held personal details for an account that now exists; don't leave them on a
+      // possibly shared device.
+      reset();
       window.location.assign(`/dashboard?${query.toString()}`);
     } catch (error) {
       setFormError(
@@ -113,12 +130,14 @@ export function FarmSetup() {
           ? error.message
           : "Unable to create your account. Please try again.",
       );
+      setFinishStep(null);
       setSubmitting(false);
     }
   }
 
   return (
     <main className="flex min-h-svh flex-col bg-[#f8f4ea]">
+      {finishStep && <FinishProgress current={finishStep} />}
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-brand/5 bg-white/70 px-5 backdrop-blur sm:px-8">
         <Link
           href="/onboarding/farm"
@@ -352,6 +371,32 @@ export function FarmSetup() {
         </div>
       </footer>
     </main>
+  );
+}
+
+function FinishProgress({ current }: { current: FinishStep }) {
+  const active = finishSteps.findIndex((step) => step.key === current);
+  return (
+    <div className="fixed inset-0 z-[1000] grid place-items-center bg-[#f8f4ea]/90 p-4 backdrop-blur-sm" role="status" aria-live="polite">
+      <section className="fg-rise w-full max-w-sm rounded-2xl border border-brand/10 bg-white p-6 shadow-2xl">
+        <BrandLogo compact className="mx-auto size-12 animate-pulse" />
+        <h2 className="mt-4 text-center text-base font-extrabold text-brand-dark">Setting up your farm</h2>
+        <ol className="mt-5 space-y-3">
+          {finishSteps.map((step, index) => {
+            const done = index < active;
+            const now = index === active;
+            return (
+              <li key={step.key} className={`flex items-center gap-3 text-xs transition ${index > active ? "opacity-40" : ""}`}>
+                <span className={`grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${done ? "bg-brand text-white" : now ? "border-2 border-brand" : "border border-border"}`}>
+                  {done ? <span className="fg-pop">✓</span> : now ? <span className="size-3 animate-spin rounded-full border-2 border-brand/30 border-t-brand" /> : null}
+                </span>
+                <span className={now ? "font-bold text-brand-dark" : "text-muted"}>{step.label}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    </div>
   );
 }
 

@@ -1,5 +1,15 @@
 name: fasalguard-runtime
 
+# Image pinning policy: ${RELEASE_VERSION} MUST be an immutable release tag whose images were
+# promoted by digest. Production deploys set REGISTRY/NAMESPACE/RELEASE_VERSION from the signed
+# release manifest and should resolve every image to `name@sha256:<digest>`.
+# Mutable tags (latest, major-only) are not allowed, and
+# base images in Dockerfiles must be digest-pinned and refreshed through reviewed PRs only.
+# Hardening baseline: non-root user, cap_drop ALL, no-new-privileges, read-only root filesystem
+# (tmpfs for scratch) and CPU/memory/pids limits. Services not yet on this baseline (api, ai-service,
+# web, platform-api, platform-worker rootfs) are tracked as follow-ups; they need runtime
+# write-path verification before read_only can be enabled.
+
 # RDS PostgreSQL/PostGIS, Tair Redis, and OSS are managed external services.
 # Copy the appropriate environment example outside source control and inject its path.
 x-api-common: &api-common
@@ -8,13 +18,32 @@ x-api-common: &api-common
   restart: unless-stopped
   init: true
   networks: [private]
+  volumes: ["${DATABASE_CA_DIR:?set the verified database CA directory}:/run/certs:ro"]
+
+x-platform-common: &platform-common
+  image: ${REGISTRY}/${NAMESPACE}/fasalguard-platform-api:${RELEASE_VERSION}
+  env_file: ${PLATFORM_ENV_FILE:?set a protected platform environment file}
+  environment:
+    NODE_ENV: production
+    MEDIA_LOCAL_DIR: /data/media
+    CORE_API_INTERNAL_URL: http://api:4000/api/v1
+    # Live satellite water productivity remains unverified; do not enable it by accident.
+    WAPOR_ENABLED: "false"
+  volumes: ["platform_media:/data/media:ro", "${DATABASE_CA_DIR:?set the verified database CA directory}:/run/certs:ro"]
+  restart: unless-stopped
+  init: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  networks: [private]
 
 services:
   api:
     <<: *api-common
     environment:
       PROCESS_ROLE: api
-    ports: ["4000:4000"]
+      NODE_ENV: production
+      ENABLE_SWAGGER: "false"
+    ports: ["127.0.0.1:4000:4000"]
     healthcheck:
       test:
         [
@@ -35,7 +64,29 @@ services:
       PROCESS_ROLE: worker
     restart: unless-stopped
     init: true
+    user: "1000:1000" # the image already runs as the unprivileged `node` user; pinned explicitly
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777,noexec,nosuid"]
     networks: [private]
+    volumes: ["${DATABASE_CA_DIR:?set the verified database CA directory}:/run/certs:ro"]
+    # The worker exposes no HTTP port; liveness = the worker entry point is still a running process.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const fs=require('fs');process.exit(fs.readdirSync('/proc').some(p=>/^[0-9]+$/.test(p)&&p!==String(process.pid)&&(()=>{try{return fs.readFileSync('/proc/'+p+'/cmdline','utf8').includes('dist/worker.js')}catch{return false}})())?0:1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 768M, pids: 256 }
 
   ai-service:
     image: ${REGISTRY}/${NAMESPACE}/fasalguard-ai-service:${RELEASE_VERSION}
@@ -60,6 +111,92 @@ services:
     profiles: ["migration"]
     command: ["npm", "run", "migration:run:prod"]
     restart: "no"
+    env_file: ${MIGRATION_ENV_FILE:?set a separately scoped migration environment file}
+
+  web:
+    image: ${REGISTRY}/${NAMESPACE}/fasalguard-web:${RELEASE_VERSION}
+    env_file: ${WEB_ENV_FILE:?set a protected web environment file}
+    environment:
+      NODE_ENV: production
+      FASALGUARD_API_URL: http://api:4000/api/v1
+      PLATFORM_API_URL: http://platform-api:8000/api/v1
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      api: { condition: service_healthy }
+      platform-api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [private]
+
+  platform-api:
+    <<: *platform-common
+    expose: ["8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/ready',timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  platform-worker:
+    <<: *platform-common
+    command: ["celery", "-A", "app.worker", "worker", "--loglevel=info", "--pool=prefork", "--concurrency=2", "-Q", "satellite,irrigation", "-n", "platform@%h"]
+    volumes: ["platform_media:/data/media", "${DATABASE_CA_DIR:?set the verified database CA directory}:/run/certs:ro"]
+    depends_on:
+      platform-api: { condition: service_healthy }
+    stop_grace_period: 210s
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 2G, pids: 512 }
+
+  platform-beat:
+    <<: *platform-common
+    command: ["celery", "-A", "app.worker", "beat", "--loglevel=info", "--schedule=/tmp/platform-beat"]
+    depends_on:
+      platform-api: { condition: service_healthy }
+    # Exactly one scheduler. This single-host definition must not be scaled.
+    read_only: true # the schedule file lives on the tmpfs below; the media volume is mounted read-only
+    tmpfs: ["/tmp:size=16m,mode=1777,noexec,nosuid"]
+    healthcheck:
+      # Beat has no network listener; liveness = a `celery ... beat` process exists.
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import os,sys; sys.exit(0 if any(b'beat' in open('/proc/'+p+'/cmdline','rb').read() for p in os.listdir('/proc') if p.isdigit() and int(p)!=os.getpid() and os.access('/proc/'+p+'/cmdline',os.R_OK)) else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits: { cpus: "0.25", memory: 256M, pids: 64 }
+
+  platform-media-init:
+    <<: *platform-common
+    profiles: ["storage-init"]
+    user: "0:0"
+    cap_drop: []
+    cap_add: [CHOWN, FOWNER]
+    volumes: ["platform_media:/data/media"]
+    command: ["python", "-c", "import os; os.chown('/data/media',1000,1000); os.chmod('/data/media',0o750)"]
+    restart: "no"
 
 networks:
   private: {}
+
+volumes:
+  platform_media:
+    # Explicitly provision, back up and restore-test this private raster/artifact volume.
+    external: true
+    name: ${PLATFORM_MEDIA_VOLUME:?set the provisioned private artifact volume name}

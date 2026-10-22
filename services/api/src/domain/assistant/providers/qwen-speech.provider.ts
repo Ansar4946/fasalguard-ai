@@ -2,14 +2,29 @@ import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type {
   AudioResult,
+  SpeechCapabilities,
+  SpeechLanguage,
   SpeechResult,
   SpeechToTextProvider,
   TextToSpeechProvider,
 } from './speech.provider';
+import { VOICE_CONSENT_VERSION } from './speech.provider';
 @Injectable()
 export class QwenSpeechProvider implements SpeechToTextProvider, TextToSpeechProvider {
   constructor(private readonly config: ConfigService) {}
-  async transcribe(input: { audioUrl: string; language?: string }): Promise<SpeechResult> {
+  capabilities(): SpeechCapabilities {
+    return {
+      available: false,
+      provider: 'ALIBABA_QWEN_UNVERIFIED',
+      sttLanguages: [],
+      ttsLanguages: [],
+      acceptedContentTypes: [],
+      maxRecordingSeconds: 120,
+      consentVersion: VOICE_CONSENT_VERSION,
+      reason: 'Configured Qwen speech models are not verified for Urdu, Hindi and English.',
+    };
+  }
+  async transcribe(input: { audioUrl: string; language: SpeechLanguage }): Promise<SpeechResult> {
     const raw = await this.call(this.config.get('qwenSttModel', 'qwen-audio-asr'), [
       {
         role: 'user',
@@ -30,7 +45,7 @@ export class QwenSpeechProvider implements SpeechToTextProvider, TextToSpeechPro
       usage: raw.usage,
     };
   }
-  async synthesize(input: { text: string; language?: string }): Promise<AudioResult> {
+  async synthesize(input: { text: string; language: SpeechLanguage }): Promise<AudioResult> {
     const key = this.config.get<string>('qwenApiKey', '');
     if (!key) throw new ServiceUnavailableException('Qwen speech credentials are not configured.');
     const response = await fetch(

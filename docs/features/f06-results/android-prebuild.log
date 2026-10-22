@@ -1,0 +1,4 @@
+command: npx expo prebuild --platform android --no-install
+result: Created native directory; package.json unchanged; Finished prebuild.
+exit=0
+scope: Native project generation only. No APK/native runtime/inference success claimed.

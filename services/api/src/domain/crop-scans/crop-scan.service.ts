@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -14,6 +15,9 @@ import { CropScanStatus } from './crop-scan.enums';
 import { RiskAssessmentService } from '../risk/risk.service';
 import { RiskTrigger } from '../risk/risk.enums';
 export const CROP_SCAN_QUEUE = 'crop-image-screening';
+/** F01 evidence budget: at most three photos per scan (matches the capture UI). */
+export const MAX_SCAN_IMAGES = 3;
+const DEFAULT_QUEUE_TIMEOUT_MS = 3000;
 export interface CropScanJob {
   scanId: string;
   ownerId: string;
@@ -49,6 +53,15 @@ export class CropScanService {
         code: 'INVALID_SCAN_MEDIA',
         message: 'Image must be a completed private crop-scan upload owned by the farmer.',
       });
+    const existing = await this.db.query<Array<{ count: string; attached: boolean }>>(
+      `SELECT count(*)::text count, bool_or(media_asset_id=$2) AS attached FROM scan_images WHERE scan_id=$1`,
+      [scanId, dto.mediaId],
+    );
+    if (!existing[0]?.attached && Number(existing[0]?.count ?? 0) >= MAX_SCAN_IMAGES)
+      throw new BadRequestException({
+        code: 'SCAN_IMAGE_LIMIT_REACHED',
+        message: `A scan can have at most ${MAX_SCAN_IMAGES} images.`,
+      });
     await this.db.query(
       `INSERT INTO scan_images(scan_id,media_asset_id,category) VALUES($1,$2,$3) ON CONFLICT(scan_id,media_asset_id) DO UPDATE SET category=excluded.category,updated_at=now()`,
       [scanId, dto.mediaId, dto.category],
@@ -83,32 +96,65 @@ export class CropScanService {
       `UPDATE crop_scans SET status=$2,failure_code=NULL,updated_at=now(),version=version+1 WHERE id=$1`,
       [scanId, CropScanStatus.ImageValidation],
     );
-    await this.queue.add(
-      'crop-scan:analyse',
-      { scanId, ownerId },
-      {
-        jobId: `crop-scan-${scanId}`,
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 1000 },
-        removeOnComplete: 1000,
-        removeOnFail: 5000,
-      },
-    );
+    try {
+      await this.enqueueAnalysis(scanId, ownerId);
+    } catch (error) {
+      // Queue unavailable (e.g. Redis down): do not leave the scan parked in IMAGE_VALIDATION with no job.
+      await this.db.query(
+        `UPDATE crop_scans SET status=$2,updated_at=now(),version=version+1 WHERE id=$1 AND status=$3`,
+        [scanId, scan.status, CropScanStatus.ImageValidation],
+      );
+      throw error instanceof ServiceUnavailableException
+        ? error
+        : new ServiceUnavailableException({
+            code: 'ANALYSIS_QUEUE_UNAVAILABLE',
+            message: 'Analysis is temporarily unavailable. Try again shortly.',
+          });
+    }
     const field = await this.db.query<Array<{ field_id: string | null }>>(
       `SELECT field_id FROM crop_scans WHERE id=$1`,
       [scanId],
     );
-    await this.fieldRisk.enqueue(field[0]?.field_id, RiskTrigger.FarmerScan);
+    // Best-effort side effect: never let it hang or fail an already-queued analysis.
+    await withTimeout(
+      this.fieldRisk.enqueue(field[0]?.field_id, RiskTrigger.FarmerScan),
+      this.config.get<number>('cropScanQueueTimeoutMs', DEFAULT_QUEUE_TIMEOUT_MS),
+    ).catch(() => undefined);
     return this.get(ownerId, scanId);
+  }
+  /** Bounded enqueue: a Redis outage answers 503 quickly instead of hanging on the offline queue. */
+  private async enqueueAnalysis(scanId: string, ownerId: string): Promise<void> {
+    const timeoutMs = this.config.get<number>('cropScanQueueTimeoutMs', DEFAULT_QUEUE_TIMEOUT_MS);
+    const jobId = `crop-scan-${scanId}`;
+    await withTimeout(
+      (async (): Promise<void> => {
+        // A finished/failed job with this id would silently swallow a retry: drop it (never an active one).
+        const previous = await this.queue.getJob(jobId);
+        if (previous && !(await previous.isActive()))
+          await previous.remove().catch(() => undefined);
+        await this.queue.add(
+          'crop-scan:analyse',
+          { scanId, ownerId },
+          {
+            jobId,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 1000 },
+            removeOnComplete: 1000,
+            removeOnFail: 5000,
+          },
+        );
+      })(),
+      timeoutMs,
+    );
   }
   async get(ownerId: string, scanId: string): Promise<unknown> {
     await this.require(ownerId, scanId);
     const rows = await this.db.query<Array<Record<string, unknown>>>(
-      `SELECT cs.id,cs.field_id AS "fieldId",cs.status,cs.confidence_policy AS "confidencePolicy",cs.failure_code AS "failureCode",cs.created_at AS "createdAt",
+      `SELECT cs.id,cs.field_id AS "fieldId",fi.name AS "fieldName",cs.status,cs.confidence_policy AS "confidencePolicy",cs.failure_code AS "failureCode",cs.created_at AS "createdAt",
         COALESCE(jsonb_agg(DISTINCT jsonb_build_object('id',si.id,'mediaId',si.media_asset_id,'category',si.category,'widthPixels',si.width_pixels,'heightPixels',si.height_pixels)) FILTER(WHERE si.id IS NOT NULL),'[]') AS images,
         d.screened_condition AS "screenedCondition",d.confidence,d.disposition,d.is_firm_diagnosis AS "isFirmDiagnosis",d.disclaimer,
         COALESCE((SELECT jsonb_agg(jsonb_build_object('condition',da.condition,'confidence',da.confidence) ORDER BY da.rank) FROM diagnosis_alternatives da WHERE da.diagnosis_id=d.id),'[]') AS alternatives
-       FROM crop_scans cs LEFT JOIN scan_images si ON si.scan_id=cs.id LEFT JOIN diagnoses d ON d.scan_id=cs.id WHERE cs.id=$1 AND cs.owner_id=$2 GROUP BY cs.id,d.id`,
+       FROM crop_scans cs LEFT JOIN fields fi ON fi.id=cs.field_id LEFT JOIN scan_images si ON si.scan_id=cs.id LEFT JOIN diagnoses d ON d.scan_id=cs.id WHERE cs.id=$1 AND cs.owner_id=$2 GROUP BY cs.id,fi.name,d.id`,
       [scanId, ownerId],
     );
     return rows[0];
@@ -152,4 +198,22 @@ export class CropScanService {
     );
     if (!rows.length) throw new ForbiddenException('You do not have access to this field.');
   }
+}
+
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new ServiceUnavailableException({
+            code: 'ANALYSIS_QUEUE_UNAVAILABLE',
+            message: 'Analysis is temporarily unavailable. Try again shortly.',
+          }),
+        ),
+      ms,
+    );
+  });
+  work.catch(() => undefined); // a late rejection after the timeout must not be unhandled
+  return Promise.race([work, timeout]).finally(() => clearTimeout(timer));
 }

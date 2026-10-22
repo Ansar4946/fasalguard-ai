@@ -1,0 +1,22 @@
+COMMAND: node --test tests/market/market-data.test.cjs
+CWD: .
+✔ source 100kg converts explicitly to displayed 40kg (203.4357ms)
+✔ empty observations stay unavailable (1.1339ms)
+✔ mixed latest dates do not distort the overview (4.1123ms)
+✔ invalid source, units, region, values and ingestion dates reject (4.3657ms)
+✔ missing, future and impossible dates never use ingestion time as fallback (5.1308ms)
+✔ identical duplicates count once and conflicting duplicates reject (3.2058ms)
+✔ weekly movement matches markets exactly seven days apart (2.1459ms)
+✔ calendar windows retain gaps without invented quotes (10.922ms)
+✔ freshness changes at Pakistan midnight (1.8774ms)
+✔ different raw commodity varieties cannot blend (2.5527ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3764.7444
+
+EXIT: 0 SIGNAL: null

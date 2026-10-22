@@ -1,0 +1,468 @@
+name: fasalguard-oracle
+
+# Single-VM deployment kit for Oracle Cloud Always Free (VM.Standard.A1.Flex, arm64, 4 OCPU / 24 GB).
+# PREPARATION ARTEFACT: nothing here has been run on a real VM. See docs/operations/FREE_DEPLOY_ORACLE.md.
+#
+# Usage (from deploy/oracle-free/, with a filled .env next to this file):
+#   docker compose build
+#   docker compose --profile migration run --rm migrate
+#   docker compose up -d
+#
+# Network model: only `caddy` publishes host ports (80, 443/tcp). Every other service lives on the
+# internal-only `private` network (internal: true => no published ports, no outbound route either)
+# or on `egress` (needed by services that must call external providers).
+#
+# Routing decision (one domain): https://DOMAIN/            -> web (Next.js UI + BFF)
+#                                https://DOMAIN/api/v1/*    -> core API (NestJS)
+# The browser uploads presigned local-disk PUTs to API_PUBLIC_URL = https://DOMAIN/api/v1, i.e. the
+# SAME origin as the page, so no CORS and the CSP `connect-src 'self'` already allows it.
+# platform-api (FastAPI, also uses the /api/v1 prefix) is reachable only by the web BFF over the
+# private network, so there is no path clash.
+#
+# API_NODE_ENV: the core API refuses OBJECT_STORAGE_PROVIDER=local-disk when NODE_ENV=production
+# (services/api/src/domain/media/media.module.ts) and platform-api demands TLS-verified Postgres and
+# rediss:// in production. This kit therefore runs the BACKEND with NODE_ENV=development ("pilot
+# mode") and the WEB with NODE_ENV=production. See the guide, section "Pilot mode vs production mode".
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-harden: &harden
+  init: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+# ---------------------------------------------------------------------------------------------
+# Shared environment blocks
+# ---------------------------------------------------------------------------------------------
+x-api-env: &api-env
+  NODE_ENV: ${API_NODE_ENV:-development}
+  PORT: "4000"
+  DATABASE_URL: postgresql://fasalguard:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/fasalguard
+  DATABASE_SSL: ${DATABASE_SSL:-false}
+  ALLOW_PLAINTEXT_DATABASE: ${ALLOW_PLAINTEXT_DATABASE:-true}
+  REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
+  TRUST_PROXY: ${TRUST_PROXY:-1}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  ENABLE_SWAGGER: "false"
+  METRICS_ENABLED: ${METRICS_ENABLED:-true}
+  METRICS_TOKEN: ${METRICS_TOKEN:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-oracle-free}
+  CORS_ORIGINS: https://${DOMAIN:?set DOMAIN}
+  WEB_APP_URL: https://${DOMAIN}
+  API_PUBLIC_URL: https://${DOMAIN}/api/v1
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET}
+  JWT_ISSUER: fasalguard-api
+  JWT_AUDIENCE: fasalguard-clients
+  INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?set INTERNAL_SERVICE_TOKEN}
+  RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-120}
+  OTP_PROVIDER: ${OTP_PROVIDER:-production}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM: ${SMTP_FROM:-}
+  OBJECT_STORAGE_PROVIDER: ${OBJECT_STORAGE_PROVIDER:-local-disk}
+  MEDIA_LOCAL_DIR: /data/media
+  OSS_REGION: ${OSS_REGION:-}
+  OSS_BUCKET: ${OSS_BUCKET:-}
+  OSS_ACCESS_KEY_ID: ${OSS_ACCESS_KEY_ID:-}
+  OSS_ACCESS_KEY_SECRET: ${OSS_ACCESS_KEY_SECRET:-}
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+  STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+  SENTINEL_HUB_CLIENT_ID: ${SENTINEL_HUB_CLIENT_ID:-}
+  SENTINEL_HUB_CLIENT_SECRET: ${SENTINEL_HUB_CLIENT_SECRET:-}
+  SATELLITE_PLATFORM_ENABLED: ${SATELLITE_PLATFORM_ENABLED:-false}
+  GEOSPATIAL_AI_URL: http://geospatial-ai:8000
+  SELF_HOSTED_VISION_URL: http://geospatial-ai:8000
+  VISION_PROVIDER: ${VISION_PROVIDER:-self-hosted}
+  ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY:-}
+  ROBOFLOW_MODEL_ID: ${ROBOFLOW_MODEL_ID:-}
+  ROBOFLOW_MODEL_VERSION: ${ROBOFLOW_MODEL_VERSION:-}
+  ROBOFLOW_WHEAT_MODEL_ID: ${ROBOFLOW_WHEAT_MODEL_ID:-}
+  ROBOFLOW_WHEAT_MODEL_VERSION: ${ROBOFLOW_WHEAT_MODEL_VERSION:-}
+  ROBOFLOW_RICE_MODEL_ID: ${ROBOFLOW_RICE_MODEL_ID:-}
+  ROBOFLOW_RICE_MODEL_VERSION: ${ROBOFLOW_RICE_MODEL_VERSION:-}
+  WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
+  OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://api.open-meteo.com}
+  OPEN_METEO_API_KEY: ${OPEN_METEO_API_KEY:-}
+  OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY:-}
+  ASSISTANT_PROVIDER: ${ASSISTANT_PROVIDER:-gemini}
+  FARM_BRAIN_PROVIDER: ${FARM_BRAIN_PROVIDER:-gemini}
+  GEMINI_TRANSPORT: ${GEMINI_TRANSPORT:-google-ai}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
+  GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
+  GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION:-us-central1}
+  QWEN_API_KEY: ${QWEN_API_KEY:-}
+  SPEECH_PROVIDER: ${SPEECH_PROVIDER:-fake}
+  SPEECH_STT_PROVIDER: ${SPEECH_STT_PROVIDER:-}
+  ASSEMBLYAI_API_KEY: ${ASSEMBLYAI_API_KEY:-}
+  AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY:-}
+  AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION:-}
+  PUSH_PROVIDER: ${PUSH_PROVIDER:-firebase}
+  FIREBASE_SERVICE_ACCOUNT_BASE64: ${FIREBASE_SERVICE_ACCOUNT_BASE64:-}
+  AMIS_SYNC_ENABLED: ${AMIS_SYNC_ENABLED:-false}
+  USSD_ENABLED: ${USSD_ENABLED:-false}
+  USSD_DEMO_ENABLED: ${USSD_DEMO_ENABLED:-false}
+  USSD_GATEWAY: contract-test
+  USSD_CALLBACK_SECRET: ${USSD_CALLBACK_SECRET:-}
+
+x-platform-env: &platform-env
+  NODE_ENV: ${API_NODE_ENV:-development}
+  OFFLINE_SYNC_ENABLED: "false"
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgresql://fasalguard:${POSTGRES_PASSWORD}@postgres:5432/fasalguard
+  REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  PLATFORM_CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/2
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+  JWT_ISSUER: fasalguard-api
+  JWT_AUDIENCE: fasalguard-clients
+  MEDIA_LOCAL_DIR: /data/media
+  CORE_API_INTERNAL_URL: http://api:4000/api/v1
+  INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+  WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
+  OPEN_METEO_API_KEY: ${OPEN_METEO_API_KEY:-}
+  IRRIGATION_WEATHER_API_KEY: ${IRRIGATION_WEATHER_API_KEY:-}
+  ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY:-}
+  ROBOFLOW_WHEAT_MODEL_ID: ${ROBOFLOW_WHEAT_MODEL_ID:-}
+  ROBOFLOW_WHEAT_MODEL_VERSION: ${ROBOFLOW_WHEAT_MODEL_VERSION:-}
+  ROBOFLOW_RICE_MODEL_ID: ${ROBOFLOW_RICE_MODEL_ID:-}
+  ROBOFLOW_RICE_MODEL_VERSION: ${ROBOFLOW_RICE_MODEL_VERSION:-}
+  ROBOFLOW_COTTON_MODEL_ID: ${ROBOFLOW_MODEL_ID:-}
+  ROBOFLOW_COTTON_MODEL_VERSION: ${ROBOFLOW_MODEL_VERSION:-}
+  SATELLITE_PLATFORM_ENABLED: ${SATELLITE_PLATFORM_ENABLED:-false}
+  WAPOR_ENABLED: "false"
+
+x-api-service: &api-service
+  <<: *restart
+  image: fasalguard-oracle/api:${IMAGE_TAG:-local}
+  networks: [private, egress]
+  volumes: ["media_data:/data/media"]
+  init: true
+  security_opt: ["no-new-privileges:true"]
+
+x-platform-service: &platform-service
+  <<: [*restart, *harden]
+  image: fasalguard-oracle/platform-api:${IMAGE_TAG:-local}
+  environment: *platform-env
+  networks: [private, egress]
+
+services:
+  # -------------------------------------------------------------------------- edge
+  caddy:
+    <<: *restart
+    image: caddy:2-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [private, egress]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    depends_on:
+      web: { condition: service_healthy }
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 128M, pids: 128 }
+
+  # -------------------------------------------------------------------------- web
+  web:
+    <<: [*restart, *harden]
+    image: fasalguard-oracle/web:${IMAGE_TAG:-local}
+    build:
+      context: ../..
+      dockerfile: deploy/oracle-free/docker/web.Dockerfile
+      args:
+        # BUILD-TIME: baked into the CSP by `next build`. Same origin as the page.
+        STORAGE_UPLOAD_ORIGINS: https://${DOMAIN}
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=1024
+      # Runtime copy of the build setting, so `next start` evaluates the same CSP.
+      STORAGE_UPLOAD_ORIGINS: https://${DOMAIN}
+      FASALGUARD_API_URL: http://api:4000/api/v1
+      PLATFORM_API_URL: http://platform-api:8000/api/v1
+      WEB_APP_URL: https://${DOMAIN}
+      WEATHER_PLATFORM_ENABLED: ${WEATHER_PLATFORM_ENABLED:-true}
+      SATELLITE_PLATFORM_ENABLED: ${SATELLITE_PLATFORM_ENABLED:-false}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
+    networks: [private, egress]
+    depends_on:
+      api: { condition: service_healthy }
+      platform-api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits: { cpus: "1.5", memory: 1536M, pids: 512 }
+
+  # -------------------------------------------------------------------------- core API + worker
+  api:
+    <<: *api-service
+    build: { context: ../../services/api, target: production }
+    environment:
+      <<: *api-env
+      PROCESS_ROLE: api
+      NODE_OPTIONS: --max-old-space-size=1024
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      media-init: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/v1/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    deploy:
+      resources:
+        limits: { cpus: "1.5", memory: 1536M, pids: 512 }
+
+  worker:
+    <<: *api-service
+    image: fasalguard-oracle/worker:${IMAGE_TAG:-local}
+    build: { context: ../../services/api, target: worker }
+    environment:
+      <<: *api-env
+      PROCESS_ROLE: worker
+      NODE_OPTIONS: --max-old-space-size=768
+    user: "1000:1000"
+    cap_drop: [ALL]
+    read_only: true # mirrors deploy/compose.production.yml; remove this line if the worker crash-loops
+    tmpfs: ["/tmp:size=64m,mode=1777,noexec,nosuid"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      media-init: { condition: service_completed_successfully }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const fs=require('fs');process.exit(fs.readdirSync('/proc').some(p=>/^[0-9]+$/.test(p)&&p!==String(process.pid)&&(()=>{try{return fs.readFileSync('/proc/'+p+'/cmdline','utf8').includes('dist/worker.js')}catch{return false}})())?0:1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1024M, pids: 256 }
+
+  # One-shot: `docker compose --profile migration run --rm migrate`. Never runs on `up`.
+  migrate:
+    <<: *api-service
+    profiles: ["migration"]
+    command: ["npm", "run", "migration:run:prod"]
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://fasalguard:${POSTGRES_PASSWORD}@postgres:5432/fasalguard
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+    networks: [private]
+    volumes: []
+    depends_on:
+      postgres: { condition: service_healthy }
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 768M, pids: 256 }
+
+  # One-shot: make the media volume writable by uid 1000 (api/worker/platform all run as uid 1000).
+  media-init:
+    image: node:22-alpine
+    command: ["sh", "-c", "mkdir -p /data/media && chown -R 1000:1000 /data/media && chmod 750 /data/media"]
+    volumes: ["media_data:/data/media"]
+    networks: [private]
+    restart: "no"
+    deploy:
+      resources:
+        limits: { memory: 64M }
+
+  # -------------------------------------------------------------------------- platform (FastAPI + Celery)
+  platform-api:
+    <<: *platform-service
+    build: { context: ../../services/platform-api, dockerfile: ../../deploy/oracle-free/docker/platform-api.Dockerfile }
+    volumes: ["media_data:/data/media:ro"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/ready',timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 25s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1024M, pids: 256 }
+
+  platform-worker:
+    <<: *platform-service
+    image: fasalguard-oracle/platform-api:${IMAGE_TAG:-local}
+    command: ["celery", "-A", "app.worker", "worker", "--loglevel=info", "--pool=prefork", "--concurrency=2", "-Q", "celery,satellite,irrigation", "-n", "platform@%h"]
+    volumes: ["media_data:/data/media"]
+    depends_on:
+      platform-api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.worker inspect ping --timeout 5 | grep -q pong"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 40s
+    stop_grace_period: 210s
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 2048M, pids: 512 }
+
+  # Exactly one scheduler. Do not scale.
+  platform-beat:
+    <<: *platform-service
+    image: fasalguard-oracle/platform-api:${IMAGE_TAG:-local}
+    command: ["celery", "-A", "app.worker", "beat", "--loglevel=info", "--schedule=/tmp/platform-beat"]
+    volumes: ["media_data:/data/media:ro"]
+    read_only: true # schedule file lives on the tmpfs; mirrors deploy/compose.production.yml
+    tmpfs: ["/tmp:size=16m,mode=1777,noexec,nosuid"]
+    depends_on:
+      platform-api: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import os,sys; sys.exit(0 if any(b'beat' in open('/proc/'+p+'/cmdline','rb').read() for p in os.listdir('/proc') if p.isdigit() and int(p)!=os.getpid() and os.access('/proc/'+p+'/cmdline',os.R_OK)) else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits: { cpus: "0.25", memory: 256M, pids: 64 }
+
+  # -------------------------------------------------------------------------- geospatial / vision / AMIS service
+  geospatial-ai:
+    <<: *restart
+    image: fasalguard-oracle/geospatial-ai:${IMAGE_TAG:-local}
+    build: { context: ../../services/geospatial-ai, dockerfile: ../../deploy/oracle-free/docker/geospatial-ai.Dockerfile }
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      AMIS_SCRAPER_ENABLED: ${AMIS_SYNC_ENABLED:-false}
+      AMIS_BASE_URL: ${AMIS_BASE_URL:-http://www.amis.pk}
+      AMIS_TIMEOUT_SECONDS: "30"
+      AMIS_REQUEST_DELAY_SECONDS: "1"
+      VISION_MODEL_PATH: /models/cotton-disease.onnx
+      VISION_MODEL_MANIFEST_PATH: /models/cotton-disease.json
+    # Reviewed ONNX weights are NOT in the repo (services/geospatial-ai/models/README.md); the
+    # folder is mounted read-only so a model can be dropped in without rebuilding.
+    volumes: ["../../services/geospatial-ai/models:/models:ro"]
+    networks: [private, egress]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: "1.5", memory: 2048M, pids: 256 }
+
+  # -------------------------------------------------------------------------- data stores (internal only)
+  postgres:
+    <<: *restart
+    # postgis/postgis:17-3.5* is amd64-only (verified with buildx imagetools). imresamu/postgis is the
+    # multi-arch (amd64+arm64) build of the same docker-postgis recipe, same env vars and entrypoint.
+    image: imresamu/postgis:17-3.5.3-alpine3.22@sha256:40c552a037ef4717766185adb0eec6acf1402c8f7f7bd75c1b172fd3a716711f
+    environment:
+      POSTGRES_DB: fasalguard
+      POSTGRES_USER: fasalguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=768MB
+      - -c
+      - effective_cache_size=2GB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=100
+      - -c
+      - timezone=UTC
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ../../services/api/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks: [private]
+    shm_size: 256m
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fasalguard -d fasalguard && psql -U fasalguard -d fasalguard -tAc \"SELECT 1 FROM pg_extension WHERE extname='postgis'\" | grep -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    stop_grace_period: 60s
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 3072M, pids: 512 }
+
+  redis:
+    <<: *restart
+    image: redis:7.4-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    # noeviction is required by BullMQ/Celery (they must never lose queue keys).
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\" --maxmemory 768mb --maxmemory-policy noeviction"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    volumes: ["redis_data:/data"]
+    networks: [private]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1024M, pids: 128 }
+
+networks:
+  # internal: true => containers on it only reach each other (no published ports, no internet).
+  private:
+    internal: true
+  # Outbound-only network for services that call external providers (Gemini, SMTP, Open-Meteo, ...).
+  # Nothing is published on it; ACME for Caddy also goes out through it.
+  egress: {}
+
+volumes:
+  pg_data:
+  redis_data:
+  media_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,26 @@
+COMMAND: node node_modules/jest/bin/jest.js --runInBand --testRegex=market-workflow.integration-spec.ts$
+CWD: services/api
+
+<--- Last few GCs --->
+
+[14868:0000017871839000]   101687 ms: Scavenge (interleaved) 346.5 (413.1) -> 318.3 (432.9) MB, pooled: 0 MB, 134.14 / 0.00 ms  (average mu = 0.998, current mu = 0.999) allocation failure; 
+[14868:0000017871839000]   103880 ms: Scavenge (interleaved) 368.3 (434.1) -> 344.2 (450.6) MB, pooled: 0 MB, 49.63 / 0.00 ms  (average mu = 0.998, current mu = 0.999) allocation failure; 
+
+FATAL ERROR: NewSpace::EnsureCurrentCapacity Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF7F8903D9F node::OnFatalError+1343
+ 2: 00007FF7F754DCB7 v8::Function::NewInstance+423
+ 3: 00007FF7F734E4F7 uv_udp_get_send_queue_count+54423
+ 4: 00007FF7F730ED73 v8::base::AddressSpaceReservation::AddressSpaceReservation+63139
+ 5: 00007FF7F73508FA uv_udp_get_send_queue_count+63642
+ 6: 00007FF7F734FF26 uv_udp_get_send_queue_count+61126
+ 7: 00007FF7F7360E82 v8::internal::StrongRootAllocatorBase::deallocate_impl+15858
+ 8: 00007FF7F73609AB v8::internal::StrongRootAllocatorBase::deallocate_impl+14619
+ 9: 00007FF7F8C324AD node::AsyncResource::CallbackScope::CallbackScope+2184429
+10: 00007FF7F734BFC0 uv_udp_get_send_queue_count+44896
+11: 00007FF7F73CFDA9 v8::Unlocker::~Unlocker+9273
+12: 00007FF7F6F435D8 v8::CodeEvent::GetFunctionName+131144
+13: 000001782FE775FA 
+
+EXIT: 134 SIGNAL: null

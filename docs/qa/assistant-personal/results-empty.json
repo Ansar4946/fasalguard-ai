@@ -1,0 +1,58 @@
+{
+  "phase": "empty",
+  "at": "2026-10-17T04:54:22.769Z",
+  "results": [
+    {
+      "name": "[phone] empty farmer: warnings card says there are no unread warnings and is dismissible",
+      "status": "PASS"
+    },
+    {
+      "name": "[phone] empty state: \"which farms do I have\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[phone] empty state: \"what are my fields\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[phone] empty state: \"what crop seasons do I have\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[phone] empty state: \"how much did I spend this month\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[phone] empty state: \"do I have any warnings\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] empty farmer: warnings card says there are no unread warnings and is dismissible",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] empty state: \"which farms do I have\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] empty state: \"what are my fields\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] empty state: \"what crop seasons do I have\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] empty state: \"how much did I spend this month\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] empty state: \"do I have any warnings\"",
+      "status": "PASS"
+    },
+    {
+      "name": "[desktop] demo farmer with no notifications: card shows the empty warnings state",
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+# Root build context is used by Dockerfile.web only. Keep secrets and backend services out of it.
+.env*
+.wapor-credentials
+!.env.example
+.git
+.github
+node_modules
+mobile
+.next
+services
+docs
+deploy
+*.log
+verify-geocode-*.png
+coverage

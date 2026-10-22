@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-13",
+  "evidenceType": "transcription of actual command results; not a generated test-runner report",
+  "environment": "isolated fasalguard-f02 containers and disposable f02_test PostGIS",
+  "checks": [
+    {"command": "pytest -q --tb=short", "exit": 0, "passed": 87, "deselectedIntegration": 7, "seconds": 15.74},
+    {"command": "pytest -m integration -q --tb=short tests/satellite/test_integration.py", "exit": 0, "passed": 7, "seconds": 72.93},
+    {"command": "ruff check app tests", "exit": 0},
+    {"command": "API typecheck and targeted Jest", "exit": 0, "passedTests": 23, "passedSuites": 5},
+    {"command": "API new-file ESLint", "exit": 0},
+    {"command": "npm run build (Nest API)", "exit": 0},
+    {"command": "migration:run, migration:revert, migration:run", "exit": [0,0,0], "database": "f02_test"},
+    {"command": "Web tsc --noEmit, scoped ESLint, next build", "exit": [0,0,0]},
+    {"command": "node tests/e2e/satellite-live.cjs (isolated web)", "exit": 0},
+    {"command": "node tests/e2e/satellite-trend-ui.cjs (isolated web)", "exit": 0}
+  ],
+  "productionVerified": false,
+  "externalBlocker": "Live Sentinel Hub adapter validation requires authorized credentials",
+  "limitations": ["Tiled GeoTIFF output not validated as COG", "New FastAPI observations do not run legacy anomaly/risk/notification processing", "Public deployment origin/proxy and media permissions require deployment verification"]
+}

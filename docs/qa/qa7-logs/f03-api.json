@@ -1,0 +1,114 @@
+[
+ {
+  "id": "F03-01",
+  "name": "unauthenticated context/profile/events/runs -> 401 (platform + BFF); wrong role 403",
+  "status": "PASS",
+  "detail": "",
+  "ms": 71
+ },
+ {
+  "id": "F03-02",
+  "name": "ownership: B cannot read context/profile/events or submit for A field (404), nor use A season on own field",
+  "status": "PASS",
+  "detail": "",
+  "ms": 69
+ },
+ {
+  "id": "F03-03",
+  "name": "context: crop, sowing date, area, coordinates; rice and missing-sowing fields give explicit conflicts",
+  "status": "PASS",
+  "detail": "wheat ctx ok; rice -> UNSUPPORTED_CROP_SYSTEM; no-sowing -> n/a; waterProductivityEnabled=false",
+  "ms": 42
+ },
+ {
+  "id": "F03-04",
+  "name": "profile validation: bad initialDate, efficiency 0/1.5, wettedFraction 0, uplandNoGroundwater false, theta ordering, Kcb ordering, extra field, boolean numeric, NaN-like, short source, negative version",
+  "status": "PASS",
+  "detail": "{\"date\":400,\"eff0\":400,\"eff15\":400,\"wet0\":400,\"upl\":400,\"thetaOrder\":400,\"kcb\":400,\"extra\":400,\"boolNum\":400,\"shortSrc\":400,\"negVer\":400,\"cn\":400,\"lengths\":400,\"future\":400}",
+  "ms": 230
+ },
+ {
+  "id": "F03-05",
+  "name": "profile save v1 then optimistic concurrency: stale version -> 409; parallel writers -> exactly one wins",
+  "status": "PASS",
+  "detail": "200,409,409,409,409",
+  "ms": 195
+ },
+ {
+  "id": "F03-06",
+  "name": "run 202 (manual weather): outbox -> beat -> Celery -> COMPLETED; result has provenance, no weather fabricated, advice fields",
+  "status": "PASS",
+  "detail": "result keys: daily,method,advisory,assumptions,snapshotHash,profileSource,weatherInputs,profileVersion,initialCondition,weatherProvenance,parameterVerification",
+  "ms": 15404
+ },
+ {
+  "id": "F03-07",
+  "name": "science sanity: zero rain, ET0=4 mm/day over 25 days -> positive irrigation requirement, depletion bounded by TAW, no NaN/negative; numbers equal DB copy",
+  "status": "PASS",
+  "detail": "advisory.netDepthMm=61.60802522774935 ; advisory.grossDepthMm=82.14403363699914",
+  "ms": 15
+ },
+ {
+  "id": "F03-08",
+  "name": "sensitivity: heavy rain (80 mm/day) run needs less irrigation than dry run; recorded irrigation event reduces need",
+  "status": "PASS",
+  "detail": "dry-sum=82.14 wet-sum=0.00 (selected numeric fields)",
+  "ms": 30879
+ },
+ {
+  "id": "F03-09",
+  "name": "idempotency: same key+payload -> same run id (no duplicate); same key different payload -> 409",
+  "status": "PASS",
+  "detail": "",
+  "ms": 31033
+ },
+ {
+  "id": "F03-10",
+  "name": "run validation: future endDate, before sowing, missing weather days, extra weather day, MANUAL without rows, ARCHIVE with rows, rain<0, et0>30, confirmedNoOtherIrrigation false, profile missing season",
+  "status": "PASS",
+  "detail": "{\"future\":400,\"short\":400,\"extra\":400,\"noRows\":400,\"archWithRows\":400,\"rainNeg\":400,\"et0Big\":400,\"noConfirm\":400,\"srcShort\":400,\"keyBad\":400,\"beforeSow\":400,\"rice\":409}",
+  "ms": 1438
+ },
+ {
+  "id": "F03-11",
+  "name": "events: record actual irrigation (201); same key replay identical; same key different -> 409; second event same date 409; future date 400; 0/negative/301 mm 400; B cannot read",
+  "status": "PASS",
+  "detail": "{\"fut\":400,\"zero\":400,\"neg\":400,\"big\":400,\"pre\":400,\"effBig\":400}",
+  "ms": 397
+ },
+ {
+  "id": "F03-12",
+  "name": "REAL Open-Meteo ARCHIVE weather run (profile from sowing to yesterday) -> COMPLETED with provider provenance and plausible ET0 inputs",
+  "status": "PASS",
+  "detail": "provider=OPEN_METEO_ARCHIVE ET0 mean=3.92 mm/day rain total=30.5 mm",
+  "ms": 27662
+ },
+ {
+  "id": "F03-13",
+  "name": "WaPOR water-productivity run is honestly BLOCKED_EXTERNAL when WAPOR_ENABLED=false (no synthetic result)",
+  "status": "PASS",
+  "detail": "status=BLOCKED_EXTERNAL code=WAPOR_NOT_CONFIGURED (needs WAPOR credentials/pywapor)",
+  "ms": 30825
+ },
+ {
+  "id": "F03-14",
+  "name": "rate limit: runs >10/hour per farmer -> 429; history lists own runs only",
+  "status": "PASS",
+  "detail": "202,202,202,202,202,202,202,202,202,202,429,429",
+  "ms": 1185
+ },
+ {
+  "id": "F03-15",
+  "name": "run result access: B cannot read A run by id (404)",
+  "status": "PASS",
+  "detail": "",
+  "ms": 47
+ },
+ {
+  "id": "F03-16",
+  "name": "broker outage keeps a committed run: stop Redis, submit (accepted or typed error), restart, beat redispatches -> COMPLETED",
+  "status": "PASS",
+  "detail": "accepted with Redis down; completed after recovery via outbox",
+  "ms": 57558
+ }
+]

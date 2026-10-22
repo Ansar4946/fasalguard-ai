@@ -1,0 +1,318 @@
+﻿# Fasal Guard platform stack (incremental FastAPI migration).
+#
+#   docker compose -f compose.platform.yml up -d --build
+#
+# Separate Compose project and volumes from the legacy `fasalguard` stack (docker-compose.yml),
+# so the old containers and their database are never touched. Secrets come from ./.env
+# (gitignored); see docs/platform/ENVIRONMENT.md. All ports bind to 127.0.0.1.
+name: fasalguard-platform
+
+x-db-url: &db-url postgresql://fasalguard:${FG_POSTGRES_PASSWORD:?set in .env}@postgres:5432/fasalguard
+
+x-app-env: &app-env
+  NODE_ENV: development
+  PORT: 4000
+  DATABASE_URL: *db-url
+  DATABASE_SSL: "false"
+  REDIS_URL: redis://redis:6379
+  LOG_LEVEL: info
+  ENABLE_SWAGGER: "true"
+  CORS_ORIGINS: http://localhost:3000
+  ENFORCE_FIELD_WITHIN_FARM: "true"
+  JWT_ACCESS_SECRET: ${FG_JWT_ACCESS_SECRET:?set in .env}
+  JWT_ISSUER: fasalguard-api
+  JWT_AUDIENCE: fasalguard-clients
+  ACCESS_TOKEN_TTL_SECONDS: "900"
+  REFRESH_TOKEN_TTL_DAYS: "30"
+  OTP_PROVIDER: development
+  WEB_APP_URL: ${WEB_APP_URL:-http://localhost:3000}
+  PASSWORD_SETUP_TTL_MINUTES: ${PASSWORD_SETUP_TTL_MINUTES:-30}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM: ${SMTP_FROM:-}
+  OBJECT_STORAGE_PROVIDER: local-disk
+  MEDIA_LOCAL_DIR: /data/media
+  API_PUBLIC_URL: http://localhost:4000/api/v1
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+  STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+  SENTINEL_HUB_CLIENT_ID: ${SENTINEL_HUB_CLIENT_ID:-}
+  SENTINEL_HUB_CLIENT_SECRET: ${SENTINEL_HUB_CLIENT_SECRET:-}
+  SENTINEL_HUB_BASE_URL: ${SENTINEL_HUB_BASE_URL:-https://services.sentinel-hub.com}
+  SENTINEL_HUB_AUTH_URL: ${SENTINEL_HUB_AUTH_URL:-https://services.sentinel-hub.com/auth/realms/main/protocol/openid-connect/token}
+  WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
+  OPEN_METEO_BASE_URL: https://api.open-meteo.com
+  OPENWEATHERMAP_BASE_URL: https://api.openweathermap.org
+  OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY:-}
+  WEATHER_CACHE_TTL_SECONDS: 900
+  WEATHER_ALERT_MIN_INTERVAL_HOURS: ${WEATHER_ALERT_MIN_INTERVAL_HOURS:-12}
+  VISION_PROVIDER: ${VISION_PROVIDER:-self-hosted}
+  SELF_HOSTED_VISION_URL: http://geospatial-ai:8000
+  ROBOFLOW_BASE_URL: ${ROBOFLOW_BASE_URL:-https://serverless.roboflow.com}
+  ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY:-}
+  ROBOFLOW_MODEL_ID: ${ROBOFLOW_MODEL_ID:-}
+  ROBOFLOW_MODEL_VERSION: ${ROBOFLOW_MODEL_VERSION:-}
+  ROBOFLOW_MODEL_TASK: ${ROBOFLOW_MODEL_TASK:-classification}
+  ROBOFLOW_WHEAT_MODEL_ID: ${ROBOFLOW_WHEAT_MODEL_ID:-}
+  ROBOFLOW_WHEAT_MODEL_VERSION: ${ROBOFLOW_WHEAT_MODEL_VERSION:-}
+  ROBOFLOW_WHEAT_MODEL_TASK: ${ROBOFLOW_WHEAT_MODEL_TASK:-classification}
+  ROBOFLOW_RICE_MODEL_ID: ${ROBOFLOW_RICE_MODEL_ID:-}
+  ROBOFLOW_RICE_MODEL_VERSION: ${ROBOFLOW_RICE_MODEL_VERSION:-}
+  ROBOFLOW_RICE_MODEL_TASK: ${ROBOFLOW_RICE_MODEL_TASK:-classification}
+  VISION_MODEL_PATH: /models/cotton-disease.onnx
+  VISION_MODEL_MANIFEST_PATH: /models/cotton-disease.json
+  VISION_MINIMUM_CONFIDENCE: ${VISION_MINIMUM_CONFIDENCE:-0.65}
+  VISION_EXPERT_REVIEW_BELOW: ${VISION_EXPERT_REVIEW_BELOW:-0.85}
+  QWEN_BASE_URL: https://dashscope-intl.aliyuncs.com
+  QWEN_API_KEY: ${QWEN_API_KEY:-}
+  QWEN_MODEL: qwen-plus
+  SPEECH_PROVIDER: ${SPEECH_PROVIDER:-fake}
+  AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY:-}
+  AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION:-}
+  SPEECH_PROVIDER_TIMEOUT_MS: ${SPEECH_PROVIDER_TIMEOUT_MS:-20000}
+  FARM_BRAIN_PROVIDER: ${FARM_BRAIN_PROVIDER:-fake}
+  GEMINI_TRANSPORT: google-ai
+  GEMINI_MODEL: gemini-3.6-flash
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  SATELLITE_MAX_CLOUD_COVERAGE: "30"
+  SATELLITE_PLATFORM_ENABLED: ${SATELLITE_PLATFORM_ENABLED:-false}
+  GEOSPATIAL_AI_URL: http://geospatial-ai:8000
+  AMIS_SYNC_ENABLED: ${AMIS_SYNC_ENABLED:-false}
+  AMIS_SCRAPE_TIMEOUT_MS: ${AMIS_SCRAPE_TIMEOUT_MS:-120000}
+  MARKET_CACHE_TTL_SECONDS: ${MARKET_CACHE_TTL_SECONDS:-3600}
+  MARKET_MAX_AGE_DAYS: ${MARKET_MAX_AGE_DAYS:-1}
+  AMIS_BASE_URL: ${AMIS_BASE_URL:-http://www.amis.pk}
+  AMIS_TIMEOUT_SECONDS: ${AMIS_TIMEOUT_SECONDS:-30}
+  AMIS_REQUEST_DELAY_SECONDS: ${AMIS_REQUEST_DELAY_SECONDS:-1}
+  SATELLITE_MONITORING_INTERVAL_HOURS: "8"
+  SATELLITE_PROVIDER_REQUESTS_PER_MINUTE: "30"
+  INTERNAL_SERVICE_TOKEN: ${FG_INTERNAL_SERVICE_TOKEN:?set in .env}
+
+x-platform-env: &platform-env
+  NODE_ENV: development
+  OFFLINE_SYNC_ENABLED: ${OFFLINE_SYNC_ENABLED:-false}
+  LOG_LEVEL: info
+  DATABASE_URL: *db-url
+  REDIS_URL: redis://redis:6379/0
+  PLATFORM_CELERY_BROKER_URL: redis://redis:6379/2
+  JWT_ACCESS_SECRET: ${FG_JWT_ACCESS_SECRET:?set in .env}
+  JWT_ISSUER: fasalguard-api
+  JWT_AUDIENCE: fasalguard-clients
+  MEDIA_LOCAL_DIR: /data/media
+  IRRIGATION_MAX_DAYS: ${IRRIGATION_MAX_DAYS:-180}
+  WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
+  OPEN_METEO_API_KEY: ${OPEN_METEO_API_KEY:-}
+  WEATHER_CACHE_TTL_SECONDS: ${WEATHER_CACHE_TTL_SECONDS:-900}
+  WEATHER_MAX_STALE_SECONDS: ${WEATHER_MAX_STALE_SECONDS:-3600}
+  IRRIGATION_RUN_LIMIT_PER_HOUR: ${IRRIGATION_RUN_LIMIT_PER_HOUR:-10}
+  IRRIGATION_WEATHER_TIMEOUT_SECONDS: ${IRRIGATION_WEATHER_TIMEOUT_SECONDS:-25}
+  IRRIGATION_WEATHER_API_KEY: ${IRRIGATION_WEATHER_API_KEY:-}
+  WAPOR_ENABLED: ${WAPOR_ENABLED:-false}
+  WAPOR_WORK_DIR: /data/media/wapor
+  WAPOR_CREDENTIALS_DIR: /run/secrets/pywapor
+  WAPOR_CONFIGURATION: ${WAPOR_CONFIGURATION:-WaPOR3_level_2}
+  WAPOR_MAX_PIXELS: ${WAPOR_MAX_PIXELS:-250000}
+  ROBOFLOW_BASE_URL: ${ROBOFLOW_BASE_URL:-https://serverless.roboflow.com}
+  ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY:-}
+  ROBOFLOW_WHEAT_MODEL_ID: ${ROBOFLOW_WHEAT_MODEL_ID:-}
+  ROBOFLOW_WHEAT_MODEL_VERSION: ${ROBOFLOW_WHEAT_MODEL_VERSION:-}
+  ROBOFLOW_RICE_MODEL_ID: ${ROBOFLOW_RICE_MODEL_ID:-}
+  ROBOFLOW_RICE_MODEL_VERSION: ${ROBOFLOW_RICE_MODEL_VERSION:-}
+  # Legacy config stored the cotton model in the generic ROBOFLOW_MODEL_* slot; map it explicitly.
+  ROBOFLOW_COTTON_MODEL_ID: ${ROBOFLOW_COTTON_MODEL_ID:-${ROBOFLOW_MODEL_ID:-}}
+  ROBOFLOW_COTTON_MODEL_VERSION: ${ROBOFLOW_COTTON_MODEL_VERSION:-${ROBOFLOW_MODEL_VERSION:-}}
+  VISION_MINIMUM_CONFIDENCE: ${VISION_MINIMUM_CONFIDENCE:-0.65}
+  VISION_EXPERT_REVIEW_BELOW: ${VISION_EXPERT_REVIEW_BELOW:-0.85}
+  SATELLITE_PLATFORM_ENABLED: ${SATELLITE_PLATFORM_ENABLED:-false}
+  SATELLITE_MAX_PIXELS: ${SATELLITE_MAX_PIXELS:-1000000}
+  CORE_API_INTERNAL_URL: http://api:4000/api/v1
+  INTERNAL_SERVICE_TOKEN: ${FG_INTERNAL_SERVICE_TOKEN:?set in .env}
+
+services:
+  postgres:
+    image: postgis/postgis:17-3.5-alpine
+    environment:
+      POSTGRES_DB: fasalguard
+      POSTGRES_USER: fasalguard
+      POSTGRES_PASSWORD: ${FG_POSTGRES_PASSWORD:?set in .env}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./services/api/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fasalguard -d fasalguard && psql -U fasalguard -d fasalguard -tAc \"SELECT 1 FROM pg_extension WHERE extname='postgis'\" | grep -q 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: ["redis_data:/data"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 3s, retries: 20 }
+    restart: unless-stopped
+
+  media-init:
+    image: node:22-alpine
+    command: ["sh", "-c", "mkdir -p /data/media && chown -R node:node /data/media"]
+    volumes: ["media_data:/data/media"]
+    restart: "no"
+
+  migrate:
+    build: { context: ./services/api, target: production }
+    command: ["npm", "run", "migration:run:prod"]
+    environment: { DATABASE_URL: *db-url, DATABASE_SSL: "false" }
+    depends_on: { postgres: { condition: service_healthy } }
+    restart: "no"
+
+  api:
+    build: { context: ./services/api, target: production }
+    environment: *app-env
+    ports: ["127.0.0.1:4000:4000"]
+    volumes: ["media_data:/data/media"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      media-init: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/v1/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    init: true
+    restart: unless-stopped
+
+  worker:
+    build: { context: ./services/api, target: worker }
+    environment: *app-env
+    volumes: ["media_data:/data/media"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      media-init: { condition: service_completed_successfully }
+    init: true
+    restart: unless-stopped
+
+  geospatial-ai:
+    build: { context: ./services/geospatial-ai }
+    environment:
+      AMIS_SCRAPER_ENABLED: ${AMIS_SYNC_ENABLED:-false}
+      AMIS_BASE_URL: ${AMIS_BASE_URL:-http://www.amis.pk}
+      AMIS_TIMEOUT_SECONDS: ${AMIS_TIMEOUT_SECONDS:-30}
+      AMIS_REQUEST_DELAY_SECONDS: ${AMIS_REQUEST_DELAY_SECONDS:-1}
+      VISION_MODEL_PATH: /models/cotton-disease.onnx
+      VISION_MODEL_MANIFEST_PATH: /models/cotton-disease.json
+    volumes: ["./services/geospatial-ai/models:/models:ro"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  platform-api:
+    build: { context: ./services/platform-api, target: production }
+    environment: *platform-env
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: ["media_data:/data/media:ro"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/v1/ready').status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  platform-worker:
+    build: { context: ./services/platform-api, target: production }
+    command: ["celery", "-A", "app.worker", "worker", "--loglevel=info", "--concurrency=2", "-Q", "celery,satellite,irrigation", "-n", "platform@%h"]
+    environment: *platform-env
+    volumes: ["media_data:/data/media"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.worker inspect ping --timeout 5 | grep -q pong"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  wapor-worker:
+    profiles: ["wapor"]
+    build: { context: ./services/platform-api, dockerfile: Dockerfile.wapor }
+    environment: *platform-env
+    volumes:
+      - "media_data:/data/media"
+      - "${WAPOR_CREDENTIALS_HOST_DIR:-./.wapor-credentials}:/run/secrets/pywapor:ro"
+    depends_on:
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      media-init: { condition: service_completed_successfully }
+    init: true
+    restart: unless-stopped
+
+  platform-beat:
+    build: { context: ./services/platform-api, target: production }
+    command: ["celery", "-A", "app.worker", "beat", "--loglevel=info", "--schedule=/tmp/satellite-beat"]
+    environment: *platform-env
+    depends_on:
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+  s3:
+    # minio/minio is no longer pullable (Phase B blocker B2). Chainguard's MinIO build, pinned.
+    image: cgr.dev/chainguard/minio@sha256:dc455cdd4db6e390b1b26514f15ff37681a777bf8dab41aac445a0259f751e56
+    entrypoint: ["/usr/bin/minio"]
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${FG_S3_ACCESS_KEY:?set in .env}
+      MINIO_ROOT_PASSWORD: ${FG_S3_SECRET_KEY:?set in .env}
+    ports: ["127.0.0.1:9000:9000", "127.0.0.1:9001:9001"]
+    volumes: ["s3_data:/data"]
+    healthcheck: { test: ["CMD", "mc", "ready", "local"], interval: 10s, timeout: 5s, retries: 10 }
+    restart: unless-stopped
+
+  web:
+    build: { context: ., dockerfile: Dockerfile.web }
+    environment:
+      FASALGUARD_API_URL: http://api:4000/api/v1
+      PLATFORM_API_URL: http://platform-api:8000/api/v1
+      WEATHER_PLATFORM_ENABLED: ${WEATHER_PLATFORM_ENABLED:-false}
+      SATELLITE_PLATFORM_ENABLED: ${SATELLITE_PLATFORM_ENABLED:-false}
+      WEB_APP_URL: http://localhost:3000
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      api: { condition: service_healthy }
+      platform-api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  redis_data:
+  media_data:
+  s3_data:
+
+

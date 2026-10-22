@@ -7,6 +7,7 @@ import type { CompleteUploadDto, PresignUploadDto } from './dto/media.dto';
 import { MediaStatus } from './media.enums';
 import {
   normalizeFilename,
+  validateAudioContent,
   validateImageContent,
   validateMediaPolicy,
   validateMetadata,
@@ -109,6 +110,20 @@ export class MediaService {
     if (asset.contentType.startsWith('image/')) {
       try {
         await validateImageContent(
+          await this.storage.getPrivateObject(asset.objectKey),
+          asset.contentType,
+        );
+      } catch (error) {
+        await this.db.query(
+          `UPDATE media_assets SET status='failed',updated_at=now(),version=version+1 WHERE id=$1 AND owner_id=$2`,
+          [asset.id, ownerId],
+        );
+        throw error;
+      }
+    }
+    if (asset.contentType.startsWith('audio/')) {
+      try {
+        validateAudioContent(
           await this.storage.getPrivateObject(asset.objectKey),
           asset.contentType,
         );

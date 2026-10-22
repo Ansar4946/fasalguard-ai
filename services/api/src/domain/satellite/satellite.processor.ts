@@ -1,3 +1,4 @@
+﻿import { satelliteLayers, indexScript, type SpectralIndex } from './spectral-indices';
 import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
@@ -36,31 +37,10 @@ interface CaptureRow {
   processing_status: string;
   boundary: Polygon;
   owner_id: string;
+  metric_boundary: Polygon;
+  metric_crs: number;
 }
-const layers = [
-  {
-    type: 'TRUE_COLOR',
-    // Browser-displayable — nothing downstream reads this layer's bytes back for analysis,
-    // unlike NDVI (see stress-analysis.client.ts, which needs a real georeferenced raster).
-    format: 'image/png',
-    evalscript: `//VERSION=3\nfunction setup(){return{input:["B02","B03","B04","dataMask"],output:{bands:4}}}function evaluatePixel(s){return[2.5*s.B04,2.5*s.B03,2.5*s.B02,s.dataMask]}`,
-  },
-  {
-    type: 'NDVI',
-    format: 'image/tiff',
-    evalscript: `//VERSION=3\nfunction setup(){return{input:["B04","B08","dataMask"],output:{bands:2,sampleType:"FLOAT32"}}}function evaluatePixel(s){let d=s.B08+s.B04;return[d===0?0:(s.B08-s.B04)/d,s.dataMask]}`,
-  },
-  {
-    type: 'NDMI',
-    format: 'image/tiff',
-    evalscript: `//VERSION=3\nfunction setup(){return{input:["B08","B11","dataMask"],output:{bands:2,sampleType:"FLOAT32"}}}function evaluatePixel(s){let d=s.B08+s.B11;return[d===0?0:(s.B08-s.B11)/d,s.dataMask]}`,
-  },
-  {
-    type: 'DATA_QUALITY',
-    format: 'image/tiff',
-    evalscript: `//VERSION=3\nfunction setup(){return{input:["SCL","dataMask"],output:{bands:2,sampleType:"UINT8"}}}function evaluatePixel(s){let valid=s.dataMask&&![0,1,3,8,9,10,11].includes(s.SCL);return[valid?1:0,s.SCL]}`,
-  },
-] as const;
+const layers = satelliteLayers;
 
 @Processor(SATELLITE_QUEUE, { concurrency: 2, lockDuration: 120_000 })
 export class SatelliteProcessor extends WorkerHost {
@@ -184,7 +164,7 @@ export class SatelliteProcessor extends WorkerHost {
       `SELECT count(*)::text count FROM satellite_layers WHERE capture_id=$1`,
       [x.captureId],
     );
-    if (Number(existing[0]?.count ?? 0) < 4) {
+    if (Number(existing[0]?.count ?? 0) < layers.length) {
       const c = await this.capture(x.captureId);
       for (const layer of layers) {
         const found: Array<{ id: string }> = await this.db.query(
@@ -193,7 +173,7 @@ export class SatelliteProcessor extends WorkerHost {
         );
         if (found[0]) continue;
         const rendered = await this.provider.render(
-          this.processPayload(c.boundary, x, layer.evalscript, layer.format),
+          this.processPayload(c.metric_boundary, x, layer.evalscript, layer.format, c.metric_crs),
         );
         const extension = layer.format === 'image/png' ? 'png' : 'tiff';
         const key = `satellite/${x.fieldId}/${x.captureId}/${layer.type.toLowerCase()}.${extension}`;
@@ -226,14 +206,14 @@ export class SatelliteProcessor extends WorkerHost {
   }
   private async statistics(x: CaptureContext): Promise<void> {
     const c = await this.capture(x.captureId);
-    for (const index of ['NDVI', 'NDMI'] as const) {
+    for (const index of ['NDVI', 'EVI', 'NDWI', 'NDMI'] as const) {
       const found: Array<{ id: string }> = await this.db.query(
         `SELECT id FROM satellite_statistics WHERE capture_id=$1 AND index=$2`,
         [x.captureId, index],
       );
       if (found[0]) continue;
       const raw = await this.provider.statistics<Record<string, unknown>>(
-        this.statisticsPayload(c.boundary, x, index),
+        this.statisticsPayload(c.metric_boundary, x, index, c.metric_crs),
       );
       const normalized = this.normalizeStatistics(raw);
       await this.db.query(
@@ -413,7 +393,7 @@ export class SatelliteProcessor extends WorkerHost {
   }
   private async next(stage: Stage, data: CaptureContext): Promise<void> {
     await this.queue.add(stage, data, {
-      // BullMQ rejects ':' in a custom jobId ("Custom Id cannot contain :") — stage names
+      // BullMQ rejects ':' in a custom jobId ("Custom Id cannot contain :") â€” stage names
       // like 'satellite:process' must be sanitized here even though they're valid job names.
       jobId: `${data.captureId}-${stage.replace(/:/g, '_')}`,
       attempts: 4,
@@ -424,7 +404,7 @@ export class SatelliteProcessor extends WorkerHost {
   }
   private async capture(id: string): Promise<CaptureRow> {
     const rows: CaptureRow[] = await this.db.query(
-      `SELECT sc.*,ST_AsGeoJSON(fi.boundary)::json boundary,u.id owner_id FROM satellite_captures sc JOIN fields fi ON fi.id=sc.field_id JOIN farms f ON f.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=f.farmer_id JOIN users u ON u.id=fp.user_id WHERE sc.id=$1`,
+      `SELECT sc.*,ST_AsGeoJSON(fi.boundary)::json boundary,u.id owner_id,utm.epsg metric_crs,ST_AsGeoJSON(ST_Transform(fi.boundary,utm.epsg))::json metric_boundary FROM satellite_captures sc JOIN fields fi ON fi.id=sc.field_id JOIN farms f ON f.id=fi.farm_id JOIN farmer_profiles fp ON fp.id=f.farmer_id JOIN users u ON u.id=fp.user_id CROSS JOIN LATERAL (SELECT (CASE WHEN ST_Y(ST_Centroid(fi.boundary))<0 THEN 32700 ELSE 32600 END)+LEAST(60,GREATEST(1,FLOOR((ST_X(ST_Centroid(fi.boundary))+180)/6)::int+1)) epsg) utm WHERE sc.id=$1`,
       [id],
     );
     if (!rows[0]) throw new Error('Capture not found');
@@ -435,14 +415,19 @@ export class SatelliteProcessor extends WorkerHost {
     x: CaptureContext,
     evalscript: string,
     format: string,
+    epsg: number,
   ): Record<string, unknown> {
     const range = this.sceneRange(x.acquisitionDate);
     return {
       input: {
-        bounds: { geometry: polygon },
+        bounds: {
+          geometry: polygon,
+          properties: { crs: `http://www.opengis.net/def/crs/EPSG/0/${epsg}` },
+        },
         data: [
           {
             type: 'sentinel-2-l2a',
+            processing: { harmonizeValues: false, upsampling: 'NEAREST', downsampling: 'NEAREST' },
             dataFilter: {
               timeRange: range,
               mosaickingOrder: 'leastCC',
@@ -461,21 +446,20 @@ export class SatelliteProcessor extends WorkerHost {
   private statisticsPayload(
     polygon: Polygon,
     x: CaptureContext,
-    index: 'NDVI' | 'NDMI',
+    index: SpectralIndex,
+    epsg: number,
   ): Record<string, unknown> {
-    const bands =
-      index === 'NDVI' ? ['B04', 'B08', 'SCL', 'dataMask'] : ['B08', 'B11', 'SCL', 'dataMask'];
-    const expr =
-      index === 'NDVI'
-        ? '((s.B08+s.B04)===0?0:(s.B08-s.B04)/(s.B08+s.B04))'
-        : '((s.B08+s.B11)===0?0:(s.B08-s.B11)/(s.B08+s.B11))';
     const range = this.sceneRange(x.acquisitionDate);
     return {
       input: {
-        bounds: { geometry: polygon },
+        bounds: {
+          geometry: polygon,
+          properties: { crs: `http://www.opengis.net/def/crs/EPSG/0/${epsg}` },
+        },
         data: [
           {
             type: 'sentinel-2-l2a',
+            processing: { harmonizeValues: false, upsampling: 'NEAREST', downsampling: 'NEAREST' },
             dataFilter: { timeRange: range },
           },
         ],
@@ -485,7 +469,7 @@ export class SatelliteProcessor extends WorkerHost {
         aggregationInterval: { of: 'P1D' },
         resx: 10,
         resy: 10,
-        evalscript: `//VERSION=3\nfunction setup(){return{input:${JSON.stringify(bands)},output:[{id:"index",bands:1},{id:"dataMask",bands:1}]}}function evaluatePixel(s){let clear=s.dataMask&&![0,1,3,8,9,10,11].includes(s.SCL);return{index:[${expr}],dataMask:[clear?1:0]}}`,
+        evalscript: indexScript(index, true),
       },
       calculations: {
         index: {
@@ -522,7 +506,8 @@ export class SatelliteProcessor extends WorkerHost {
       percentiles: stats.percentiles ?? {},
       histogram: output?.histogram ?? null,
       validPixelPercentage: sampleCount ? ((sampleCount - noDataCount) / sampleCount) * 100 : 0,
-      maskedCloudPercentage: sampleCount ? (noDataCount / sampleCount) * 100 : 100,
+      maskedPixelPercentage: sampleCount ? (noDataCount / sampleCount) * 100 : 100,
+      maskedCloudPercentage: null, // Provider aggregate does not distinguish cloud from other masks.
       providerResponse: raw,
     };
   }

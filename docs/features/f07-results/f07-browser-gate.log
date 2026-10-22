@@ -1,0 +1,4 @@
+COMMAND: node tests/e2e/market-live.cjs
+BLOCKED_EXTERNAL: configure F07_WEB_URL, F07_STORAGE_STATE_PATH and F07_EXPECT_RECORD_ID from an isolated persisted test fixture.
+
+EXIT: 2

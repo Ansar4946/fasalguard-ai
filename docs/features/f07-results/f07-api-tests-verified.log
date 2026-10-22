@@ -1,0 +1,16 @@
+COMMAND: node node_modules/jest/bin/jest.js --runInBand --runTestsByPath test/market-data-policy.spec.ts test/amis-html.parser.spec.ts test/amis-market-price.provider.spec.ts test/market.scheduler.spec.ts
+CWD: services/api
+[Nest] 17928  - 10/14/2026, 3:00:00 PM    WARN [MarketService] Market read cache unavailable; reading PostgreSQL.
+[Nest] 17928  - 10/14/2026, 3:00:00 PM    WARN [MarketService] Market database read failed or timed out.
+PASS test/amis-html.parser.spec.ts (33.718 s)
+PASS test/market-data-policy.spec.ts (10.942 s)
+PASS test/amis-market-price.provider.spec.ts
+PASS test/market.scheduler.spec.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       33 passed, 33 total
+Snapshots:   0 total
+Time:        51.894 s, estimated 137 s
+Ran all test suites within paths "test/market-data-policy.spec.ts", "test/amis-html.parser.spec.ts", "test/amis-market-price.provider.spec.ts", "test/market.scheduler.spec.ts".
+
+EXIT: 0 ERROR: none

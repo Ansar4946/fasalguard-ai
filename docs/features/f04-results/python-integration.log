@@ -1,0 +1,36 @@
+.........                                                                [100%]
+=============================== warnings summary ===============================
+../usr/local/lib/python3.12/site-packages/starlette/testclient.py:37
+  /usr/local/lib/python3.12/site-packages/starlette/testclient.py:37: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64
+  /usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+    prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
+
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+  /usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+  /usr/local/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+../usr/local/lib/python3.12/site-packages/matplotlib/_mathtext.py:45
+  /usr/local/lib/python3.12/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+9 passed, 15 warnings in 15.33s
+
+exit=0

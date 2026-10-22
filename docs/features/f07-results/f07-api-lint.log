@@ -1,0 +1,33 @@
+COMMAND: node node_modules/eslint/bin/eslint.js src/domain/market test/market-data-policy.spec.ts test/amis-html.parser.spec.ts test/amis-market-price.provider.spec.ts
+CWD: services/api
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\services\api\test\amis-market-price.provider.spec.ts
+  120:25  error  Replace `⏎······.fn()⏎······` with `.fn()`    prettier/prettier
+  123:7   error  Delete `··`                                   prettier/prettier
+  124:1   error  Delete `··`                                   prettier/prettier
+  125:1   error  Delete `··`                                   prettier/prettier
+  126:1   error  Replace `··············` with `············`  prettier/prettier
+  127:1   error  Delete `··`                                   prettier/prettier
+  128:9   error  Delete `··`                                   prettier/prettier
+  129:1   error  Delete `··`                                   prettier/prettier
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\services\api\test\market-data-policy.spec.ts
+   26:1   error  Missing return type on function                                                                                                                                                                                                                                                                                                             @typescript-eslint/explicit-function-return-type
+   77:17  error  A method that is not declared with `this: void` may cause unintentional scoping of `this` when separated from its object.
+Consider using an arrow function or explicitly `.bind()`ing the method to avoid calling the method with an unintended `this` value. 
+If a function does not access `this`, it can be annotated with `this: void`  @typescript-eslint/unbound-method
+   88:12  error  A method that is not declared with `this: void` may cause unintentional scoping of `this` when separated from its object.
+Consider using an arrow function or explicitly `.bind()`ing the method to avoid calling the method with an unintended `this` value. 
+If a function does not access `this`, it can be annotated with `this: void`  @typescript-eslint/unbound-method
+  129:3   error  Missing return type on function                                                                                                                                                                                                                                                                                                             @typescript-eslint/explicit-function-return-type
+  145:41  error  Async method 'fetchCurrentPrices' has no 'await' expression                                                                                                                                                                                                                                                                                 @typescript-eslint/require-await
+  145:41  error  Missing return type on function                                                                                                                                                                                                                                                                                                             @typescript-eslint/explicit-function-return-type
+  166:12  error  A method that is not declared with `this: void` may cause unintentional scoping of `this` when separated from its object.
+Consider using an arrow function or explicitly `.bind()`ing the method to avoid calling the method with an unintended `this` value. 
+If a function does not access `this`, it can be annotated with `this: void`  @typescript-eslint/unbound-method
+
+✖ 15 problems (15 errors, 0 warnings)
+  8 errors and 0 warnings potentially fixable with the `--fix` option.
+
+
+EXIT: 1 SIGNAL: null

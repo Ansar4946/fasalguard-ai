@@ -10,7 +10,11 @@ import { MediaService } from '../src/domain/media/media.service';
 const productionEnvironment = {
   NODE_ENV: 'production',
   DATABASE_URL: 'postgresql://service:secret@db:5432/fasalguard',
+  DATABASE_SSL: true,
   REDIS_URL: 'rediss://cache:6379',
+  WEB_APP_URL: 'https://app.fasalguard.example',
+  API_PUBLIC_URL: 'https://api.fasalguard.example/api/v1',
+  INTERNAL_SERVICE_TOKEN: 'i'.repeat(40),
   JWT_ACCESS_SECRET: 'x'.repeat(64),
   CORS_ORIGINS: 'https://app.fasalguard.example',
   ENABLE_SWAGGER: false,
@@ -26,6 +30,15 @@ const productionEnvironment = {
   FARM_BRAIN_PROVIDER: 'gemini',
   GEMINI_TRANSPORT: 'vertex',
   GOOGLE_CLOUD_PROJECT: 'fasalguard-production',
+  OPEN_METEO_BASE_URL: 'https://customer-api.open-meteo.com',
+  OPEN_METEO_API_KEY: 'synthetic-test-key',
+  PUSH_PROVIDER: 'firebase',
+  ASSISTANT_PROVIDER: 'gemini',
+  GEMINI_API_KEY: 'synthetic-test-key',
+  SPEECH_PROVIDER: 'fake',
+  SPEECH_STT_PROVIDER: 'assemblyai',
+  ASSEMBLYAI_API_KEY: 'synthetic-test-key',
+  FIREBASE_SERVICE_ACCOUNT_BASE64: 'c3ludGhldGljLXRlc3QtZml4dHVyZQ==',
 };
 
 describe('production security hardening', () => {
@@ -59,6 +72,51 @@ describe('production security hardening', () => {
         QWEN_BASE_URL: 'https://user:secret@dashscope-intl.aliyuncs.com',
       }).error,
     ).toBeDefined();
+  });
+  it('enforces transport and public-URL production guards', () => {
+    const bad = (override: Record<string, unknown>): unknown =>
+      environmentSchema.validate({ ...productionEnvironment, ...override }).error;
+    expect(bad({ DATABASE_SSL: false })).toBeDefined();
+    expect(bad({ DATABASE_SSL: false, ALLOW_PLAINTEXT_DATABASE: true })).toBeUndefined();
+    expect(bad({ REDIS_URL: 'redis://cache:6379' })).toBeDefined();
+    expect(bad({ INTERNAL_SERVICE_TOKEN: '' })).toBeDefined();
+    expect(bad({ INTERNAL_SERVICE_TOKEN: 'short' })).toBeDefined();
+    expect(bad({ WEB_APP_URL: 'http://localhost:3000' })).toBeDefined();
+    expect(bad({ WEB_APP_URL: 'https://127.0.0.1' })).toBeDefined();
+    expect(bad({ WEB_APP_URL: 'http://app.fasalguard.example' })).toBeDefined();
+    expect(bad({ API_PUBLIC_URL: 'https://localhost:4000/api/v1' })).toBeDefined();
+    expect(
+      bad({ CORS_ORIGINS: 'https://app.fasalguard.example,http://localhost:3000' }),
+    ).toBeDefined();
+    expect(bad({ TRUST_PROXY: 'true' })).toBeDefined();
+    expect(bad({ TRUST_PROXY: '1' })).toBeUndefined();
+    expect(bad({ TRUST_PROXY: 'banana' })).toBeDefined();
+  });
+  it('requires complete Stripe configuration once billing is enabled', () => {
+    const stripe = {
+      STRIPE_SECRET_KEY: 'sk_test_synthetic',
+      STRIPE_WEBHOOK_SECRET: 'whsec_synthetic',
+      STRIPE_PUBLISHABLE_KEY: 'pk_test_synthetic',
+    };
+    expect(
+      environmentSchema.validate({ ...productionEnvironment, ...stripe }).error,
+    ).toBeUndefined();
+    expect(
+      environmentSchema.validate({
+        ...productionEnvironment,
+        STRIPE_SECRET_KEY: 'sk_test_synthetic',
+      }).error,
+    ).toBeDefined();
+  });
+  it('keeps non-production defaults permissive', () => {
+    expect(
+      environmentSchema.validate({
+        NODE_ENV: 'development',
+        DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+        REDIS_URL: 'redis://localhost:6379',
+        JWT_ACCESS_SECRET: 'x'.repeat(32),
+      }).error,
+    ).toBeUndefined();
   });
   it('sets restrictive API headers and removes framework disclosure', () => {
     const headers = new Map<string, string>();

@@ -1,0 +1,83 @@
+{
+  "status": "RUN_PASS",
+  "passed": 19,
+  "failed": 0,
+  "results": [
+    {
+      "name": "unauthenticated page redirects to login and ledger BFF returns 401",
+      "status": "PASS"
+    },
+    {
+      "name": "genuine empty ledger is shown only after a successful zero-record response",
+      "status": "PASS"
+    },
+    {
+      "name": "simulation notice is visible and Start is disabled until acknowledged",
+      "status": "PASS"
+    },
+    {
+      "name": "PIN setup with wrong password is rejected, correct password succeeds",
+      "status": "PASS"
+    },
+    {
+      "name": "confirmed PKR 321 expense: receipt verified against ledger and PostgreSQL (32100 paisa, owner A)",
+      "status": "PASS"
+    },
+    {
+      "name": "reload keeps the persisted record visible",
+      "status": "PASS"
+    },
+    {
+      "name": "replaying the confirming request with the same event id returns the same receipt and creates no duplicate",
+      "status": "PASS"
+    },
+    {
+      "name": "ledger HTTP 500 shows an error (not empty), keeps last good records, and retry recovers",
+      "status": "PASS"
+    },
+    {
+      "name": "malformed 200 body is an error, never an empty ledger",
+      "status": "PASS"
+    },
+    {
+      "name": "network failure is an error and recovers on retry",
+      "status": "PASS"
+    },
+    {
+      "name": "delayed ledger visibility: verification retries until the row appears",
+      "status": "PASS"
+    },
+    {
+      "name": "tampered amount in the ledger response is flagged as a mismatch, not verified",
+      "status": "PASS"
+    },
+    {
+      "name": "receipt absent from ledger is reported as not yet visible, never verified",
+      "status": "PASS"
+    },
+    {
+      "name": "cancel at review stores nothing",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid inputs are rejected without ledger writes (bad PIN format, zero/negative/decimal/oversize amount)",
+      "status": "PASS"
+    },
+    {
+      "name": "ledger rows are append-only at the database layer",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile viewport: no horizontal overflow and keyboard-only flow works",
+      "status": "PASS"
+    },
+    {
+      "name": "account switch: farmer B sees no records of farmer A and no cross-user DB rows",
+      "status": "PASS"
+    },
+    {
+      "name": "expired/revoked session: ledger refresh shows session-ended and clears records; sending is refused",
+      "status": "PASS"
+    }
+  ]
+}

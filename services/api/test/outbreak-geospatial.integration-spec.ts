@@ -34,7 +34,7 @@ integration('Privacy-safe PostGIS outbreak foundation', () => {
       id: string;
     }>;
     const profile = (await runner.query(
-      `INSERT INTO farmer_profiles(user_id,full_name)VALUES($1,'Outbreak Farmer')RETURNING id`,
+      `INSERT INTO farmer_profiles(user_id,full_name,referral_code)VALUES($1,'Outbreak Farmer',upper(substr(md5(random()::text),1,8)))RETURNING id`,
       [farmer[0]!.id],
     )) as Array<{ id: string }>;
     const farm = (await runner.query(

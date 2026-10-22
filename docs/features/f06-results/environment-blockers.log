@@ -1,0 +1,6 @@
+Docker test environment check:
+- default docker ps --format {{.Names}} did not return usable output.
+- bounded docker --context desktop-linux ps --format {{.Names}} returned no output before timeout.
+- bounded process result: exit=null; error=ETIMEDOUT; timeout=15000ms.
+No Docker Desktop/container/volume restart or reset was performed.
+Migration41 and real PostGIS integration tests were not executed.

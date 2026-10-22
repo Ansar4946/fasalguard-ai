@@ -32,6 +32,12 @@ export interface CurrentWeatherResponse {
 
 /** Shape returned by GET /api/fields/:id/weather/forecast. */
 export interface ForecastResponse {
+  fetchedAt?: string;
+  expiresAt?: string;
+  freshness?: "FRESH" | "STALE";
+  providerIssuedAt?: string | null;
+  resolutionMinutes?: number;
+  daily?: Array<{ key: string; highC: number | null; lowC: number | null; totalPrecipitationMm: number | null; maxWindKph: number | null; maxRainProbabilityPercent: number | null }>;
   fieldId: string;
   provider: WeatherProviderName;
   timezone: string;
@@ -67,7 +73,7 @@ export interface WeatherRisksResponse {
   ruleProvenance: { hasExpertApprovedRules: boolean; demoRuleCount: number };
 }
 
-export type DayCondition = "clear" | "chance-of-rain" | "rain-likely";
+export type DayCondition = "unknown" | "clear" | "chance-of-rain" | "rain-likely";
 
 /** One calendar day's worth of hourly points, summarised for display. */
 export interface DaySummary {

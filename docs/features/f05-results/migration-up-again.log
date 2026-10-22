@@ -1,0 +1,27 @@
+
+> @fasalguard/api@0.1.0 migration:run
+> typeorm-ts-node-commonjs -d src/infrastructure/database/data-source.ts migration:run
+
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+query: SELECT version()
+query: SELECT * FROM current_schema()
+query: CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+query: CREATE EXTENSION IF NOT EXISTS "postgis"
+query: SELECT * FROM "information_schema"."tables" WHERE "table_schema" = 'public' AND "table_name" = 'typeorm_migrations'
+query: SELECT * FROM "typeorm_migrations" "typeorm_migrations" ORDER BY "id" DESC
+38 migrations are already loaded in the database.
+39 migrations were found in the source code.
+WeatherForecastProvenance1755000039000 is the last executed migration. It was executed on Tue Aug 12 2025 12:00:39 GMT+0000 (Coordinated Universal Time).
+1 migrations are new migrations must be executed.
+query: START TRANSACTION
+query: ALTER TABLE fields ADD COLUMN boundary_metadata jsonb NOT NULL DEFAULT '{}'::jsonb
+query: CREATE TABLE field_geometry_imports (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+      farm_id uuid NOT NULL REFERENCES farms(id) ON DELETE RESTRICT, idempotency_key uuid NOT NULL,
+      request_hash varchar(64) NOT NULL, result jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now(),
+      CONSTRAINT uq_geometry_import_owner_key UNIQUE(owner_id,idempotency_key))
+query: INSERT INTO "typeorm_migrations"("timestamp", "name") VALUES ($1, $2) -- PARAMETERS: [1755000040000,"FieldGeometryImports1755000040000"]
+Migration FieldGeometryImports1755000040000 has been executed successfully.
+query: COMMIT
+
+exit=0

@@ -1,0 +1,15 @@
+COMMAND: node node_modules/eslint/bin/eslint.js src/domain/market test/market-data-policy.spec.ts test/amis-html.parser.spec.ts test/amis-market-price.provider.spec.ts test/market-workflow.integration-spec.ts test/market.integration-spec.ts
+CWD: services/api
+
+D:\Fasal Guard Development Workspace\fasalguard-ai\services\api\test\market-workflow.integration-spec.ts
+  127:36  error  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+  157:19  error  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+  159:19  error  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+  165:19  error  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+  172:19  error  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+  176:36  error  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+
+✖ 6 problems (6 errors, 0 warnings)
+
+
+EXIT: 1 ERROR: none

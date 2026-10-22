@@ -1,0 +1,4 @@
+PASS F01-28 baseline: core worker processes a scan within 60 s :: NEEDS_FOLLOW_UP
+PASS F01-29 after a Redis restart (stop 5 s, start), a scan submitted once Redis is healthy is processed by the already-running worker within 90 s :: analyse=202 final=NEEDS_FOLLOW_UP
+PASS F01-29b after a 45 s Redis outage, a scan submitted once Redis is healthy is processed by the already-running worker within 120 s :: analyse=202 final=NEEDS_FOLLOW_UP
+SUMMARY pass=3 fail=0 blocked=0

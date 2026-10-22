@@ -1,0 +1,10 @@
+src/domain/farms/farm-management.service.ts 750ms (unchanged)
+src/domain/farms/dto/farm-management.dto.ts 134ms (unchanged)
+src/domain/geospatial/geojson-polygon.ts 104ms (unchanged)
+src/infrastructure/database/migrations/1755000040000-field-geometry-imports.ts 9ms (unchanged)
+test/geojson-polygon.spec.ts 52ms (unchanged)
+test/farm-management.integration-spec.ts 288ms
+test/database-geospatial.integration-spec.ts 70ms (unchanged)
+test/security-hardening.spec.ts 47ms (unchanged)
+
+exit=0
