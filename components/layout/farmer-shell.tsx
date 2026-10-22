@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { UpgradeNudge } from "@/components/billing/upgrade-nudge";
+import { isDawaiCheckEnabled } from "@/features/dawai-check/flag";
 
 type NavItem = {
   href: string;
@@ -26,6 +27,7 @@ const navigation: NavItem[] = [
   },
   { href: "/weather", label: "Weather Intelligence", icon: "weather" as const },
   { href: "/irrigation", label: "Irrigation & Water", icon: "weather" as const },
+  ...(isDawaiCheckEnabled() ? [{ href: "/dawai-check", label: "Dawai Check", icon: "scan" as const }] : []),
   { href: "/market-intelligence", label: "Market Intelligence", icon: "market" as const },
   { href: "/radar", label: "Outbreak Radar", icon: "radar" as const },
   { href: "/alerts", label: "Alerts", icon: "bell" as const },

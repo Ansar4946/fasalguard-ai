@@ -7,7 +7,7 @@ const presignSchema = z.object({
   contentType: z.string().trim().min(3).max(120),
   sizeBytes: z.number().int().min(1).max(104_857_600),
   checksum: z.string().regex(/^[a-f0-9]{64}$/i).optional(),
-  purpose: z.enum(["crop-scan", "field-inspection", "expert-review", "voice-note", "satellite", "report"]),
+  purpose: z.enum(["crop-scan", "field-inspection", "expert-review", "voice-note", "satellite", "report", "pesticide-label"]),
 });
 
 export async function POST(request: Request): Promise<Response> {
