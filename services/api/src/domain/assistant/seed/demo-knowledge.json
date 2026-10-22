@@ -1,0 +1,174 @@
+{
+  "label": "DEMO - not expert-reviewed",
+  "source": "DEMO - not expert-reviewed (FasalGuard hackathon demo content)",
+  "articles": [
+    {
+      "key": "wheat-seedbed",
+      "crop": "WHEAT",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Wheat seed-bed preparation and sowing habits",
+      "content": "A good wheat crop starts with a well prepared seed-bed. Clear the field of old stubble and weeds, loosen the soil so it is fine and level, and avoid sowing into soil that is too wet or hard and dry. Use clean, healthy seed from a source you trust, and sow evenly so plants are not crowded in one place and bare in another. The best sowing time depends on your area and the season, so follow the sowing window your local agriculture office advises. Write the sowing date and the seed source in your farm record. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "wheat-seedbed",
+      "crop": "WHEAT",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: گندم کی زمین کی تیاری اور بوائی کی عادتیں",
+      "content": "اچھی گندم کی فصل اچھی طرح تیار کی ہوئی زمین سے شروع ہوتی ہے۔ کھیت سے پرانا بھوسا، جڑی بوٹیاں اور کچرا صاف کریں، زمین کو اتنا نرم اور ہموار کریں کہ بیج برابر بیٹھے، اور بہت گیلی یا بہت سخت اور خشک زمین میں بوائی سے بچیں۔ صاف ستھرا اور صحت مند بیج کسی قابلِ اعتماد ذریعے سے لیں اور بیج کو یکساں پھیلا کر بوئیں تاکہ کہیں پودے بہت گھنے اور کہیں خالی جگہ نہ رہ جائے۔ بوائی کا بہترین وقت آپ کے علاقے اور موسم پر منحصر ہے، اس لیے اپنے مقامی محکمہ زراعت کی بتائی ہوئی مدت کے مطابق چلیں۔ بوائی کی تاریخ اور بیج کا ذریعہ اپنے فارم کے ریکارڈ میں لکھ لیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "wheat-scouting",
+      "crop": "WHEAT",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Wheat field scouting and yellow leaves",
+      "content": "Walk through your wheat field regularly and look at plants in several places, not only near the edge. If wheat leaves are turning yellow, note where it starts: in whole patches, on the older lower leaves, or only at the tips. Yellow leaves can come from many causes such as too much or too little water, poor nutrition, disease or insects, so do not guess the cause. Take clear photographs in daylight and write down what you see and when. Compare with a healthy part of the field and check whether the problem is spreading. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "wheat-scouting",
+      "crop": "WHEAT",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: گندم کے کھیت کی نگرانی اور پتوں کا پیلا پن",
+      "content": "اپنے گندم کے کھیت کا باقاعدگی سے چکر لگائیں اور صرف کنارے پر نہیں بلکہ کئی جگہوں پر پودے دیکھیں۔ اگر گندم کے پتے پیلے ہو رہے ہوں تو دیکھیں کہ پیلاہٹ کہاں سے شروع ہوئی: پورے ٹکڑے میں، نیچے کے پرانے پتوں میں یا صرف پتوں کے سروں پر۔ پتے پیلے ہونے کی کئی وجوہات ہو سکتی ہیں، جیسے پانی کی زیادتی یا کمی، غذائیت کی کمی، بیماری یا کیڑے، اس لیے اندازے سے وجہ طے نہ کریں۔ دن کی روشنی میں صاف تصویریں لیں اور جو دیکھیں اسے تاریخ کے ساتھ لکھ لیں۔ اسے کھیت کے صحت مند حصے سے ملا کر دیکھیں اور جانچیں کہ مسئلہ پھیل رہا ہے یا نہیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "wheat-irrigation",
+      "crop": "WHEAT",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Wheat irrigation timing in general terms",
+      "content": "Wheat needs water at the right times rather than too much at once. Before you irrigate, dig a little and feel the soil to judge its moisture. Water matters most at the important growth stages, such as early establishment, tillering, flowering and grain filling, but the exact timing depends on your soil, weather and variety. Avoid standing water, which can harm the roots. Keep a note of every irrigation date so you can see the pattern across the season. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "wheat-irrigation",
+      "crop": "WHEAT",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: گندم کو پانی دینے کا وقت، عمومی رہنمائی",
+      "content": "گندم کو ایک ساتھ بہت زیادہ پانی کی بجائے صحیح وقت پر پانی کی ضرورت ہوتی ہے۔ پانی لگانے سے پہلے تھوڑی سی مٹی کھود کر ہاتھ سے دیکھیں کہ زمین میں نمی کتنی ہے۔ پودے کی نشوونما کے اہم مرحلوں پر پانی سب سے زیادہ اہم ہوتا ہے، جیسے ابتدائی جماؤ، پھوٹ، پھول اور دانہ بننے کا وقت، لیکن ٹھیک وقت آپ کی زمین، موسم اور قسم پر منحصر ہے۔ کھیت میں پانی کھڑا نہ رہنے دیں کیونکہ اس سے جڑوں کو نقصان پہنچ سکتا ہے۔ ہر بار پانی لگانے کی تاریخ لکھتے رہیں تاکہ پورے موسم کا انداز نظر آئے۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "wheat-stubble-records",
+      "crop": "WHEAT",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Wheat stubble and record keeping",
+      "content": "After harvest, handle wheat stubble with care. Burning it harms soil life and creates smoke and fire risk, so ask your agriculture office about safer options, such as mixing the residue into the soil or collecting it for other use. Keep a simple record of your wheat season: sowing date, seed source, irrigation dates, problems you saw and the harvest result. These records help you and any expert understand what happened and plan the next season. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "wheat-stubble-records",
+      "crop": "WHEAT",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: گندم کا بھوسا اور ریکارڈ رکھنے کی عادت",
+      "content": "کٹائی کے بعد گندم کے بھوسے اور باقیات کو احتیاط سے سنبھالیں۔ اسے جلانے سے زمین کے مفید جاندار ختم ہوتے ہیں اور دھواں اور آگ کا خطرہ بنتا ہے، اس لیے اپنے محکمہ زراعت سے محفوظ طریقے پوچھیں، جیسے باقیات کو زمین میں ملا دینا یا دوسرے استعمال کے لیے جمع کرنا۔ اپنے گندم کے موسم کا سادہ ریکارڈ رکھیں: بوائی کی تاریخ، بیج کا ذریعہ، پانی لگانے کی تاریخیں، جو مسائل نظر آئے اور کٹائی کا نتیجہ۔ یہ ریکارڈ آپ کو اور کسی بھی ماہر کو سمجھنے میں مدد دیتا ہے کہ کیا ہوا اور اگلے موسم کی منصوبہ بندی آسان بناتا ہے۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "cotton-scouting",
+      "crop": "COTTON",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Cotton field scouting habits",
+      "content": "Check your cotton field regularly and look under the leaves as well as on top, because many problems start on the underside. Look at the growing tips, flower buds and bolls for damage, spots, curling or unusual colour, and note whether you see insects or only damage. Walk in a zig-zag pattern across the field, not only along one edge. Record what you find with the date and take photographs. If the problem seems to spread quickly, contact an agriculture expert early. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "cotton-scouting",
+      "crop": "COTTON",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: کپاس کے کھیت کی نگرانی کی عادتیں",
+      "content": "اپنی کپاس کے کھیت کو باقاعدگی سے دیکھیں اور پتوں کو اوپر کے ساتھ ساتھ نیچے سے بھی دیکھیں، کیونکہ بہت سے مسائل پتے کی نچلی طرف سے شروع ہوتے ہیں۔ پودے کے بڑھتے ہوئے سروں، پھولوں کی کلیوں اور ڈوڈوں میں نقصان، دھبے، پتوں کے مڑنے یا رنگ کی تبدیلی کو دیکھیں، اور لکھیں کہ کیڑے خود نظر آ رہے ہیں یا صرف نقصان۔ کھیت میں صرف ایک کنارے پر نہیں بلکہ ٹیڑھی میڑھی لکیر میں چل کر مختلف حصے دیکھیں۔ جو کچھ ملے اسے تاریخ کے ساتھ لکھیں اور تصویریں لیں۔ اگر مسئلہ تیزی سے پھیلتا لگے تو جلد کسی زرعی ماہر سے رابطہ کریں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "cotton-nutrition",
+      "crop": "COTTON",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Balanced nutrition for cotton in general terms",
+      "content": "Cotton grows best with balanced nutrition. Too much of one kind of fertiliser and too little of others can give leafy plants with few bolls, or weak plants. A soil test helps you understand what your field actually needs, so ask your agriculture office about it. Organic matter such as well-rotted manure improves the soil. Pale or oddly coloured leaves may point to a nutrition problem, but water stress and disease can look similar, so ask an expert before changing what you apply. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "cotton-nutrition",
+      "crop": "COTTON",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: کپاس کے لیے متوازن غذائیت، عمومی رہنمائی",
+      "content": "کپاس سب سے اچھی طرح تب بڑھتی ہے جب اسے متوازن غذائیت ملے۔ ایک قسم کی کھاد بہت زیادہ اور باقی بہت کم ہونے سے پودا صرف پتوں میں بڑھتا ہے اور ڈوڈے کم لگتے ہیں، یا پودا کمزور رہتا ہے۔ مٹی کا ٹیسٹ بتاتا ہے کہ آپ کے کھیت کو اصل میں کس چیز کی ضرورت ہے، اس لیے اس بارے میں محکمہ زراعت سے پوچھیں۔ اچھی طرح گلی سڑی دیسی کھاد جیسی نامیاتی چیزیں زمین کو بہتر بناتی ہیں۔ پتوں کا پیلا یا عجیب رنگ غذائیت کی کمی کی طرف اشارہ ہو سکتا ہے، لیکن پانی کی کمی اور بیماری بھی ایسی ہی لگ سکتی ہیں، اس لیے کھیت میں کچھ بھی بدلنے سے پہلے ماہر سے پوچھیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "cotton-irrigation",
+      "crop": "COTTON",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Cotton irrigation and water stress in general terms",
+      "content": "Cotton is sensitive to both water stress and waterlogging. Watch the plants: wilting in the afternoon heat that recovers by morning is common, but wilting that continues may point to low soil moisture or a root problem. Irrigate according to soil moisture and crop stage, not only by habit, and take extra care around flowering and boll formation, when stress can make flowers and bolls drop. Do not let water stand around the plants. Record your irrigation dates. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "cotton-irrigation",
+      "crop": "COTTON",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: کپاس کی آبپاشی اور پانی کی کمی، عمومی رہنمائی",
+      "content": "کپاس پانی کی کمی اور پانی کے جمع ہو جانے، دونوں سے متاثر ہوتی ہے۔ پودوں کو دیکھتے رہیں: دوپہر کی گرمی میں پتوں کا مرجھانا جو صبح تک ٹھیک ہو جائے عام بات ہے، لیکن اگر مرجھاہٹ برقرار رہے تو زمین میں نمی کم ہو سکتی ہے یا جڑوں کا مسئلہ ہو سکتا ہے۔ پانی صرف عادت کی بنیاد پر نہیں بلکہ زمین کی نمی اور فصل کے مرحلے کو دیکھ کر لگائیں، اور پھول اور ڈوڈے بننے کے وقت خاص خیال رکھیں کیونکہ اس وقت پانی کی تکلیف سے پھول اور ڈوڈے گر سکتے ہیں۔ پودوں کے گرد پانی کھڑا نہ رہنے دیں۔ پانی لگانے کی تاریخیں لکھتے رہیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "cotton-records-expert",
+      "crop": "COTTON",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Cotton record keeping and when to call an expert",
+      "content": "Keep a simple notebook or phone note for each cotton field: sowing date, variety, irrigation dates, problems you saw and what you did about them. Take dated photographs of any problem. When you notice something unusual, such as damage that spreads fast, many plants affected or a symptom you have never seen, do not wait. Show your records and photographs to an agriculture expert or your local agriculture office. Early advice usually costs less than late action. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "cotton-records-expert",
+      "crop": "COTTON",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: کپاس میں ریکارڈ رکھنا اور ماہر کو کب بلانا ہے",
+      "content": "ہر کپاس کے کھیت کے لیے ایک سادہ کاپی یا فون میں نوٹ رکھیں: بوائی کی تاریخ، قسم، پانی لگانے کی تاریخیں، جو مسائل نظر آئے اور آپ نے ان کا کیا کیا۔ کسی بھی مسئلے کی تاریخ کے ساتھ تصویریں لیں۔ جب کوئی غیر معمولی بات نظر آئے، جیسے نقصان کا تیزی سے پھیلنا، بہت سے پودوں کا متاثر ہونا یا ایسی علامت جو پہلے کبھی نہ دیکھی ہو، تو انتظار نہ کریں۔ اپنا ریکارڈ اور تصویریں کسی زرعی ماہر یا اپنے مقامی محکمہ زراعت کو دکھائیں۔ جلد مشورہ لینا عموماً دیر سے کارروائی کرنے سے سستا پڑتا ہے۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "rice-nursery-field",
+      "crop": "RICE",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Rice nursery and field preparation",
+      "content": "Healthy rice begins with a good nursery and a well prepared field. Use clean seed from a source you trust, and keep the nursery bed level with water managed carefully. Level the main field well so that water spreads evenly, and clear weeds and old stubble before transplanting. Handle the seedlings gently and avoid planting them too deep. Follow the transplanting time advised for your area. Record the nursery sowing and transplanting dates. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "rice-nursery-field",
+      "crop": "RICE",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: دھان کی پنیری اور کھیت کی تیاری",
+      "content": "صحت مند دھان کی فصل اچھی پنیری اور اچھی طرح تیار کھیت سے شروع ہوتی ہے۔ صاف ستھرا بیج کسی قابلِ اعتماد ذریعے سے لیں اور پنیری کی کیاری کو ہموار رکھیں اور پانی کا خیال رکھیں۔ مرکزی کھیت کو اچھی طرح ہموار کریں تاکہ پانی ہر جگہ برابر پھیلے، اور پنیری لگانے سے پہلے جڑی بوٹیاں اور پرانا بھوسا صاف کریں۔ پنیری کے پودوں کو نرمی سے سنبھالیں اور انہیں بہت گہرا نہ لگائیں۔ پنیری لگانے کا وقت اپنے علاقے کے لیے بتائی گئی ہدایت کے مطابق رکھیں۔ پنیری بونے اور منتقل کرنے کی تاریخیں لکھ لیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "rice-water",
+      "crop": "RICE",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Rice water management in general terms",
+      "content": "Rice is grown with water, but water management still matters. Keep the field level so the water depth is even, and check the bunds for leaks. Some stages, such as establishment and flowering, are sensitive to water shortage, while water standing for too long can encourage some problems. Ask your agriculture office which water management practice suits your area and variety. Note how often you irrigate and any dry spells. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "rice-water",
+      "crop": "RICE",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: دھان میں پانی کا انتظام، عمومی رہنمائی",
+      "content": "دھان پانی میں اگایا جاتا ہے، پھر بھی پانی کا انتظام بہت اہم ہے۔ کھیت کو ہموار رکھیں تاکہ پانی کی گہرائی ہر جگہ برابر رہے، اور بندوں میں رساؤ دیکھتے رہیں۔ کچھ مرحلے، جیسے پودے کا جمنا اور پھول آنا، پانی کی کمی کے لیے حساس ہوتے ہیں، جبکہ بہت دیر تک کھڑا پانی کچھ مسائل کو بڑھا سکتا ہے۔ اپنے محکمہ زراعت سے پوچھیں کہ آپ کے علاقے اور قسم کے لیے پانی کے انتظام کا کون سا طریقہ مناسب ہے۔ لکھ لیں کہ آپ کتنی بار پانی لگاتے ہیں اور کب کب پانی کی قلت رہی۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "rice-early-symptoms",
+      "crop": "RICE",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Spotting early symptoms in a rice field",
+      "content": "Walk through your rice field regularly and look at plants closely, not only at the edges. Early signs to watch for include spots on leaves, yellow or brown patches, stunted or fallen plants and unusual insects. Note whether the damage is in patches or spread everywhere, and whether it is near the water inlet. Take dated photographs of both healthy and affected plants. Many problems look alike in the early stage, so avoid guessing the cause. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "rice-early-symptoms",
+      "crop": "RICE",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: دھان کے کھیت میں ابتدائی علامات پہچاننا",
+      "content": "اپنے دھان کے کھیت کا باقاعدگی سے چکر لگائیں اور پودوں کو غور سے دیکھیں، صرف کناروں پر نہیں۔ ابتدائی علامات میں پتوں پر دھبے، پیلے یا بھورے ٹکڑے، چھوٹے رہ جانے والے یا گر جانے والے پودے اور غیر معمولی کیڑے شامل ہیں۔ لکھیں کہ نقصان ٹکڑوں میں ہے یا ہر جگہ پھیلا ہوا ہے، اور کیا یہ پانی آنے کی جگہ کے قریب ہے۔ صحت مند اور متاثرہ دونوں پودوں کی تاریخ کے ساتھ تصویریں لیں۔ ابتدائی مرحلے میں کئی مسائل ایک جیسے لگتے ہیں، اس لیے وجہ کا اندازہ نہ لگائیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    },
+    {
+      "key": "rice-stubble-records",
+      "crop": "RICE",
+      "language": "en",
+      "title": "DEMO - not expert-reviewed: Rice stubble and record keeping",
+      "content": "After harvest, handle rice stubble with care. Burning it harms the soil and causes smoke and fire risk, so ask your agriculture office about safer ways to manage the residue. Keep a simple record of your rice season: nursery and transplanting dates, water management, problems you saw and the harvest result. Good records let you compare seasons and show an expert exactly what happened. Please consult an agriculture expert before making decisions about your own field."
+    },
+    {
+      "key": "rice-stubble-records",
+      "crop": "RICE",
+      "language": "ur",
+      "title": "DEMO - not expert-reviewed: دھان کا بھوسا اور ریکارڈ رکھنے کی عادت",
+      "content": "کٹائی کے بعد دھان کے بھوسے اور باقیات کو احتیاط سے سنبھالیں۔ اسے جلانے سے زمین کو نقصان پہنچتا ہے اور دھواں اور آگ کا خطرہ پیدا ہوتا ہے، اس لیے باقیات کو سنبھالنے کے محفوظ طریقے اپنے محکمہ زراعت سے پوچھیں۔ اپنے دھان کے موسم کا سادہ ریکارڈ رکھیں: پنیری بونے اور منتقل کرنے کی تاریخیں، پانی کا انتظام، جو مسائل نظر آئے اور کٹائی کا نتیجہ۔ اچھا ریکارڈ آپ کو مختلف موسموں کا موازنہ کرنے دیتا ہے اور ماہر کو ٹھیک ٹھیک دکھا دیتا ہے کہ کیا ہوا تھا۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہِ کرم زرعی ماہر سے مشورہ کریں۔"
+    }
+  ]
+}

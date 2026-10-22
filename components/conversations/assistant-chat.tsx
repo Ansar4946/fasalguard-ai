@@ -3,19 +3,18 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   briefingSpeech,
-  CHAT_LANGUAGES,
   newRequestId,
   parseBriefing,
   parseChatHistory,
   parseChatMessage,
   parseConversationId,
   parseLatestConversationId,
-  pickVoice,
-  SPEECH_LANG,
   type Briefing,
   type ChatLanguage,
   type ChatMessage,
 } from "@/features/conversations/assistant-chat";
+import { STRINGS, type UiLang } from "@/features/conversations/strings";
+import { useSpeech } from "@/features/speech/use-speech";
 
 type FarmOption = { id: string; name: string };
 type HistoryState =
@@ -24,6 +23,9 @@ type HistoryState =
   | { status: "error"; message: string }
   | { status: "unauthorized" };
 type PendingSend = { text: string; key: string; language: ChatLanguage };
+
+/** Message ids/keys of the answer or briefing currently being read aloud. */
+type SpeakKey = string | null;
 
 class HttpError extends Error {
   constructor(
@@ -43,7 +45,7 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
       typeof body === "object" &&
       typeof (body as { error?: { message?: unknown } }).error?.message === "string"
         ? (body as { error: { message: string } }).error.message
-        : "The assistant is unavailable right now.";
+        : "";
     throw new HttpError(message, response.status);
   }
   return body;
@@ -59,16 +61,27 @@ function parseFarms(value: unknown): FarmOption[] {
 }
 
 export function AssistantChat({
+  lang,
   prefill,
+  onSendingChange,
+  onSpeakingChange,
+  speechRef,
 }: {
+  lang: UiLang;
+  /** Submits the text immediately (voice flow, after the 1.5 s review in the voice panel). */
   prefill?: { text: string; nonce: number } | null;
+  onSendingChange?: (sending: boolean) => void;
+  onSpeakingChange?: (speaking: boolean) => void;
+  /** Lets the voice panel stop the answer that is being read aloud. */
+  speechRef?: { current: (() => void) | null };
 }) {
+  const t = STRINGS[lang];
+  const language: ChatLanguage = lang;
   const [history, setHistory] = useState<HistoryState>({ status: "loading" });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [farms, setFarms] = useState<FarmOption[]>([]);
   const [farmId, setFarmId] = useState("");
-  const [language, setLanguage] = useState<ChatLanguage>("en");
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -77,8 +90,11 @@ export function AssistantChat({
   const loadTicket = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
   const lastPrefill = useRef(0);
-  const [speaking, setSpeaking] = useState<string | null>(null);
+  const speech = useSpeech();
+  const [speakKey, setSpeakKey] = useState<SpeakKey>(null);
+  const speaking = speech.speaking ? speakKey : null;
   const [voiceNote, setVoiceNote] = useState<string | null>(null);
+  const deliverRef = useRef<(item: PendingSend) => Promise<void>>(async () => undefined);
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
 
@@ -120,7 +136,7 @@ export function AssistantChat({
             ? { status: "unauthorized" }
             : {
                 status: "error",
-                message: reason instanceof Error ? reason.message : "History is unavailable.",
+                message: reason instanceof Error ? reason.message : "",
               },
         );
       },
@@ -130,25 +146,35 @@ export function AssistantChat({
     };
   }, []);
 
-  // Stop any speech when the panel goes away so audio never outlives the page.
+  // The hook cancels speech on unmount, so audio never outlives the page.
+  const { stop: stopSpeech } = speech;
   useEffect(() => {
+    onSpeakingChange?.(speech.speaking);
+  }, [speech.speaking, onSpeakingChange]);
+  useEffect(() => {
+    onSendingChange?.(sending);
+  }, [sending, onSendingChange]);
+  useEffect(() => {
+    if (!speechRef) return;
+    speechRef.current = stopSpeech;
     return () => {
-      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+      speechRef.current = null;
     };
-  }, []);
+  }, [speechRef, stopSpeech]);
 
   useEffect(() => {
     if (prefill && prefill.nonce !== lastPrefill.current) {
       lastPrefill.current = prefill.nonce;
-      setDraft(prefill.text);
+      void deliverRef.current({ text: prefill.text, key: newRequestId(), language });
     }
-  }, [prefill]);
+  }, [prefill, language]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: "nearest" });
   }, [messages.length, sending]);
 
   async function deliver(item: PendingSend) {
+    speech.stop();
     setSending(true);
     setSendError(null);
     try {
@@ -161,7 +187,7 @@ export function AssistantChat({
             body: JSON.stringify(farmId ? { farmId } : {}),
           }),
         );
-        if (!created) throw new Error("The conversation could not be started.");
+        if (!created) throw new Error(t.conversationNotStarted);
         id = created;
         if (mounted.current) setConversationId(created);
       }
@@ -176,7 +202,7 @@ export function AssistantChat({
           }),
         }),
       );
-      if (!reply) throw new Error("The assistant reply was not understood. Nothing was assumed.");
+      if (!reply) throw new Error(t.replyNotUnderstood);
       if (!mounted.current) return;
       setMessages((existing) => [
         ...existing,
@@ -201,11 +227,15 @@ export function AssistantChat({
         return;
       }
       setPending(item);
-      setSendError(reason instanceof Error ? reason.message : "The assistant is unavailable.");
+      setSendError(reason instanceof Error && reason.message ? reason.message : t.assistantUnavailable);
     } finally {
       if (mounted.current) setSending(false);
     }
   }
+
+  useEffect(() => {
+    deliverRef.current = deliver;
+  });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -214,34 +244,20 @@ export function AssistantChat({
     void deliver({ text, key: newRequestId(), language });
   }
 
-  /** Reads text aloud with an on-device voice, only after a click. The text never leaves the browser. */
+  /** Reads text aloud with the on-device voice, only after a click. The text never leaves the browser. */
   function speak(key: string, text: string, target: ChatLanguage) {
-    const synth = typeof window === "undefined" ? undefined : window.speechSynthesis;
     setVoiceNote(null);
-    if (!synth) {
-      setVoiceNote("This browser cannot read answers aloud.");
+    if (!speech.supported) {
+      setVoiceNote(t.speechUnsupported);
       return;
     }
     if (speaking === key) {
-      synth.cancel();
-      setSpeaking(null);
+      speech.stop();
+      setSpeakKey(null);
       return;
     }
-    synth.cancel();
-    const voice = pickVoice(synth.getVoices(), target);
-    if (!voice) {
-      setVoiceNote(
-        `No ${CHAT_LANGUAGES[target]} voice is installed on this device. Read the answer on screen instead.`,
-      );
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = voice;
-    utterance.lang = SPEECH_LANG[target];
-    utterance.onend = () => setSpeaking((current) => (current === key ? null : current));
-    utterance.onerror = () => setSpeaking(null);
-    setSpeaking(key);
-    synth.speak(utterance);
+    setSpeakKey(key);
+    speech.speak(text, target === "en" ? "en" : "ur");
   }
 
   function listen(message: ChatMessage) {
@@ -262,44 +278,23 @@ export function AssistantChat({
       aria-labelledby="chat-heading"
     >
       <h2 id="chat-heading" className="text-xl font-extrabold text-brand-dark">
-        Ask the agriculture assistant
+        {t.title}
       </h2>
-      <p className="mt-1 text-sm text-muted">
-        Farming answers use only approved guidance and cite their sources; if none applies, the
-        assistant says so instead of guessing. Questions about your own farms, fields, crop
-        seasons, confirmed expenses and notifications are answered from your account and tagged
-        &ldquo;From your account&rdquo;. The assistant only reads your data and never changes it.
-        It is not a substitute for an agriculture expert.
-      </p>
+      <p className="mt-1 text-sm leading-6 text-muted">{t.intro}</p>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4">
         <label className="text-sm font-bold">
-          Farm
+          {t.farm}
           <select
             value={farmId}
             onChange={(event) => setFarmId(event.target.value)}
             disabled={locked || sending}
             className="mt-1 min-h-11 w-full rounded-xl border border-border bg-white px-3 font-normal"
           >
-            <option value="">No farm selected</option>
+            <option value="">{t.noFarm}</option>
             {farms.map((farm) => (
               <option key={farm.id} value={farm.id}>
                 {farm.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm font-bold">
-          Language
-          <select
-            value={language}
-            onChange={(event) => setLanguage(event.target.value as ChatLanguage)}
-            disabled={sending}
-            className="mt-1 min-h-11 w-full rounded-xl border border-border bg-white px-3 font-normal"
-          >
-            {Object.entries(CHAT_LANGUAGES).map(([code, name]) => (
-              <option key={code} value={code}>
-                {name}
               </option>
             ))}
           </select>
@@ -314,27 +309,28 @@ export function AssistantChat({
         >
           <div className="flex items-start justify-between gap-3">
             <h3 id="briefing-heading" className="text-base font-extrabold text-amber-950">
-              Warnings for you
+              {t.warningsTitle}
             </h3>
             <button
               type="button"
               onClick={() => setBriefingDismissed(true)}
-              aria-label="Dismiss warnings"
+              aria-label={t.dismissAria}
               className="min-h-11 min-w-11 rounded-xl border border-amber-400 px-3 text-sm font-bold text-amber-950"
             >
-              Dismiss
+              {t.dismiss}
             </button>
           </div>
           {briefing.unreadTotal === 0 ? (
-            <p className="mt-1 text-sm text-amber-950">You have no unread warnings.</p>
+            <p className="mt-1 text-sm text-amber-950">{t.noWarnings}</p>
           ) : (
             <>
               <p className="mt-1 text-sm font-semibold text-amber-950">
-                {briefing.unreadTotal} unread {briefing.unreadTotal === 1 ? "warning" : "warnings"}
-                {briefing.byCategory.length > 0 &&
-                  ` (${briefing.byCategory.map((c) => `${c.category.toLowerCase()} ${c.count}`).join(", ")})`}
+                {t.unreadWarnings(
+                  briefing.unreadTotal,
+                  briefing.byCategory.map((c) => `${c.category.toLowerCase()} ${c.count}`).join(", "),
+                )}
               </p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-950">
+              <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-amber-950">
                 {briefing.top.map((item, index) => (
                   <li key={`${index}-${item.title}`} dir="auto">
                     {item.title}
@@ -349,29 +345,27 @@ export function AssistantChat({
             aria-pressed={speaking === "briefing"}
             className="mt-3 min-h-11 rounded-xl border border-amber-700 px-4 text-sm font-bold text-amber-950"
           >
-            {speaking === "briefing" ? "Stop" : "Read my warnings"}
+            {speaking === "briefing" ? t.stop : t.readWarnings}
           </button>
         </aside>
       )}
 
       <div className="mt-4 min-h-40 space-y-3" aria-live="polite" aria-busy={history.status === "loading"}>
         {history.status === "loading" && (
-          <p className="rounded-xl bg-surface-soft p-4 text-sm text-muted">Loading conversation…</p>
+          <p className="rounded-xl bg-surface-soft p-4 text-sm text-muted">{t.loadingConversation}</p>
         )}
         {history.status === "error" && (
           <p className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-danger" role="alert">
-            Conversation history is unavailable: {history.message}
+            {t.historyUnavailable(history.message || t.assistantUnavailable)}
           </p>
         )}
         {history.status === "unauthorized" && (
           <p className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-danger" role="alert">
-            Your session has ended. Sign in again to use the assistant.
+            {t.sessionEnded}
           </p>
         )}
         {history.status === "ready" && messages.length === 0 && (
-          <p className="rounded-xl bg-surface-soft p-4 text-sm text-muted">
-            No questions yet. Ask about your crop, in English, Urdu or Hindi.
-          </p>
+          <p className="rounded-xl bg-surface-soft p-4 text-sm text-muted">{t.noQuestions}</p>
         )}
         {messages.map((message) => (
           <article
@@ -379,9 +373,9 @@ export function AssistantChat({
             className={`rounded-2xl border p-4 ${message.role === "USER" ? "border-border bg-white" : "border-brand bg-brand-soft"}`}
           >
             <p className="text-xs font-bold uppercase tracking-wide text-muted">
-              {message.role === "USER" ? "You" : "Assistant"}
+              {message.role === "USER" ? t.you : t.assistant}
             </p>
-            <p className="mt-1 whitespace-pre-wrap text-sm" dir="auto">
+            <p className="mt-1 whitespace-pre-wrap text-base leading-7" dir="auto">
               {message.content}
             </p>
             {message.role === "ASSISTANT" && message.grounding === "ACCOUNT_DATA" && (
@@ -390,7 +384,7 @@ export function AssistantChat({
                   className="rounded-full bg-brand-dark px-3 py-1 font-bold text-white"
                   data-testid="account-chip"
                 >
-                  From your account
+                  {t.fromAccount}
                 </span>
                 {message.sources.map((source) => (
                   <span key={source.label} className="text-muted">
@@ -401,12 +395,14 @@ export function AssistantChat({
             )}
             {message.role === "ASSISTANT" && message.grounding === "GROUNDED" && (
               <div className="mt-3 text-xs">
-                <p className="font-bold text-brand-dark">Sources</p>
-                <ul className="mt-1 list-disc space-y-1 pl-5">
+                <p className="font-bold text-brand-dark">{t.sources}</p>
+                <ul className="mt-1 list-disc space-y-1 ps-5">
                   {message.citations.map((citation) => (
                     <li key={citation.id} dir="auto">
-                      {citation.title} · revision {citation.revision}{" "}
-                      <span className="font-mono text-[10px] text-muted">{citation.id}</span>
+                      {citation.title} · {t.revision} {citation.revision}{" "}
+                      <span className="font-mono text-[10px] text-muted" dir="ltr">
+                        {citation.id}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -419,13 +415,11 @@ export function AssistantChat({
                 aria-pressed={speaking === message.id}
                 className="mt-3 min-h-11 rounded-xl border border-brand px-4 text-sm font-bold text-brand-dark"
               >
-                {speaking === message.id ? "Stop" : "Listen"}
+                {speaking === message.id ? t.stop : t.listen}
               </button>
             )}
             {message.role === "ASSISTANT" && message.grounding === "ABSTAINED" && (
-              <p className="mt-3 text-xs font-bold text-amber-900">
-                No approved guidance found — this is not an answer. Ask an expert.
-              </p>
+              <p className="mt-3 text-xs font-bold text-amber-900">{t.abstained}</p>
             )}
           </article>
         ))}
@@ -446,17 +440,34 @@ export function AssistantChat({
               type="button"
               onClick={() => void deliver(pending)}
               disabled={sending}
-              className="ml-3 min-h-11 rounded-xl border border-danger px-4 font-bold"
+              className="ms-3 min-h-11 rounded-xl border border-danger px-4 font-bold"
             >
-              Retry
+              {t.retry}
             </button>
           )}
         </div>
       )}
 
+      <div className="mt-4" data-testid="starter-chips">
+        <p className="text-xs font-bold text-muted">{t.starterTitle}</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {t.starters.map((starter) => (
+            <button
+              key={starter}
+              type="button"
+              disabled={sending || history.status === "unauthorized"}
+              onClick={() => void deliver({ text: starter, key: newRequestId(), language })}
+              className="min-h-11 rounded-full border border-brand bg-white px-4 py-2 text-start text-sm font-semibold text-brand-dark disabled:opacity-50"
+            >
+              {starter}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <form onSubmit={onSubmit} className="mt-4">
         <label className="text-sm font-bold" htmlFor="assistant-question">
-          Your question
+          {t.yourQuestion}
         </label>
         <textarea
           id="assistant-question"
@@ -465,7 +476,7 @@ export function AssistantChat({
           maxLength={4000}
           rows={3}
           dir="auto"
-          className="mt-1 w-full rounded-xl border border-border bg-white p-3"
+          className="mt-1 w-full rounded-xl border border-border bg-white p-3 text-base"
         />
         <div className="mt-3 flex flex-wrap gap-3">
           <button
@@ -473,7 +484,7 @@ export function AssistantChat({
             disabled={sending || !draft.trim() || history.status === "unauthorized"}
             className="min-h-12 rounded-xl bg-brand px-6 font-extrabold text-white disabled:opacity-50"
           >
-            {sending ? "Asking…" : "Ask"}
+            {sending ? t.asking : t.ask}
           </button>
           {messages.length > 0 && (
             <button
@@ -482,7 +493,7 @@ export function AssistantChat({
               disabled={sending}
               className="min-h-12 rounded-xl border border-brand px-5 font-bold text-brand-dark"
             >
-              New conversation
+              {t.newConversation}
             </button>
           )}
         </div>
