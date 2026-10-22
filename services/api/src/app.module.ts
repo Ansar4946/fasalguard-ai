@@ -40,6 +40,7 @@ import { MarketModule } from './domain/market/market.module';
 import { YieldModule } from './domain/yield/yield.module';
 import { DashboardModule } from './domain/dashboard/dashboard.module';
 import { FarmFinanceModule } from './domain/farm-finance/farm-finance.module';
+import { PesticideCheckModule } from './domain/pesticide-check/pesticide-check.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ClientThrottlerGuard } from './common/guards/client-throttler.guard';
 @Module({
@@ -140,6 +141,8 @@ import { ClientThrottlerGuard } from './common/guards/client-throttler.guard';
     YieldModule,
     DashboardModule,
     FarmFinanceModule,
+    // Dawai Check routes exist only when DAWAI_CHECK_ENABLED=true (ConfigModule.forRoot has already loaded .env).
+    ...(process.env.DAWAI_CHECK_ENABLED === 'true' ? [PesticideCheckModule] : []),
   ],
   providers: [
     ApiExceptionFilter,

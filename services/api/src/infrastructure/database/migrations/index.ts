@@ -43,6 +43,7 @@ import { UssdFarmLedger1755000043000 } from './1755000043000-ussd-farm-ledger';
 import { AssistantGrounding1755000044000 } from './1755000044000-assistant-grounding';
 import { YieldReference1755000045000 } from './1755000045000-yield-reference';
 import { AssistantAccountData1755000046000 } from './1755000046000-assistant-account-data';
+import { PesticideCheck1755000047000 } from './1755000047000-pesticide-check';
 export const databaseMigrations = [
   InitialGeospatialSchema1755000000000,
   SeedReferenceCrops1755000001000,
@@ -89,4 +90,5 @@ export const databaseMigrations = [
   AssistantGrounding1755000044000,
   YieldReference1755000045000,
   AssistantAccountData1755000046000,
+  PesticideCheck1755000047000,
 ];

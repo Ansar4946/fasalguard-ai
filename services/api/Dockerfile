@@ -12,6 +12,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
+# Dawai Check: bundled OCR language data (no runtime download) and the seed CSVs next to the compiled seed script.
+COPY assets ./assets
+COPY src/domain/pesticide-check/seed ./dist/domain/pesticide-check/seed
 COPY OPENFARM-LICENSE.txt ./licenses/OPENFARM.txt
 USER node
 EXPOSE 4000
