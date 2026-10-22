@@ -1,0 +1,42 @@
+[
+ {
+  "id": "u/m360/en/denied-message",
+  "status": "PASS",
+  "detail": "Microphone permission was denied. Allow the microphone in your browser settings, or type your question. | Retry"
+ },
+ {
+  "id": "u/m360/en/retry-button",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "u/m360/en/retry-works",
+  "status": "PASS",
+  "detail": "retry re-requests mic (denied again as simulated)"
+ },
+ {
+  "id": "u/m360/ur/denied-message",
+  "status": "PASS",
+  "detail": "مائیک کی اجازت نہیں ملی۔ براؤزر کی سیٹنگ میں مائیک کی اجازت دیں، یا اپنا سوال لکھیں۔ | دوبارہ کوشش کریں"
+ },
+ {
+  "id": "u/m360/ur/retry-button",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "u/m360/ur/retry-works",
+  "status": "PASS",
+  "detail": "retry re-requests mic (denied again as simulated)"
+ },
+ {
+  "id": "p/m360/ur-rice-dhaan",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: دھان میں پانی کا انتظام، عمومی رہنمائی): | دھان پانی میں اگایا جاتا ہے، پھر بھی پانی کا انتظام بہت اہم ہے۔ کھیت کو ہموار رکھیں تاکہ پانی کی گہرائی ہر جگہ برابر رہے، اور بندوں میں رساؤ دیکھتے رہیں۔ کچھ مرحلے، جیسے پودے کا جمنا اور پھول "
+ },
+ {
+  "id": "p/m360/ur-rice-chawal",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: دھان میں پانی کا انتظام، عمومی رہنمائی): | دھان پانی میں اگایا جاتا ہے، پھر بھی پانی کا انتظام بہت اہم ہے۔ کھیت کو ہموار رکھیں تاکہ پانی کی گہرائی ہر جگہ برابر رہے، اور بندوں میں رساؤ دیکھتے رہیں۔ کچھ مرحلے، جیسے پودے کا جمنا اور پھول "
+ }
+]

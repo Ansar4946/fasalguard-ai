@@ -1,0 +1,52 @@
+[
+ {
+  "id": "t/m360-realwav/en/idle-to-recording",
+  "status": "PASS",
+  "detail": "idle=\"Tap the microphone and speak\" recording=\"Listening… tap to stop\" waveform=1 timer=\"0:04 / 1:00\""
+ },
+ {
+  "id": "t/m360-realwav/en/states",
+  "status": "INFO",
+  "detail": "Preparing audio… > Uploading securely… > Listening to your recording… > Check your question => review"
+ },
+ {
+  "id": "t/m360-realwav/en/transcript-bubble",
+  "status": "PASS",
+  "detail": "transcript=\"Why are my wheat leaves turning yellow?\" autoSendBanner=1"
+ },
+ {
+  "id": "t/m360-realwav/en/autosend-cited-answer",
+  "status": "PASS",
+  "detail": "ASSISTANT | From approved knowledge (DEMO - not expert-reviewed: Wheat field scouting and yellow leaves): | Walk through your wheat field regularly and look at plants in several places, not only near the edge. If wheat leaves are turning yellow, note where it starts: in whole patches, on the older lower leaves, or only at the tips. Yellow leaves can come from many causes such as too much or too li"
+ },
+ {
+  "id": "t/d1440-beep/ur/idle-to-recording",
+  "status": "PASS",
+  "detail": "idle=\"مائیک دبائیں اور بولیں\" recording=\"سن رہا ہوں… روکنے کے لیے دبائیں\" waveform=1 timer=\"0:03 / 1:00\""
+ },
+ {
+  "id": "t/d1440-beep/ur/final-state",
+  "status": "PASS",
+  "detail": "states=آڈیو تیار ہو رہی ہے… > محفوظ طریقے سے بھیجا جا رہا ہے… > سن رہا ہوں… > کچھ گڑبڑ ہو گئی final=error alert=\"بات نہیں بنی۔ دوبارہ کوشش کریں یا اپنا سوال لکھیں۔\n\nNo speech was detected. Please record again.\n\nدوبارہ کوشش کریں\" transcript=null"
+ },
+ {
+  "id": "u/m360/en/denied-message",
+  "status": "FAIL",
+  "detail": "alert=\"That did not work. Please try again or type your question. | Retry\" retryButtons=1"
+ },
+ {
+  "id": "u/m360/en/retry-button",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "u/m360/ur/denied-message",
+  "status": "FAIL",
+  "detail": "alert=\"بات نہیں بنی۔ دوبارہ کوشش کریں یا اپنا سوال لکھیں۔ | دوبارہ کوشش کریں\" retryButtons=1"
+ },
+ {
+  "id": "u/m360/ur/retry-button",
+  "status": "PASS",
+  "detail": ""
+ }
+]

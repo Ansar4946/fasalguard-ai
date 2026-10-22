@@ -1,0 +1,57 @@
+[
+ {
+  "id": "n/unauth-list",
+  "status": "PASS",
+  "detail": "GET /api/pesticide-checks no cookie -> 401"
+ },
+ {
+  "id": "n/unauth-manual",
+  "status": "PASS",
+  "detail": "POST manual no cookie -> 401"
+ },
+ {
+  "id": "n/unauth-assistant",
+  "status": "INFO",
+  "detail": "POST /api/assistant/ask no cookie -> 404"
+ },
+ {
+  "id": "n/register",
+  "status": "PASS",
+  "detail": "A=201 B=201 "
+ },
+ {
+  "id": "n/login-bff",
+  "status": "PASS",
+  "detail": "A=200 B=200"
+ },
+ {
+  "id": "n/A-creates-check",
+  "status": "PASS",
+  "detail": "status=201 verdict=HIGH_RISK"
+ },
+ {
+  "id": "n/A-reads-own",
+  "status": "PASS",
+  "detail": "status 200"
+ },
+ {
+  "id": "n/B-reads-A-check-404",
+  "status": "PASS",
+  "detail": "status 404"
+ },
+ {
+  "id": "n/B-list-excludes-A",
+  "status": "PASS",
+  "detail": "B list length 0"
+ },
+ {
+  "id": "n/unknown-id-404",
+  "status": "PASS",
+  "detail": "status 404"
+ },
+ {
+  "id": "n/bad-body-400",
+  "status": "PASS",
+  "detail": "status 400"
+ }
+]
