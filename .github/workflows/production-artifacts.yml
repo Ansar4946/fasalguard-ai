@@ -18,6 +18,12 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - name: Validate release tag and packaging
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          node -e "if (!/^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$/.test(process.env.RELEASE_VERSION)) process.exit(1)"
+          node scripts/release-preflight.mjs --source
       - uses: docker/setup-buildx-action@v3
       - name: Authenticate to Alibaba Container Registry
         uses: docker/login-action@v3
@@ -45,11 +51,28 @@ jobs:
           context: services/geospatial-ai
           push: true
           tags: ${{ vars.ALIBABA_REGISTRY }}/${{ vars.ALIBABA_NAMESPACE }}/fasalguard-ai-service:${{ inputs.version }}
+      - name: Build and publish web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.web
+          target: runtime
+          push: true
+          tags: ${{ vars.ALIBABA_REGISTRY }}/${{ vars.ALIBABA_NAMESPACE }}/fasalguard-web:${{ inputs.version }}
+      - name: Build and publish platform API and Celery worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/platform-api
+          target: production
+          push: true
+          tags: ${{ vars.ALIBABA_REGISTRY }}/${{ vars.ALIBABA_NAMESPACE }}/fasalguard-platform-api:${{ inputs.version }}
 
   summary:
     runs-on: ubuntu-24.04
     needs: publish
     steps:
-      - run: |
+      - env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
           echo "Images were published only. No migration or deployment was executed." >> "$GITHUB_STEP_SUMMARY"
-          echo "Use the reviewed deployment runbook and immutable version ${{ inputs.version }}." >> "$GITHUB_STEP_SUMMARY"
+          printf 'Use the reviewed deployment runbook and immutable version %s.\n' "$RELEASE_VERSION" >> "$GITHUB_STEP_SUMMARY"
