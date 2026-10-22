@@ -7,6 +7,9 @@ import { MediaModule } from '../media/media.module';
 import { CropScanController } from './crop-scan.controller';
 import { CropScanProcessor } from './crop-scan.processor';
 import { CROP_SCAN_QUEUE, CropScanService } from './crop-scan.service';
+import { CropScanRecoveryService } from './crop-scan-recovery.service';
+import { InternalCropScanEventsController } from './internal-crop-scan-events.controller';
+import { InternalCropScanEventsService } from './internal-crop-scan-events.service';
 import { RoboflowVisionProvider } from './providers/roboflow-vision.provider';
 import { SelfHostedVisionProvider } from './providers/self-hosted-vision.provider';
 import {
@@ -14,6 +17,7 @@ import {
   type VisionDiagnosisProvider,
 } from './providers/vision-diagnosis.provider';
 import { RiskModule } from '../risk/risk.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { workersEnabled } from '../../infrastructure/execution-role';
 @Module({
   imports: [
@@ -21,11 +25,14 @@ import { workersEnabled } from '../../infrastructure/execution-role';
     RiskModule,
     GrowthModule,
     AiOpsModule,
+    ScheduleModule.forRoot(),
     BullModule.registerQueue({ name: CROP_SCAN_QUEUE }),
   ],
-  controllers: [CropScanController],
+  controllers: [CropScanController, InternalCropScanEventsController],
   providers: [
     CropScanService,
+    InternalCropScanEventsService,
+    ...(workersEnabled() ? [CropScanRecoveryService] : []),
     ...(workersEnabled() ? [CropScanProcessor] : []),
     RoboflowVisionProvider,
     SelfHostedVisionProvider,

@@ -4,7 +4,7 @@ import type { AuthPrincipal } from '../auth/auth.types';
 import { CurrentPrincipal } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../identity/identity.enums';
-import { ExplainDto, SubmitAnswersDto } from './dto/follow-up.dto';
+import { ExplainDto, SubmitAnswersDto, SubmitObservationsDto } from './dto/follow-up.dto';
 import { FollowUpService } from './follow-up.service';
 @ApiTags('Intelligent follow-up and explanations')
 @ApiBearerAuth()
@@ -30,6 +30,13 @@ export class FollowUpController {
     @Body() dto: SubmitAnswersDto,
   ): Promise<unknown> {
     return this.service.answer(p.userId, id, dto);
+  }
+  @Post('observations') observations(
+    @CurrentPrincipal() p: AuthPrincipal,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: SubmitObservationsDto,
+  ): Promise<unknown> {
+    return this.service.observe(p.userId, id, dto);
   }
   @Post('explanation') explain(
     @CurrentPrincipal() p: AuthPrincipal,

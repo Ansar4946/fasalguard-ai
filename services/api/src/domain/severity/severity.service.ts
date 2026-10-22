@@ -36,7 +36,7 @@ export class SeverityService {
     const spread = answers.find((x) => x.key === 'SPREADING');
     const extent = answers.find((x) => x.key === 'FIELD_PERCENT');
     const percentage = this.percentage(extent?.answer);
-    const rapid = spread ? /(rapid|quick|fast|yes|spreading)/i.test(spread.answer) : false;
+    const rapid = spread ? isRapidSpread(spread.answer) : false;
     const satellite = scan.fieldId
       ? (
           await this.db.query<Array<{ id: string; score: number }>>(
@@ -187,4 +187,10 @@ export class SeverityService {
             ? 20
             : 10;
   }
+}
+
+/** "Not spreading" / "No" must never count as rapid spread, even though it contains "spreading". */
+export function isRapidSpread(answer: string): boolean {
+  if (/^\s*(no|not|none|slow)/i.test(answer)) return false;
+  return /(rapid|quick|fast|yes|spreading)/i.test(answer);
 }

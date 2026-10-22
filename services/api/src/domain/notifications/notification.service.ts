@@ -1,12 +1,23 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'node:crypto';
 import type { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
-import { CreateTaskDto, RegisterPushTokenDto, UpdateTaskDto } from './dto/notification.dto';
+import {
+  CreateTaskDto,
+  RegisterPushTokenDto,
+  UpdatePreferenceDto,
+  UpdateTaskDto,
+} from './dto/notification.dto';
+import { isValidTimeZone, quietHoursDelayMs } from './quiet-hours';
 import { DeliveryStatus, NotificationCategory, TaskSource, TaskStatus } from './notification.enums';
 import { NotificationSafetyPolicy } from './notification.policy';
 /* TypeORM raw query results are constrained by each explicit SQL projection below. */
@@ -31,6 +42,12 @@ export class NotificationService {
       [days],
     );
   }
+  /**
+   * By design a push token (one physical app install) belongs to whoever registered it last: when a
+   * device changes hands or a different account signs in on it, the same token hash is rebound to the
+   * new user and the previous owner's registration stops receiving pushes. FCM tokens are high-entropy
+   * secrets that the API never returns, so this cannot be exploited without already knowing the token.
+   */
   async registerToken(userId: string, d: RegisterPushTokenDto) {
     const hash = createHash('sha256').update(d.token).digest('hex');
     const rows = await this.db.query(
@@ -49,11 +66,109 @@ export class NotificationService {
     if (!r.length) throw new NotFoundException('Push token was not found.');
     return { id, revoked: true };
   }
-  async notifications(userId: string) {
+  async notifications(userId: string, options: { unreadOnly?: boolean; limit?: number } = {}) {
+    const limit = Math.min(Math.max(options.limit ?? 100, 1), 100);
     return this.db.query(
-      `SELECT id,category,title,body,data,read_at "readAt",created_at "createdAt" FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100`,
+      `SELECT n.id,n.category,n.title,n.body,n.data,n.read_at "readAt",n.created_at "createdAt",
+              COALESCE((SELECT jsonb_object_agg(s.status,s.c) FROM (SELECT d.status,count(*)::int c FROM notification_deliveries d WHERE d.notification_id=n.id GROUP BY d.status) s),'{}'::jsonb) delivery
+         FROM notifications n WHERE n.user_id=$1 AND ($2::boolean IS NOT TRUE OR n.read_at IS NULL)
+        ORDER BY n.created_at DESC LIMIT $3`,
+      [userId, options.unreadOnly ?? false, limit],
+    );
+  }
+  async unreadCount(userId: string): Promise<{ count: number }> {
+    const rows = await this.db.query<Array<{ count: number }>>(
+      `SELECT count(*)::int count FROM notifications WHERE user_id=$1 AND read_at IS NULL`,
       [userId],
     );
+    return { count: rows[0]?.count ?? 0 };
+  }
+  /**
+   * Read-only digest of the caller's UNREAD notifications for the assistant: counts per category
+   * and the newest titles. Never changes read state. Notifications have no severity column, so
+   * "warnings" are unread notifications and the category is the only classification available.
+   */
+  async unreadDigest(
+    userId: string,
+    options: { category?: NotificationCategory; titles?: number } = {},
+  ): Promise<{
+    unreadTotal: number;
+    byCategory: Array<{ category: string; count: number }>;
+    top: Array<{ category: string; title: string; createdAt: Date }>;
+  }> {
+    const category = options.category ?? null;
+    const [byCategory, top] = await Promise.all([
+      this.db.query<Array<{ category: string; count: number }>>(
+        `SELECT category,count(*)::int count FROM notifications WHERE user_id=$1 AND read_at IS NULL AND ($2::text IS NULL OR category=$2) GROUP BY category ORDER BY count(*) DESC,category`,
+        [userId, category],
+      ),
+      this.db.query<Array<{ category: string; title: string; createdAt: Date }>>(
+        `SELECT category,title,created_at "createdAt" FROM notifications WHERE user_id=$1 AND read_at IS NULL AND ($2::text IS NULL OR category=$2) ORDER BY created_at DESC LIMIT $3`,
+        [userId, category, Math.min(Math.max(options.titles ?? 3, 1), 10)],
+      ),
+    ]);
+    return { unreadTotal: byCategory.reduce((n, r) => n + r.count, 0), byCategory, top };
+  }
+  async readAll(userId: string): Promise<{ updated: number }> {
+    const [, updated] = await this.db.query<[unknown[], number]>(
+      `UPDATE notifications SET read_at=now() WHERE user_id=$1 AND read_at IS NULL`,
+      [userId],
+    );
+    return { updated };
+  }
+  /** Every category with its saved preference or the default (push on, no quiet hours). */
+  async preferences(userId: string) {
+    const [saved, consent] = await Promise.all([
+      this.db.query<
+        Array<{
+          category: NotificationCategory;
+          pushEnabled: boolean;
+          quietHoursStart: string | null;
+          quietHoursEnd: string | null;
+          timezone: string;
+        }>
+      >(
+        `SELECT category,push_enabled "pushEnabled",to_char(quiet_hours_start,'HH24:MI') "quietHoursStart",to_char(quiet_hours_end,'HH24:MI') "quietHoursEnd",timezone FROM notification_preferences WHERE user_id=$1`,
+        [userId],
+      ),
+      this.db.query<Array<{ granted: boolean }>>(
+        `SELECT granted FROM consents WHERE user_id=$1 AND type='NOTIFICATIONS' ORDER BY recorded_at DESC,created_at DESC LIMIT 1`,
+        [userId],
+      ),
+    ]);
+    return {
+      consentGranted: consent[0]?.granted === true,
+      categories: Object.values(NotificationCategory).map(
+        (category) =>
+          saved.find((row) => row.category === category) ?? {
+            category,
+            pushEnabled: true,
+            quietHoursStart: null,
+            quietHoursEnd: null,
+            timezone: 'Asia/Karachi',
+          },
+      ),
+    };
+  }
+  async setPreference(userId: string, category: NotificationCategory, d: UpdatePreferenceDto) {
+    if (!!d.quietHoursStart !== !!d.quietHoursEnd)
+      throw new BadRequestException('Quiet hours need both a start and an end time.');
+    if (d.quietHoursStart && d.quietHoursStart === d.quietHoursEnd)
+      throw new BadRequestException('Quiet hours start and end must differ.');
+    const timezone = d.timezone ?? 'Asia/Karachi';
+    if (!isValidTimeZone(timezone)) throw new BadRequestException('Unknown time zone.');
+    await this.db.query(
+      `INSERT INTO notification_preferences(user_id,category,push_enabled,quiet_hours_start,quiet_hours_end,timezone) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(user_id,category) DO UPDATE SET push_enabled=excluded.push_enabled,quiet_hours_start=excluded.quiet_hours_start,quiet_hours_end=excluded.quiet_hours_end,timezone=excluded.timezone,updated_at=now(),version=notification_preferences.version+1`,
+      [
+        userId,
+        category,
+        d.pushEnabled,
+        d.quietHoursStart ?? null,
+        d.quietHoursEnd ?? null,
+        timezone,
+      ],
+    );
+    return (await this.preferences(userId)).categories.find((c) => c.category === category);
   }
   async read(userId: string, id: string) {
     // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
@@ -159,6 +274,8 @@ export class NotificationService {
     confirmedEvidence?: boolean;
     aiConfidence?: number | null;
     incidentId?: string;
+    /** Urgent notifications ignore quiet hours. No producer sets this yet; use sparingly. */
+    urgent?: boolean;
   }) {
     this.safety.assertSafe({
       title: input.title,
@@ -188,11 +305,26 @@ export class NotificationService {
       );
       if (!enabled.length || enabled[0].granted !== true)
         return { id: rows[0].id, deliveryIds: [] as string[] };
+      const pref = (
+        await tx.query<Array<{ start: string | null; end: string | null; timezone: string }>>(
+          `SELECT to_char(quiet_hours_start,'HH24:MI') start,to_char(quiet_hours_end,'HH24:MI') "end",timezone FROM notification_preferences WHERE user_id=$1 AND category=$2`,
+          [input.userId, input.category],
+        )
+      )[0];
+      // Quiet hours delay delivery to the end of the window; the notification itself is stored at once.
+      const delayMs = input.urgent
+        ? 0
+        : quietHoursDelayMs(
+            new Date(),
+            pref?.start ?? null,
+            pref?.end ?? null,
+            pref?.timezone ?? 'Asia/Karachi',
+          );
       const deliveries = await tx.query(
-        `INSERT INTO notification_deliveries(notification_id,device_token_id,status,scheduled_at) SELECT $1,dt.id,$2,now() FROM device_tokens dt LEFT JOIN notification_preferences np ON np.user_id=dt.user_id AND np.category=$3 WHERE dt.user_id=$4 AND dt.active=true AND dt.deleted_at IS NULL AND COALESCE(np.push_enabled,true)=true ON CONFLICT DO NOTHING RETURNING id`,
-        [rows[0].id, DeliveryStatus.Scheduled, input.category, input.userId],
+        `INSERT INTO notification_deliveries(notification_id,device_token_id,status,scheduled_at) SELECT $1,dt.id,$2,now()+make_interval(secs=>$5::double precision) FROM device_tokens dt LEFT JOIN notification_preferences np ON np.user_id=dt.user_id AND np.category=$3 WHERE dt.user_id=$4 AND dt.active=true AND dt.deleted_at IS NULL AND COALESCE(np.push_enabled,true)=true ON CONFLICT DO NOTHING RETURNING id`,
+        [rows[0].id, DeliveryStatus.Scheduled, input.category, input.userId, delayMs / 1000],
       );
-      return { id: rows[0].id, deliveryIds: deliveries.map((d: { id: string }) => d.id) };
+      return { id: rows[0].id, delayMs, deliveryIds: deliveries.map((d: { id: string }) => d.id) };
     });
     if (!persisted) return null;
     for (const deliveryId of persisted.deliveryIds)
@@ -200,6 +332,7 @@ export class NotificationService {
         'notification:deliver',
         { deliveryId },
         {
+          delay: persisted.delayMs,
           jobId: `notify-${deliveryId}`,
           attempts: 4,
           backoff: { type: 'exponential', delay: 2000 },
@@ -207,7 +340,11 @@ export class NotificationService {
           removeOnFail: 5000,
         },
       );
-    return { id: persisted.id, scheduled: persisted.deliveryIds.length };
+    return {
+      id: persisted.id,
+      scheduled: persisted.deliveryIds.length,
+      delayedMs: persisted.delayMs,
+    };
   }
   private async assertField(userId: string, fieldId: string) {
     const r = await this.db.query(

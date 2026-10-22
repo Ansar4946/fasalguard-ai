@@ -3,6 +3,8 @@ import {
   IsDateString,
   IsEnum,
   IsObject,
+  IsInt,
+  Min,
   IsOptional,
   IsString,
   IsUUID,
@@ -33,6 +35,7 @@ export class CreateFarmDto {
 }
 
 export class UpdateFarmDto {
+  @IsOptional() @IsInt() @Min(1) expectedVersion?: number;
   @IsOptional() @IsString() @Length(2, 160) name?: string;
   @IsOptional() @IsObject() boundary?: Polygon;
   @IsOptional() @IsString() @Length(1, 120) province?: string;
@@ -53,6 +56,7 @@ export class CreateFieldDto {
 }
 
 export class UpdateFieldDto {
+  @IsOptional() @IsInt() @Min(1) expectedVersion?: number;
   @IsOptional() @IsString() @Length(2, 160) name?: string;
   @IsOptional() @IsObject() boundary?: Polygon;
   @IsOptional()

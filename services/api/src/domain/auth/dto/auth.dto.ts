@@ -50,6 +50,7 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty()
   identifier!: string;
+  @IsString() @Length(1, 128) password!: string;
   @IsDefined() @ValidateNested() @Type(() => DeviceInputDto) device!: DeviceInputDto;
 }
 export class RefreshDto {

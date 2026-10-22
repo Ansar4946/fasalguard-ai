@@ -10,12 +10,14 @@ interface Registered {
 }
 interface FarmResponse {
   id: string;
+  version: number;
   areaHectares: number;
   centroid: { type: string };
   soilType: string;
 }
 interface FieldResponse {
   id: string;
+  version: number;
   areaHectares: number;
   currentCropCycle: { cropId: string };
 }
@@ -83,13 +85,13 @@ integration('Farmer farm and field ownership API', () => {
       'phase4-stranger-device',
     );
     // This suite exercises ownership/geometry behavior, not billing limits, and creates
-    // several farms for `owner` across cases — put them on a high-limit plan so the FREE
+    // several farms for `owner` across cases â€” put them on a high-limit plan so the FREE
     // plan's maxFarms entitlement (exercised separately in billing.integration-spec.ts)
     // doesn't interfere here.
     await db.query(`UPDATE subscriptions SET plan_code='FARM_BUSINESS' WHERE user_id=$1`, [
       owner.user.id,
     ]);
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     if (db) {
@@ -232,6 +234,41 @@ integration('Farmer farm and field ownership API', () => {
       .expect(404);
     await request(app.getHttpServer())
       .delete(`/api/v1/fields/${field.id}`)
+      .set(auth(owner))
+      .expect(204);
+  });
+
+  it('requires current versions for farm and field boundary writes', async () => {
+    const farm = await createFarm();
+    const field = (
+      await request(app.getHttpServer())
+        .post(`/api/v1/farms/${farm.id}/fields`)
+        .set(auth(owner))
+        .send({ name: 'Versioned synthetic field', boundary: fieldBoundary })
+        .expect(201)
+    ).body as FieldResponse;
+    for (const [path, boundary, version] of [
+      [`/api/v1/farms/${farm.id}`, farmBoundary, farm.version],
+      [`/api/v1/fields/${field.id}`, fieldBoundary, field.version],
+    ] as const) {
+      await request(app.getHttpServer())
+        .patch(path)
+        .set(auth(owner))
+        .send({ boundary })
+        .expect(400);
+      await request(app.getHttpServer())
+        .patch(path)
+        .set(auth(owner))
+        .send({ boundary, expectedVersion: version })
+        .expect(200);
+      await request(app.getHttpServer())
+        .patch(path)
+        .set(auth(owner))
+        .send({ boundary, expectedVersion: version })
+        .expect(409);
+    }
+    await request(app.getHttpServer())
+      .delete(`/api/v1/farms/${farm.id}`)
       .set(auth(owner))
       .expect(204);
   });

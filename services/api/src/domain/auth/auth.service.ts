@@ -38,6 +38,16 @@ export class AuthService {
     private readonly config: ConfigService,
     @Inject(EMAIL_PROVIDER) private readonly email: EmailProvider,
   ) {}
+  private static dummyHashPromise?: Promise<string>;
+  private static dummyHash(): Promise<string> {
+    AuthService.dummyHashPromise ??= argon2.hash(randomBytes(16).toString('hex'), {
+      type: argon2.argon2id,
+      memoryCost: 19456,
+      timeCost: 2,
+      parallelism: 1,
+    });
+    return AuthService.dummyHashPromise;
+  }
   async register(
     dto: RegisterDto,
     context: SessionContext,
@@ -138,10 +148,16 @@ export class AuthService {
       [dto.identifier],
     );
     const user = rows[0];
-    if (!user || user.status !== UserStatus.Active)
+    // Always run one argon2 verification so an unknown account, an account
+    // without a password and a wrong password cost the same time and return
+    // the same error.
+    const passwordOk = await argon2
+      .verify(user?.password_hash ?? (await AuthService.dummyHash()), dto.password)
+      .catch(() => false);
+    if (!user || user.status !== UserStatus.Active || !user.password_hash || !passwordOk)
       throw new UnauthorizedException({
         code: 'INVALID_CREDENTIALS',
-        message: 'The supplied credentials are invalid.',
+        message: 'The email, phone number or password is incorrect.',
       });
     return this.db.transaction(async (manager) => {
       const deviceId = await this.upsertDevice(

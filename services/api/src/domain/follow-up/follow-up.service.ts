@@ -4,10 +4,11 @@ import { DataSource } from 'typeorm';
 import { AIOperation, AIRunStatus } from '../ai-ops/ai-run.enums';
 import { AIRunLogger } from '../ai-ops/ai-run-logger.service';
 import { CropScanStatus } from '../crop-scans/crop-scan.enums';
-import type { ExplainDto, SubmitAnswersDto } from './dto/follow-up.dto';
+import type { ExplainDto, SubmitAnswersDto, SubmitObservationsDto } from './dto/follow-up.dto';
 import { LLM_PROVIDER, type LlmProvider, type LlmResult } from './providers/llm.provider';
 import { PROMPT_VERSION } from './prompts';
 import { ALLOWED_QUESTION_LIBRARY } from './question-library';
+const FARMER_INTAKE_VERSION = 'farmer-intake-v1';
 interface ScanContext {
   id: string;
   status: CropScanStatus;
@@ -57,6 +58,27 @@ export class FollowUpService {
       [scanId, CropScanStatus.NeedsFollowUp],
     );
     return this.questions(userId, scanId);
+  }
+  /**
+   * Stores the farmer's own wizard answers against fixed library questions. No LLM is involved
+   * and the scan status is untouched; severity scoring reads these through the same tables.
+   */
+  async observe(userId: string, scanId: string, dto: SubmitObservationsDto): Promise<unknown> {
+    await this.scan(userId, scanId);
+    await this.db.transaction(async (manager) => {
+      for (const [index, item] of dto.observations.entries()) {
+        const question = ALLOWED_QUESTION_LIBRARY.find((x) => x.key === item.key)!;
+        const rows = await manager.query<Array<{ id: string }>>(
+          `INSERT INTO follow_up_questions(scan_id,library_key,question_text,display_order,context,prompt_version) VALUES($1,$2,$3,$4,'{}',$5) ON CONFLICT(scan_id,library_key) DO UPDATE SET updated_at=now() RETURNING id`,
+          [scanId, question.key, question.text, index + 1, FARMER_INTAKE_VERSION],
+        );
+        await manager.query(
+          `INSERT INTO follow_up_answers(question_id,farmer_id,answer_text,answered_at) VALUES($1,$2,$3,now()) ON CONFLICT(question_id) DO UPDATE SET answer_text=excluded.answer_text,answered_at=now(),updated_at=now(),version=follow_up_answers.version+1`,
+          [rows[0]!.id, userId, item.answer.trim()],
+        );
+      }
+    });
+    return { recorded: dto.observations.length };
   }
   async questions(userId: string, scanId: string): Promise<unknown> {
     await this.scan(userId, scanId);

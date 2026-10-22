@@ -36,7 +36,27 @@ integration('Private direct media uploads', () => {
   const suffix = Date.now();
   const checksum = 'a'.repeat(64);
 
+  /** Node AggregateErrors (refused connections to localhost) have an empty message; spell them out. */
+  const describeError = (error: unknown): string => {
+    const e = error as { name?: string; message?: string; code?: string; errors?: unknown[] };
+    const nested = (e.errors ?? []).map(describeError).join('; ');
+    return (
+      [e.name, e.code, e.message, nested && `[${nested}]`].filter(Boolean).join(' ') ||
+      String(error)
+    );
+  };
+
   beforeAll(async () => {
+    try {
+      await setup();
+    } catch (error) {
+      throw new Error(
+        `Media integration setup failed (needs a migrated DATABASE_URL and a reachable REDIS_URL): ${describeError(error)}`,
+      );
+    }
+  }, 30_000);
+
+  async function setup(): Promise<void> {
     process.env.NODE_ENV = 'test';
     process.env.JWT_ACCESS_SECRET = 'integration-test-secret-at-least-32-characters';
     process.env.JWT_ISSUER = 'fasalguard-api';
@@ -63,7 +83,7 @@ integration('Private direct media uploads', () => {
       'Media Stranger',
       'media-stranger-device',
     );
-  }, 30_000);
+  }
 
   afterAll(async () => {
     if (db) {

@@ -1,3 +1,4 @@
+import { isRapidSpread } from '../src/domain/severity/severity.service';
 import {
   SeverityEngine,
   type SeverityEvidence,
@@ -77,5 +78,17 @@ describe('SeverityEngine', () => {
     });
     expect(result.severity).toBe(SeverityLevel.Critical);
     expect(result.escalationReasons).toContain('CRITICAL_SEVERITY');
+  });
+});
+
+describe('isRapidSpread', () => {
+  it('treats negative and slow answers as not rapid', () => {
+    expect(isRapidSpread('Not spreading')).toBe(false);
+    expect(isRapidSpread('No')).toBe(false);
+    expect(isRapidSpread('Slowly')).toBe(false);
+  });
+  it('treats quick spread as rapid', () => {
+    expect(isRapidSpread('Quickly')).toBe(true);
+    expect(isRapidSpread('Yes, spreading fast')).toBe(true);
   });
 });

@@ -13,6 +13,7 @@ import {
   SendAssistantMessageDto,
   SynthesizeSpeechDto,
   TranscribeVoiceDto,
+  VoiceConsentDto,
 } from './dto/assistant.dto';
 @ApiTags('AI agriculture assistant')
 @ApiBearerAuth()
@@ -20,6 +21,19 @@ import {
 @Controller({ version: '1', path: 'assistant' })
 export class AssistantController {
   constructor(private readonly service: AssistantService) {}
+  /** Owner-scoped unread warning counts and the three newest titles. Read-only. */
+  @Get('briefing') briefing(@CurrentPrincipal() p: AuthPrincipal) {
+    return this.service.briefing(p.userId);
+  }
+  @Get('speech/capabilities') capabilities(@CurrentPrincipal() p: AuthPrincipal) {
+    return this.service.speechCapabilities(p.userId);
+  }
+  @Post('speech/consent') consent(
+    @CurrentPrincipal() p: AuthPrincipal,
+    @Body() d: VoiceConsentDto,
+  ) {
+    return this.service.setVoiceConsent(p.userId, d);
+  }
   @Post('conversations') create(
     @CurrentPrincipal() p: AuthPrincipal,
     @Body() d: CreateConversationDto,
@@ -49,8 +63,9 @@ export class AssistantController {
     return this.service.transcribe(p.userId, d);
   }
   @Post('speech/synthesize') @Throttle({ default: { limit: 20, ttl: 60_000 } }) synthesize(
+    @CurrentPrincipal() p: AuthPrincipal,
     @Body() d: SynthesizeSpeechDto,
   ) {
-    return this.service.synthesize(d);
+    return this.service.synthesize(p.userId, d);
   }
 }

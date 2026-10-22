@@ -40,6 +40,8 @@ export class OpenMeteoWeatherProvider implements WeatherProvider {
     );
     url.searchParams.set('latitude', String(latitude));
     url.searchParams.set('longitude', String(longitude));
+    const apiKey = this.config.get<string>('openMeteoApiKey', '');
+    if (apiKey) url.searchParams.set('apikey', apiKey);
     url.searchParams.set('timezone', 'auto');
     url.searchParams.set('forecast_days', '7');
     url.searchParams.set('current', variables.join(','));

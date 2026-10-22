@@ -8,5 +8,6 @@ import { FarmManagementService } from './farm-management.service';
   imports: [GeospatialModule, BillingModule],
   controllers: [FarmManagementController],
   providers: [FarmManagementService],
+  exports: [FarmManagementService],
 })
 export class FarmManagementModule {}

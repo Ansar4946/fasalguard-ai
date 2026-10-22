@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -18,8 +18,9 @@ export class AutomaticMonitoringService {
     @InjectQueue(SATELLITE_MONITORING_QUEUE) private readonly queue: Queue<MonitoringJob>,
   ) {}
   @Cron('*/10 * * * *') async dispatchDueFields(): Promise<number> {
+    if (process.env.SATELLITE_PLATFORM_ENABLED === 'true') return 0;
     // Satellite monitoring is a paid-plan entitlement (`satelliteMonitoring` in
-    // subscription_plans.limits) — gated here (own subscription, then pilot-org
+    // subscription_plans.limits) â€” gated here (own subscription, then pilot-org
     // subscription, then deny) so an upgrade/downgrade takes effect on the next tick
     // with no per-field backfill needed.
     interface DueField {
@@ -28,7 +29,7 @@ export class AutomaticMonitoringService {
       lastSuccessfulCaptureAt: Date | null;
     }
     // DataSource.query() for an UPDATE...RETURNING (outside an existing transaction/manager)
-    // returns a [rows, affectedCount] tuple rather than a flat rows array — unwrap it explicitly.
+    // returns a [rows, affectedCount] tuple rather than a flat rows array â€” unwrap it explicitly.
     const [rows] = await this.db.query<[DueField[], number]>(
       `WITH due AS (
          SELECT fi.id FROM fields fi

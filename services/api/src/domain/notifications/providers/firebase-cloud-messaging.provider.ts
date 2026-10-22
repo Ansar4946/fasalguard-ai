@@ -33,6 +33,8 @@ export class FirebaseCloudMessagingProvider implements PushNotificationProvider 
               token: message.token,
               notification: { title: message.title, body: message.body },
               data: message.data,
+              // The mobile app creates this channel before asking for permission (Android 8+).
+              android: { notification: { channel_id: 'default' } },
             },
           }),
           signal: controller.signal,
@@ -40,11 +42,23 @@ export class FirebaseCloudMessagingProvider implements PushNotificationProvider 
       );
       const payload = (await response.json().catch(() => ({}))) as {
         name?: string;
-        error?: { status?: string; details?: Array<{ errorCode?: string }> };
+        error?: {
+          status?: string;
+          details?: Array<{
+            errorCode?: string;
+            fieldViolations?: Array<{ field?: string }>;
+          }>;
+        };
       };
-      const code =
-        payload.error?.details?.find((x) => x.errorCode)?.errorCode ?? payload.error?.status;
-      if (code === 'UNREGISTERED' || code === 'INVALID_ARGUMENT')
+      const details = payload.error?.details ?? [];
+      const code = details.find((x) => x.errorCode)?.errorCode ?? payload.error?.status;
+      // INVALID_ARGUMENT also means a malformed message, so only a violation on the token field
+      // proves the token is bad. Treating every INVALID_ARGUMENT as a bad token would permanently
+      // deactivate healthy phones whenever a payload problem occurs.
+      const badTokenField = details.some((x) =>
+        x.fieldViolations?.some((v) => v.field === 'message.token'),
+      );
+      if (code === 'UNREGISTERED' || (code === 'INVALID_ARGUMENT' && badTokenField))
         return { messageId: null, status: 'INVALID_TOKEN' };
       if (!response.ok)
         throw new ServiceUnavailableException(`FCM delivery failed: ${code ?? response.status}`);

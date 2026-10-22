@@ -7,9 +7,17 @@ export const environmentSchema = Joi.object({
     .uri({ scheme: ['postgres', 'postgresql'] })
     .required(),
   DATABASE_SSL: Joi.boolean().truthy('true').falsy('false').default(false),
+  // Documented production override for private-network databases that cannot terminate TLS.
+  ALLOW_PLAINTEXT_DATABASE: Joi.boolean().truthy('true').falsy('false').default(false),
   REDIS_URL: Joi.string()
     .uri({ scheme: ['redis', 'rediss'] })
     .required(),
+  // Express 'trust proxy': 'false' (default), or the number of trusted reverse-proxy hops.
+  // 'true' (trust every hop) is accepted outside production only.
+  TRUST_PROXY: Joi.string()
+    .pattern(/^(false|true|[1-9]\d?)$/)
+    .default('false'),
+  INTERNAL_SERVICE_TOKEN: Joi.string().allow('').default(''),
   LOG_LEVEL: Joi.string()
     .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent')
     .default('info'),
@@ -58,14 +66,18 @@ export const environmentSchema = Joi.object({
   GEOSPATIAL_AI_URL: Joi.string().uri().default('http://localhost:8000'),
   AMIS_SYNC_ENABLED: Joi.boolean().truthy('true').falsy('false').default(false),
   AMIS_SCRAPE_TIMEOUT_MS: Joi.number().integer().min(10_000).max(180_000).default(120_000),
-  AMIS_BASE_URL: Joi.string().uri({ scheme: ['http', 'https'] }).default('http://www.amis.pk'),
+  AMIS_BASE_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('http://www.amis.pk'),
   AMIS_TIMEOUT_SECONDS: Joi.number().integer().min(5).max(60).default(30),
   AMIS_REQUEST_DELAY_SECONDS: Joi.number().min(0).max(10).default(1),
   MARKET_CACHE_TTL_SECONDS: Joi.number().integer().min(60).max(86_400).default(3600),
+  MARKET_MAX_AGE_DAYS: Joi.number().integer().min(0).max(30).default(1),
   SATELLITE_MONITORING_INTERVAL_HOURS: Joi.number().integer().min(6).max(12).default(8),
   SATELLITE_PROVIDER_REQUESTS_PER_MINUTE: Joi.number().integer().min(1).max(300).default(30),
   WEATHER_PROVIDER: Joi.string().valid('open-meteo', 'openweathermap').default('open-meteo'),
   OPEN_METEO_BASE_URL: Joi.string().uri().default('https://api.open-meteo.com'),
+  OPEN_METEO_API_KEY: Joi.string().allow('').default(''),
   OPENWEATHERMAP_BASE_URL: Joi.string().uri().default('https://api.openweathermap.org'),
   OPENWEATHERMAP_API_KEY: Joi.string().allow('').default(''),
   WEATHER_CACHE_TTL_SECONDS: Joi.number().integer().min(300).max(3600).default(900),
@@ -95,8 +107,20 @@ export const environmentSchema = Joi.object({
   PUSH_PROVIDER: Joi.string().valid('development', 'firebase').default('development'),
   FIREBASE_SERVICE_ACCOUNT_BASE64: Joi.string().allow('').default(''),
   PUSH_TOKEN_STALE_DAYS: Joi.number().integer().min(7).max(365).default(90),
-  ASSISTANT_PROVIDER: Joi.string().valid('fake', 'qwen').default('fake'),
-  SPEECH_PROVIDER: Joi.string().valid('fake', 'qwen').default('fake'),
+  ASSISTANT_PROVIDER: Joi.string().valid('fake', 'qwen', 'gemini').default('fake'),
+  RATE_LIMIT_PER_MINUTE: Joi.number().integer().min(30).max(10_000).default(120),
+  ASSISTANT_TIMEOUT_MS: Joi.number().integer().min(2_000).max(60_000).default(20_000),
+  ASSISTANT_MAX_CONTEXT_MESSAGES: Joi.number().integer().min(0).max(20).default(10),
+  ASSISTANT_RETRIEVAL_LIMIT: Joi.number().integer().min(1).max(8).default(4),
+  SPEECH_PROVIDER: Joi.string().valid('fake', 'qwen', 'azure').default('fake'),
+  SPEECH_STT_PROVIDER: Joi.string().valid('', 'assemblyai').default(''),
+  ASSEMBLYAI_API_KEY: Joi.string().allow('').default(''),
+  AZURE_SPEECH_KEY: Joi.string().allow('').default(''),
+  AZURE_SPEECH_REGION: Joi.string()
+    .pattern(/^[a-z0-9-]+$/)
+    .allow('')
+    .default(''),
+  SPEECH_PROVIDER_TIMEOUT_MS: Joi.number().integer().min(5_000).max(30_000).default(20_000),
   QWEN_STT_MODEL: Joi.string().min(1).default('qwen-audio-asr'),
   QWEN_TTS_MODEL: Joi.string().min(1).default('qwen-tts'),
   FARM_BRAIN_PROVIDER: Joi.string().valid('fake', 'gemini').default('fake'),
@@ -109,12 +133,78 @@ export const environmentSchema = Joi.object({
   GOOGLE_CLOUD_PROJECT: Joi.string().allow('').max(120).default(''),
   GOOGLE_CLOUD_LOCATION: Joi.string().min(2).max(40).default('us-central1'),
   GOOGLE_ACCESS_TOKEN: Joi.string().allow('').default(''),
+  USSD_ENABLED: Joi.boolean().truthy('true').falsy('false').default(false),
+  USSD_DEMO_ENABLED: Joi.boolean().truthy('true').falsy('false').default(false),
+  USSD_GATEWAY: Joi.string().valid('contract-test').default('contract-test'),
+  USSD_CALLBACK_SECRET: Joi.string().allow('').default(''),
+  USSD_SESSION_TTL_SECONDS: Joi.number().integer().min(60).max(900).default(300),
+  USSD_PIN_MAX_ATTEMPTS: Joi.number().integer().min(3).max(10).default(5),
+  USSD_PIN_LOCK_SECONDS: Joi.number().integer().min(60).max(86400).default(900),
+  USSD_MAX_AMOUNT_MINOR: Joi.number().integer().min(100).max(100000000).default(100000000),
 }).custom((value: Record<string, unknown>, helpers) => {
   if (value.NODE_ENV !== 'production') return value;
   const required = (key: string): boolean =>
     typeof value[key] === 'string' && String(value[key]).trim().length > 0;
+  if (
+    value.USSD_ENABLED === true &&
+    (typeof value.USSD_CALLBACK_SECRET !== 'string' || value.USSD_CALLBACK_SECRET.length < 32)
+  )
+    return helpers.error('any.invalid', {
+      message: 'Enabled production USSD requires a callback secret of at least 32 characters.',
+    });
+  if (value.USSD_ENABLED === true && value.USSD_GATEWAY === 'contract-test')
+    return helpers.error('any.invalid', {
+      message: 'The test-only USSD gateway adapter cannot be enabled in production.',
+    });
   if (value.ENABLE_SWAGGER === true)
     return helpers.error('any.invalid', { message: 'Swagger must be disabled in production.' });
+  if (value.DATABASE_SSL !== true && value.ALLOW_PLAINTEXT_DATABASE !== true)
+    return helpers.error('any.invalid', {
+      message:
+        'Production requires DATABASE_SSL=true (or the documented ALLOW_PLAINTEXT_DATABASE=true override).',
+    });
+  if (new URL(String(value.REDIS_URL)).protocol !== 'rediss:')
+    return helpers.error('any.invalid', { message: 'Production REDIS_URL must use rediss://.' });
+  if (value.TRUST_PROXY === 'true')
+    return helpers.error('any.invalid', {
+      message: 'Production TRUST_PROXY must be false or an explicit proxy hop count, not true.',
+    });
+  if (!required('INTERNAL_SERVICE_TOKEN') || String(value.INTERNAL_SERVICE_TOKEN).length < 32)
+    return helpers.error('any.invalid', {
+      message: 'Production requires INTERNAL_SERVICE_TOKEN of at least 32 characters.',
+    });
+  const stripeKeys = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PUBLISHABLE_KEY'];
+  // Billing is considered enabled as soon as any Stripe key is supplied; it must then be complete.
+  if (stripeKeys.some(required) && !stripeKeys.every(required))
+    return helpers.error('any.invalid', {
+      message: 'Billing is enabled but Stripe configuration is incomplete: set all Stripe keys.',
+    });
+  const isLocalHost = (host: string): boolean =>
+    ['localhost', '127.0.0.1', '0.0.0.0', '[::1]', '::1'].includes(host) ||
+    host.endsWith('.localhost');
+  for (const key of ['WEB_APP_URL', 'API_PUBLIC_URL']) {
+    const target = new URL(String(value[key]));
+    if (isLocalHost(target.hostname) || target.protocol !== 'https:' || target.username)
+      return helpers.error('any.invalid', {
+        message: `${key} must be a public HTTPS URL (not localhost) in production.`,
+      });
+  }
+  for (const origin of String(value.CORS_ORIGINS).split(',')) {
+    const trimmed = origin.trim();
+    if (!trimmed) continue;
+    let host: string;
+    try {
+      host = new URL(trimmed).hostname;
+    } catch {
+      return helpers.error('any.invalid', {
+        message: 'Production CORS origins must be valid URLs.',
+      });
+    }
+    if (isLocalHost(host))
+      return helpers.error('any.invalid', {
+        message: 'Production CORS origins must not include localhost.',
+      });
+  }
   if (value.METRICS_ENABLED === true && !required('METRICS_TOKEN'))
     return helpers.error('any.invalid', { message: 'Production metrics require an access token.' });
   if (required('SENTRY_DSN')) {
@@ -157,6 +247,33 @@ export const environmentSchema = Joi.object({
     return helpers.error('any.invalid', {
       message: 'Production requires configured private Alibaba OSS.',
     });
+  if (value.SPEECH_PROVIDER === 'fake' && value.SPEECH_STT_PROVIDER !== 'assemblyai')
+    return helpers.error('any.invalid', {
+      message: 'Fake speech is forbidden in production.',
+    });
+  if (value.SPEECH_STT_PROVIDER === 'assemblyai' && !required('ASSEMBLYAI_API_KEY'))
+    return helpers.error('any.invalid', {
+      message: 'Selected AssemblyAI credentials are missing.',
+    });
+  if (value.ASSISTANT_PROVIDER === 'fake')
+    return helpers.error('any.invalid', {
+      message: 'The fake assistant is forbidden in production.',
+    });
+  if (value.ASSISTANT_PROVIDER === 'qwen' && !required('QWEN_API_KEY'))
+    return helpers.error('any.invalid', {
+      message: 'Selected Qwen assistant credentials are missing.',
+    });
+  if (value.ASSISTANT_PROVIDER === 'gemini' && !required('GEMINI_API_KEY'))
+    return helpers.error('any.invalid', {
+      message: 'Selected Gemini assistant credentials are missing.',
+    });
+  if (
+    value.SPEECH_PROVIDER === 'azure' &&
+    (!required('AZURE_SPEECH_KEY') || !required('AZURE_SPEECH_REGION'))
+  )
+    return helpers.error('any.invalid', {
+      message: 'Selected Azure Speech credentials are missing.',
+    });
   if (value.OTP_PROVIDER !== 'production')
     return helpers.error('any.invalid', { message: 'Development OTP is forbidden in production.' });
   for (const key of ['SMTP_HOST', 'SMTP_FROM'])
@@ -173,11 +290,24 @@ export const environmentSchema = Joi.object({
       message: 'Selected weather provider credentials are missing.',
     });
   if (
+    value.WEATHER_PROVIDER === 'open-meteo' &&
+    (!required('OPEN_METEO_API_KEY') ||
+      new URL(String(value.OPEN_METEO_BASE_URL)).hostname !== 'customer-api.open-meteo.com')
+  )
+    return helpers.error('any.invalid', {
+      message: 'Production Open-Meteo requires commercial credentials and the customer endpoint.',
+    });
+  if (
     (value.ASSISTANT_PROVIDER === 'qwen' || value.SPEECH_PROVIDER === 'qwen') &&
     !required('QWEN_API_KEY')
   )
     return helpers.error('any.invalid', {
       message: 'Selected Qwen provider credentials are missing.',
+    });
+  if (value.PUSH_PROVIDER === 'development')
+    return helpers.error('any.invalid', {
+      message:
+        'The development push provider reports unsent messages as SENT and is forbidden in production.',
     });
   if (value.PUSH_PROVIDER === 'firebase' && !required('FIREBASE_SERVICE_ACCOUNT_BASE64'))
     return helpers.error('any.invalid', {

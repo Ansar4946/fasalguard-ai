@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Inject } from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -26,6 +27,7 @@ interface ImageRow {
   objectKey: string;
   contentType: string;
   sizeBytes: string;
+  checksum?: string | null;
   category: ScanImageCategory;
   cropName: string | null;
 }
@@ -50,7 +52,7 @@ export class CropScanProcessor extends WorkerHost {
     );
     try {
       const images = await this.db.query<ImageRow[]>(
-        `SELECT si.id,ma.object_key AS "objectKey",ma.content_type AS "contentType",ma.size_bytes AS "sizeBytes",si.category,c.name AS "cropName" FROM scan_images si JOIN media_assets ma ON ma.id=si.media_asset_id JOIN crop_scans cs ON cs.id=si.scan_id LEFT JOIN fields fi ON fi.id=cs.field_id LEFT JOIN LATERAL(SELECT * FROM crop_cycles x WHERE x.field_id=fi.id AND x.status='active' AND x.deleted_at IS NULL ORDER BY x.created_at DESC LIMIT 1)cc ON true LEFT JOIN crops c ON c.id=cc.crop_id WHERE si.scan_id=$1 AND cs.owner_id=$2 AND ma.status='ready'`,
+        `SELECT si.id,ma.object_key AS "objectKey",ma.content_type AS "contentType",ma.size_bytes AS "sizeBytes",ma.checksum,si.category,c.name AS "cropName" FROM scan_images si JOIN media_assets ma ON ma.id=si.media_asset_id JOIN crop_scans cs ON cs.id=si.scan_id LEFT JOIN fields fi ON fi.id=cs.field_id LEFT JOIN LATERAL(SELECT * FROM crop_cycles x WHERE x.field_id=fi.id AND x.status='active' AND x.deleted_at IS NULL ORDER BY x.created_at DESC LIMIT 1)cc ON true LEFT JOIN crops c ON c.id=cc.crop_id WHERE si.scan_id=$1 AND cs.owner_id=$2 AND ma.status='ready'`,
         [job.data.scanId, job.data.ownerId],
       );
       const inputs: VisionInput[] = [];
@@ -59,6 +61,13 @@ export class CropScanProcessor extends WorkerHost {
       for (const row of images) {
         if (Number(row.sizeBytes) > 15 * 1024 * 1024) throw new Error('IMAGE_TOO_LARGE');
         const image = await this.storage.getPrivateObject(row.objectKey);
+        // Bytes verified at upload completion must still be the bytes analysed (object replaced since?).
+        if (
+          typeof row.checksum === 'string' &&
+          /^[a-f0-9]{64}$/i.test(row.checksum) &&
+          createHash('sha256').update(image).digest('hex') !== row.checksum.toLowerCase()
+        )
+          throw new Error('MEDIA_INTEGRITY_FAILED');
         let metadata;
         try {
           metadata = await sharp(image, { failOn: 'error' }).metadata();

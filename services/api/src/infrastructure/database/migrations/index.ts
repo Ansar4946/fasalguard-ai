@@ -1,4 +1,8 @@
 import { InitialGeospatialSchema1755000000000 } from './1755000000000-initial-geospatial-schema';
+import { SatellitePlatformOutbox1755000037000 } from './1755000037000-satellite-platform-outbox';
+import { IrrigationWaterProductivity1755000038000 } from './1755000038000-irrigation-water-productivity';
+import { WeatherForecastProvenance1755000039000 } from './1755000039000-weather-forecast-provenance';
+import { FieldGeometryImports1755000040000 } from './1755000040000-field-geometry-imports';
 import { SeedReferenceCrops1755000001000 } from './1755000001000-seed-reference-crops';
 import { AuthSessionsConsentRbac1755000002000 } from './1755000002000-auth-sessions-consent-rbac';
 import { FarmManagement1755000003000 } from './1755000003000-farm-management';
@@ -33,6 +37,12 @@ import { PilotEnrollment1755000030000 } from './1755000030000-pilot-enrollment';
 import { FeedbackCollection1755000031000 } from './1755000031000-feedback-collection';
 import { StripePayments1755000032000 } from './1755000032000-stripe-payments';
 import { MarketIntelligence1755000033000 } from './1755000033000-market-intelligence';
+import { OfflineCropObservations1755000041000 } from './1755000041000-offline-crop-observations';
+import { VoiceProcessingConsent1755000042000 } from './1755000042000-voice-processing-consent';
+import { UssdFarmLedger1755000043000 } from './1755000043000-ussd-farm-ledger';
+import { AssistantGrounding1755000044000 } from './1755000044000-assistant-grounding';
+import { YieldReference1755000045000 } from './1755000045000-yield-reference';
+import { AssistantAccountData1755000046000 } from './1755000046000-assistant-account-data';
 export const databaseMigrations = [
   InitialGeospatialSchema1755000000000,
   SeedReferenceCrops1755000001000,
@@ -69,4 +79,14 @@ export const databaseMigrations = [
   FeedbackCollection1755000031000,
   StripePayments1755000032000,
   MarketIntelligence1755000033000,
+  SatellitePlatformOutbox1755000037000,
+  IrrigationWaterProductivity1755000038000,
+  WeatherForecastProvenance1755000039000,
+  FieldGeometryImports1755000040000,
+  OfflineCropObservations1755000041000,
+  VoiceProcessingConsent1755000042000,
+  UssdFarmLedger1755000043000,
+  AssistantGrounding1755000044000,
+  YieldReference1755000045000,
+  AssistantAccountData1755000046000,
 ];

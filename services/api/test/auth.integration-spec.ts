@@ -90,6 +90,7 @@ integration('Authentication and authorization API', () => {
       .post('/api/v1/auth/login')
       .send({
         identifier: email,
+        password,
         device: { deviceIdentifier: 'integration-browser-002', platform: 'web' },
       })
       .expect(200);
@@ -117,6 +118,7 @@ integration('Authentication and authorization API', () => {
         .post('/api/v1/auth/login')
         .send({
           identifier: email,
+          password,
           device: { deviceIdentifier: 'integration-browser-003', platform: 'web' },
         })
         .expect(200)
@@ -144,6 +146,7 @@ integration('Authentication and authorization API', () => {
         .post('/api/v1/auth/login')
         .send({
           identifier: email,
+          password,
           device: { deviceIdentifier: 'integration-browser-004', platform: 'web' },
         })
         .expect(200)
@@ -165,6 +168,7 @@ integration('Authentication and authorization API', () => {
         .post('/api/v1/auth/login')
         .send({
           identifier: email,
+          password,
           device: { deviceIdentifier: 'integration-browser-005', platform: 'web' },
         })
         .expect(200)

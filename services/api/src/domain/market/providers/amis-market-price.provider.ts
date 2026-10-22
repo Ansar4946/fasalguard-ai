@@ -60,7 +60,11 @@ export class AmisMarketPriceProvider implements MarketPriceProvider {
       target.username ||
       target.password
     )
-      throw new MarketPriceProviderError('AMIS_INVALID_ORIGIN', 'AMIS origin is not approved.', false);
+      throw new MarketPriceProviderError(
+        'AMIS_INVALID_ORIGIN',
+        'AMIS origin is not approved.',
+        false,
+      );
     target.pathname = target.pathname.replace(/\/?$/, '/');
     target.search = '';
     target.hash = '';
@@ -93,11 +97,35 @@ export class AmisMarketPriceProvider implements MarketPriceProvider {
           );
         }
         if (!(response.headers.get('content-type') ?? '').toLowerCase().includes('text/html'))
-          throw new MarketPriceProviderError('AMIS_INVALID_RESPONSE', 'AMIS returned non-HTML data.', true);
-        const html = await response.text();
-        if (Buffer.byteLength(html, 'utf8') > 2_000_000)
-          throw new MarketPriceProviderError('AMIS_INVALID_RESPONSE', 'AMIS response was too large.', true);
-        return html;
+          throw new MarketPriceProviderError(
+            'AMIS_INVALID_RESPONSE',
+            'AMIS returned non-HTML data.',
+            true,
+          );
+        if (!response.body)
+          throw new MarketPriceProviderError(
+            'AMIS_INVALID_RESPONSE',
+            'AMIS returned an empty body.',
+            true,
+          );
+        const reader = response.body.getReader();
+        const chunks: Uint8Array[] = [];
+        let size = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > 2_000_000) {
+            await reader.cancel();
+            throw new MarketPriceProviderError(
+              'AMIS_INVALID_RESPONSE',
+              'AMIS response was too large.',
+              true,
+            );
+          }
+          chunks.push(value);
+        }
+        return Buffer.concat(chunks).toString('utf8');
       } catch (error) {
         if (error instanceof MarketPriceProviderError) throw error;
         if (attempt === 2)
@@ -105,6 +133,7 @@ export class AmisMarketPriceProvider implements MarketPriceProvider {
         await this.delay(500 * 2 ** attempt);
       } finally {
         clearTimeout(timeout);
+        controller.abort();
       }
     }
     throw new MarketPriceProviderError('AMIS_UPSTREAM_FAILURE', 'AMIS request failed.', true);

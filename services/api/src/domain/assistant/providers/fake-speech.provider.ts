@@ -1,28 +1,43 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import type {
   AudioResult,
+  SpeechCapabilities,
+  SpeechLanguage,
   SpeechResult,
   SpeechToTextProvider,
   TextToSpeechProvider,
 } from './speech.provider';
+import { VOICE_CONSENT_VERSION } from './speech.provider';
 @Injectable()
 export class FakeSpeechProvider implements SpeechToTextProvider, TextToSpeechProvider {
-  transcribe(_input: { audioUrl: string; language?: string }): Promise<SpeechResult> {
-    void _input;
-    return Promise.resolve({
-      text: 'Development voice transcript',
+  capabilities(): SpeechCapabilities {
+    return {
+      available: false,
       provider: 'FAKE',
-      modelId: 'fake-stt',
-      modelVersion: '1',
-    });
+      sttLanguages: [],
+      ttsLanguages: [],
+      acceptedContentTypes: [],
+      maxRecordingSeconds: 120,
+      consentVersion: VOICE_CONSENT_VERSION,
+      reason: 'Real speech service is not configured.',
+    };
   }
-  synthesize(input: { text: string }): Promise<AudioResult> {
-    return Promise.resolve({
-      audioBase64: Buffer.from(input.text).toString('base64'),
-      contentType: 'audio/mpeg',
-      provider: 'FAKE',
-      modelId: 'fake-tts',
-      modelVersion: '1',
-    });
+  transcribe(_input: { audioUrl: string; language: SpeechLanguage }): Promise<SpeechResult> {
+    void _input;
+    return Promise.reject(
+      new ServiceUnavailableException({
+        code: 'SPEECH_PROVIDER_NOT_CONFIGURED',
+        message: 'Real speech service is not configured.',
+      }),
+    );
+  }
+  synthesize(input: { text: string; language: SpeechLanguage }): Promise<AudioResult> {
+    void input;
+    return Promise.reject(
+      new ServiceUnavailableException({
+        code: 'SPEECH_PROVIDER_NOT_CONFIGURED',
+        message: 'Real speech service is not configured.',
+      }),
+    );
   }
 }

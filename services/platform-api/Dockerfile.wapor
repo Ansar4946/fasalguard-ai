@@ -1,0 +1,18 @@
+# Dedicated incompatible native scientific environment; shares the existing API/database/broker.
+FROM mambaorg/micromamba:1.5.10
+USER root
+RUN useradd --system --uid 1000 platform
+USER $MAMBA_USER
+RUN micromamba install -y -n base -c conda-forge python=3.12 pywapor=3.7.3 numpy=1.26.4 pandas=2.2.3 gdal=3.10.3 && micromamba clean --all --yes
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
+COPY --chown=$MAMBA_USER:$MAMBA_USER requirements-wapor.txt /tmp/requirements-wapor.txt
+RUN python -m pip install --no-cache-dir -r /tmp/requirements-wapor.txt
+USER root
+WORKDIR /app
+COPY app ./app
+COPY PYFAO56-LICENSE.txt ./licenses/PYFAO56.txt
+COPY PYWAPOR-LICENSE.txt ./licenses/PYWAPOR.txt
+COPY OPENFARM-LICENSE.txt ./licenses/OPENFARM.txt
+USER platform
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 WAPOR_ENABLED=true
+CMD ["celery", "-A", "app.worker", "worker", "-Q", "wapor", "--pool=prefork", "--concurrency=1", "--loglevel=warning"]

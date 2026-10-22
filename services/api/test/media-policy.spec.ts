@@ -2,6 +2,7 @@ import { MediaPurpose } from '../src/domain/media/media.enums';
 import type sharpFactory from 'sharp';
 import {
   normalizeFilename,
+  validateAudioContent,
   validateImageContent,
   validateMediaPolicy,
 } from '../src/domain/media/media-policy';
@@ -9,6 +10,21 @@ import {
 const sharp = require('sharp') as typeof sharpFactory;
 
 describe('media policy', () => {
+  it('validates audio signatures instead of trusting MIME metadata', () => {
+    const ogg = Buffer.alloc(47);
+    ogg.write('OggS', 0, 'ascii');
+    ogg.writeBigUInt64LE(BigInt(48000), 6);
+    ogg[26] = 1;
+    ogg[27] = 19;
+    ogg.write('OpusHead', 28, 'ascii');
+    ogg[37] = 1;
+    expect(validateAudioContent(ogg, 'audio/ogg')).toBe(1);
+    ogg.writeBigUInt64LE(BigInt(61 * 48000), 6);
+    expect(() => validateAudioContent(ogg, 'audio/ogg')).toThrow('between 1 and 60 seconds');
+    expect(() => validateAudioContent(Buffer.from('not audio'), 'audio/ogg')).toThrow(
+      'Uploaded audio content is corrupt or does not match its declared type.',
+    );
+  });
   it('normalizes path-like and unsafe filenames', () => {
     expect(normalizeFilename('../../ Cotton Leaf (1).JPG')).toBe('cotton-leaf-1.jpg');
   });

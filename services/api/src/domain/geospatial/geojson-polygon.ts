@@ -8,7 +8,7 @@ export class InvalidPolygonError extends Error {
 }
 
 function validatePosition(position: Position, path: string): void {
-  if (position.length < 2)
+  if (!Array.isArray(position) || position.length !== 2)
     throw new InvalidPolygonError(`${path} must contain longitude and latitude.`);
   const [longitude, latitude] = position;
   if (
@@ -35,12 +35,23 @@ export function validateGeoJsonPolygon(value: unknown): asserts value is Polygon
     throw new InvalidPolygonError('Boundary type must be Polygon.');
   if (candidate.coordinates.length === 0)
     throw new InvalidPolygonError('Polygon must contain an exterior ring.');
+  if (
+    'crs' in candidate ||
+    candidate.coordinates.length > 21 ||
+    candidate.coordinates.reduce((n, ring) => n + (Array.isArray(ring) ? ring.length : 5001), 0) >
+      5000
+  )
+    throw new InvalidPolygonError(
+      'Only bounded WGS84 polygons with at most 5000 positions and 20 holes are supported.',
+    );
   candidate.coordinates.forEach((ring, ringIndex) => {
     if (!Array.isArray(ring) || ring.length < 4)
       throw new InvalidPolygonError(`Ring ${ringIndex} must contain at least four positions.`);
     ring.forEach((position, positionIndex) =>
       validatePosition(position, `Ring ${ringIndex}, position ${positionIndex}`),
     );
+    if (ring.some((point, i) => i > 0 && Math.abs(point[0]! - ring[i - 1]![0]!) > 180))
+      throw new InvalidPolygonError('Antimeridian-crossing boundaries are unsupported.');
     const first = ring[0];
     const last = ring[ring.length - 1];
     if (!first || !last || !positionsEqual(first, last))

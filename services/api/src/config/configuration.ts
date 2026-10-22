@@ -3,6 +3,7 @@ export interface AppConfiguration {
   port: number;
   databaseUrl: string;
   databaseSsl: boolean;
+  trustProxy: boolean | number;
   redisUrl: string;
   logLevel: string;
   metricsEnabled: boolean;
@@ -50,10 +51,12 @@ export interface AppConfiguration {
   amisTimeoutSeconds: number;
   amisRequestDelaySeconds: number;
   marketCacheTtlSeconds: number;
+  marketMaxAgeDays: number;
   satelliteMonitoringIntervalHours: number;
   satelliteProviderRequestsPerMinute: number;
   weatherProvider: 'open-meteo' | 'openweathermap';
   openMeteoBaseUrl: string;
+  openMeteoApiKey: string;
   openWeatherMapBaseUrl: string;
   openWeatherMapApiKey: string;
   weatherCacheTtlSeconds: number;
@@ -79,8 +82,17 @@ export interface AppConfiguration {
   pushProvider: 'development' | 'firebase';
   firebaseServiceAccountBase64: string;
   pushTokenStaleDays: number;
-  assistantProvider: 'fake' | 'qwen';
-  speechProvider: 'fake' | 'qwen';
+  assistantProvider: 'fake' | 'qwen' | 'gemini';
+  rateLimitPerMinute: number;
+  assistantTimeoutMs: number;
+  assistantMaxContextMessages: number;
+  assistantRetrievalLimit: number;
+  speechProvider: 'fake' | 'qwen' | 'azure';
+  speechSttProvider: '' | 'assemblyai';
+  assemblyAiApiKey: string;
+  azureSpeechKey: string;
+  azureSpeechRegion: string;
+  speechProviderTimeoutMs: number;
   qwenSttModel: string;
   qwenTtsModel: string;
   farmBrainProvider: 'fake' | 'gemini';
@@ -93,6 +105,20 @@ export interface AppConfiguration {
   googleCloudProject: string;
   googleCloudLocation: string;
   googleAccessToken: string;
+  ussdEnabled: boolean;
+  ussdDemoEnabled: boolean;
+  ussdGateway: string;
+  ussdCallbackSecret: string;
+  ussdSessionTtlSeconds: number;
+  ussdPinMaxAttempts: number;
+  ussdPinLockSeconds: number;
+  ussdMaxAmountMinor: number;
+}
+export function parseTrustProxy(raw: string | undefined): boolean | number {
+  const value = (raw ?? 'false').trim().toLowerCase();
+  if (value === 'true') return true;
+  const hops = Number(value);
+  return Number.isInteger(hops) && hops > 0 ? hops : false;
 }
 export default function configuration(): AppConfiguration {
   return {
@@ -100,6 +126,7 @@ export default function configuration(): AppConfiguration {
     port: Number(process.env.PORT),
     databaseUrl: process.env.DATABASE_URL ?? '',
     databaseSsl: process.env.DATABASE_SSL === 'true',
+    trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
     redisUrl: process.env.REDIS_URL ?? '',
     logLevel: process.env.LOG_LEVEL ?? 'info',
     metricsEnabled: process.env.METRICS_ENABLED !== 'false',
@@ -155,6 +182,7 @@ export default function configuration(): AppConfiguration {
     amisTimeoutSeconds: Number(process.env.AMIS_TIMEOUT_SECONDS ?? 30),
     amisRequestDelaySeconds: Number(process.env.AMIS_REQUEST_DELAY_SECONDS ?? 1),
     marketCacheTtlSeconds: Number(process.env.MARKET_CACHE_TTL_SECONDS ?? 3600),
+    marketMaxAgeDays: Number(process.env.MARKET_MAX_AGE_DAYS ?? 1),
     satelliteMonitoringIntervalHours: Number(process.env.SATELLITE_MONITORING_INTERVAL_HOURS ?? 8),
     satelliteProviderRequestsPerMinute: Number(
       process.env.SATELLITE_PROVIDER_REQUESTS_PER_MINUTE ?? 30,
@@ -162,6 +190,7 @@ export default function configuration(): AppConfiguration {
     weatherProvider: (process.env.WEATHER_PROVIDER ?? 'open-meteo') as
       'open-meteo' | 'openweathermap',
     openMeteoBaseUrl: process.env.OPEN_METEO_BASE_URL ?? 'https://api.open-meteo.com',
+    openMeteoApiKey: process.env.OPEN_METEO_API_KEY ?? '',
     openWeatherMapBaseUrl: process.env.OPENWEATHERMAP_BASE_URL ?? 'https://api.openweathermap.org',
     openWeatherMapApiKey: process.env.OPENWEATHERMAP_API_KEY ?? '',
     weatherCacheTtlSeconds: Number(process.env.WEATHER_CACHE_TTL_SECONDS ?? 900),
@@ -190,8 +219,17 @@ export default function configuration(): AppConfiguration {
     pushProvider: (process.env.PUSH_PROVIDER ?? 'development') as 'development' | 'firebase',
     firebaseServiceAccountBase64: process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 ?? '',
     pushTokenStaleDays: Number(process.env.PUSH_TOKEN_STALE_DAYS ?? 90),
-    assistantProvider: (process.env.ASSISTANT_PROVIDER ?? 'fake') as 'fake' | 'qwen',
-    speechProvider: (process.env.SPEECH_PROVIDER ?? 'fake') as 'fake' | 'qwen',
+    assistantProvider: (process.env.ASSISTANT_PROVIDER ?? 'fake') as 'fake' | 'qwen' | 'gemini',
+    rateLimitPerMinute: Number(process.env.RATE_LIMIT_PER_MINUTE ?? 120),
+    assistantTimeoutMs: Number(process.env.ASSISTANT_TIMEOUT_MS ?? 20000),
+    assistantMaxContextMessages: Number(process.env.ASSISTANT_MAX_CONTEXT_MESSAGES ?? 10),
+    assistantRetrievalLimit: Number(process.env.ASSISTANT_RETRIEVAL_LIMIT ?? 4),
+    speechProvider: (process.env.SPEECH_PROVIDER ?? 'fake') as 'fake' | 'qwen' | 'azure',
+    speechSttProvider: (process.env.SPEECH_STT_PROVIDER ?? '') as '' | 'assemblyai',
+    assemblyAiApiKey: process.env.ASSEMBLYAI_API_KEY ?? '',
+    azureSpeechKey: process.env.AZURE_SPEECH_KEY ?? '',
+    azureSpeechRegion: process.env.AZURE_SPEECH_REGION ?? '',
+    speechProviderTimeoutMs: Number(process.env.SPEECH_PROVIDER_TIMEOUT_MS ?? 20_000),
     qwenSttModel: process.env.QWEN_STT_MODEL ?? 'qwen-audio-asr',
     qwenTtsModel: process.env.QWEN_TTS_MODEL ?? 'qwen-tts',
     farmBrainProvider: (process.env.FARM_BRAIN_PROVIDER ?? 'fake') as 'fake' | 'gemini',
@@ -210,5 +248,13 @@ export default function configuration(): AppConfiguration {
     googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT ?? '',
     googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION ?? 'us-central1',
     googleAccessToken: process.env.GOOGLE_ACCESS_TOKEN ?? '',
+    ussdEnabled: process.env.USSD_ENABLED === 'true',
+    ussdDemoEnabled: process.env.USSD_DEMO_ENABLED === 'true',
+    ussdGateway: process.env.USSD_GATEWAY ?? 'contract-test',
+    ussdCallbackSecret: process.env.USSD_CALLBACK_SECRET ?? '',
+    ussdSessionTtlSeconds: Number(process.env.USSD_SESSION_TTL_SECONDS ?? 300),
+    ussdPinMaxAttempts: Number(process.env.USSD_PIN_MAX_ATTEMPTS ?? 5),
+    ussdPinLockSeconds: Number(process.env.USSD_PIN_LOCK_SECONDS ?? 900),
+    ussdMaxAmountMinor: Number(process.env.USSD_MAX_AMOUNT_MINOR ?? 100000000),
   };
 }

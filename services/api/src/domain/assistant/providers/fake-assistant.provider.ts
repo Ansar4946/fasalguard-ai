@@ -12,6 +12,7 @@ export class FakeAssistantProvider implements AgricultureAssistantProvider {
     return Promise.resolve({
       answer:
         'Inspect the field and use verified guidance. This response does not execute actions.',
+      citations: [],
       proposals: [],
       provider: 'FAKE',
       modelId: 'fake-assistant',

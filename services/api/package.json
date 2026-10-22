@@ -13,6 +13,7 @@
     "test": "jest --runInBand",
     "test:integration": "jest --runInBand --testRegex=\\.integration-spec\\.ts$",
     "test:cov": "jest --coverage",
+    "yield:import": "ts-node src/domain/yield/yield-import.cli.ts",
     "migration:run": "typeorm-ts-node-commonjs -d src/infrastructure/database/data-source.ts migration:run",
     "migration:run:prod": "typeorm -d dist/infrastructure/database/data-source.js migration:run",
     "migration:revert": "typeorm-ts-node-commonjs -d src/infrastructure/database/data-source.ts migration:revert",
@@ -40,7 +41,7 @@
     "ioredis": "^5.11.1",
     "joi": "^18.0.1",
     "nestjs-pino": "^4.6.1",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^10.1.0",
     "pg": "^8.16.3",
     "pino-http": "^11.0.0",
     "reflect-metadata": "^0.2.2",
@@ -74,7 +75,8 @@
   },
   "overrides": {
     "@nestjs/swagger": {
-      "js-yaml": "5.2.3"
-    }
+      "js-yaml": "5.4.3"
+    },
+    "mysql2": "3.24.6"
   }
 }
