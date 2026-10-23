@@ -57,3 +57,19 @@ docker exec -it fasalguard-oracle-postgres-1 psql -U fasalguard -d fasalguard \
 3. Real Gemini key, SMTP check (registration emails), push test on a device.
 4. Production mode needs Alibaba OSS (or a code change for another store) plus Postgres and Redis TLS.
 5. Disk is about 45 GB, not the 150 GB planned; resize the boot volume in the Oracle console if images and data grow.
+
+## Update 2026-10-23: Dawai Check and the Urdu voice assistant deployed
+
+Deployed from `master` (commit 443f0ae). Steps taken: database backup, new code copied from `git archive`, server `.env` updated, `deploy.sh` (builds, migrations 047 and 048, restart), then the seeds were run inside the API container.
+
+- **New settings on the server:** `ASSISTANT_PROVIDER=extractive`, `DAWAI_CHECK_ENABLED=true`, `LABEL_READER_PROVIDER=tesseract`, `LABEL_OCR_LANGS=eng`, `NEXT_PUBLIC_DAWAI_CHECK_ENABLED=true` and `NEXT_PUBLIC_VOICE_ASSISTANT_ENABLED=true` (the two NEXT_PUBLIC values are baked into the web image at build time).
+- **Reference data loaded (live):** 26 banned DPP ingredients, 9 banned pre-mixture brands, 139 notified Form-16 products, 20 demo catalogue products, 24 demo knowledge articles (all labelled `DEMO - not expert-reviewed`).
+- **Seed commands (re-runnable):**
+  ```bash
+  cd ~/fasalguard/deploy/oracle-free
+  docker compose --env-file .env exec -T api node dist/domain/pesticide-check/pesticide-seed.cli.js
+  docker compose --env-file .env exec -T api node dist/domain/assistant/demo-knowledge-seed.cli.js
+  ```
+- **Smoke test:** all checks passed. Live Dawai Check photo tests over HTTPS: DPP-notified label VERIFIED (WHO class III), banned pre-mixture Ammo-phos HIGH_RISK (SRO 624(I)/96), Endosulfan HIGH_RISK (S.R.O. 1329(I)/2012), unknown ingredient SUSPICIOUS ("could not confirm"). Live assistant: Urdu rice, English wheat and Urdu wheat questions cite their own DEMO article; an off-topic question abstains; an account question answers from the user's own data.
+- **Deploy-kit fix:** the platform-api and geospatial-ai Dockerfiles now strip Windows line endings from `requirements.txt` before the rasterio bump (a CRLF checkout made the first attempt fail).
+- **Still true:** pilot mode (API production guards off), the assistant is quote-only (no model key), the DPP notified list is partial and from 2005 (not found does not mean unregistered), usage terms of the DPP lists are unverified, OCR is proven on generated labels only.
