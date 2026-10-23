@@ -98,6 +98,13 @@ x-api-env: &api-env
   GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION:-us-central1}
   QWEN_API_KEY: ${QWEN_API_KEY:-}
   SPEECH_PROVIDER: ${SPEECH_PROVIDER:-fake}
+  # Dawai Check (pesticide label screening). OCR uses the English data bundled in the image.
+  DAWAI_CHECK_ENABLED: ${DAWAI_CHECK_ENABLED:-true}
+  LABEL_READER_PROVIDER: ${LABEL_READER_PROVIDER:-tesseract}
+  LABEL_OCR_LANGS: ${LABEL_OCR_LANGS:-eng}
+  LABEL_VISION_BASE_URL: ${LABEL_VISION_BASE_URL:-}
+  LABEL_VISION_API_KEY: ${LABEL_VISION_API_KEY:-}
+  LABEL_VISION_MODEL: ${LABEL_VISION_MODEL:-}
   SPEECH_STT_PROVIDER: ${SPEECH_STT_PROVIDER:-}
   ASSEMBLYAI_API_KEY: ${ASSEMBLYAI_API_KEY:-}
   AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY:-}
@@ -192,6 +199,8 @@ services:
       args:
         # BUILD-TIME: baked into the CSP by `next build`. Same origin as the page.
         STORAGE_UPLOAD_ORIGINS: https://${DOMAIN}
+        NEXT_PUBLIC_DAWAI_CHECK_ENABLED: ${NEXT_PUBLIC_DAWAI_CHECK_ENABLED:-true}
+        NEXT_PUBLIC_VOICE_ASSISTANT_ENABLED: ${NEXT_PUBLIC_VOICE_ASSISTANT_ENABLED:-true}
     environment:
       NODE_ENV: production
       NODE_OPTIONS: --max-old-space-size=1024
@@ -238,7 +247,7 @@ services:
       start_period: 30s
     deploy:
       resources:
-        limits: { cpus: "1.5", memory: 1536M, pids: 512 }
+        limits: { cpus: "1.5", memory: 2048M, pids: 512 }
 
   worker:
     <<: *api-service
