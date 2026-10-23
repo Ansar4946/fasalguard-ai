@@ -95,7 +95,7 @@ function Spinner() {
 function Waveform({ levels, label }: { levels: readonly number[]; label: string }) {
   return (
     <div
-      className="flex h-14 items-center justify-center gap-[3px]"
+      className="flex h-10 items-center justify-center gap-[3px] lg:h-14"
       role="img"
       aria-label={label}
       dir="ltr"
@@ -103,7 +103,7 @@ function Waveform({ levels, label }: { levels: readonly number[]; label: string 
       {levels.map((level, index) => (
         <span
           key={index}
-          className="w-1.5 rounded-full bg-danger transition-[height] duration-75"
+          className="w-1 rounded-full bg-white/90 transition-[height] duration-75 lg:w-1.5"
           style={{ height: `${barHeightPercent(level)}%` }}
         />
       ))}
@@ -117,8 +117,8 @@ function SpeakingBars() {
       {[0, 150, 300, 450, 600].map((delay) => (
         <span
           key={delay}
-          className="h-full w-1.5 origin-bottom animate-pulse rounded-full bg-brand motion-reduce:animate-none"
-          style={{ animationDelay: `${delay}ms`, transform: `scaleY(${0.4 + (delay % 450) / 750})` }}
+          className="fg-orb-wave h-full w-1.5 rounded-full bg-emerald-200"
+          style={{ animationDelay: `${delay}ms` }}
         />
       ))}
     </div>
@@ -516,45 +516,36 @@ export function FarmerAssistant({
 
   const micDisabled = !ready || !consented || busy || processing || state.phase === "requesting";
 
+  const orbTone = recording
+    ? "from-rose-400 to-red-600 shadow-[0_0_40px_rgba(239,68,68,.55)]"
+    : thinking
+      ? "from-amber-300 to-orange-500 shadow-[0_0_36px_rgba(245,158,11,.5)]"
+      : "from-emerald-300 to-emerald-600 shadow-[0_0_36px_rgba(52,211,153,.5)]";
+  const haloTone = recording ? "bg-red-400/40" : thinking ? "bg-amber-300/40" : "bg-emerald-300/40";
+  const orbBusy = processing || state.phase === "requesting" || thinking;
+  const orbClass = `relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br text-white ring-4 ring-white/25 transition active:scale-95 disabled:opacity-50 lg:h-32 lg:w-32 lg:ring-8 ${orbTone}`;
+
   return (
     <section
-      className="rounded-3xl border border-brand/10 bg-white p-5 shadow-[0_14px_40px_rgba(15,45,32,.07)] sm:p-6"
+      className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#03452c] via-[#075f3d] to-[#0b7a4d] p-3 text-white shadow-[0_18px_50px_rgba(3,69,44,.35)] lg:p-6"
       aria-labelledby="voice-heading"
       dir={UI_DIR[lang]}
       lang={lang}
     >
-      <h2 id="voice-heading" className="text-xl font-extrabold text-brand-dark">
+      <h2 id="voice-heading" className="sr-only lg:not-sr-only lg:text-xl lg:font-extrabold">
         {t.voiceTitle}
       </h2>
-      <p className="mt-1 text-sm leading-6 text-muted">{t.voiceHint}</p>
+      <p className="hidden text-sm leading-6 text-white/75 lg:mt-1 lg:block">{t.voiceHint}</p>
 
-      <label className="mt-4 flex min-h-11 items-start gap-3 rounded-2xl bg-surface-soft p-3 text-sm leading-6">
-        <input
-          type="checkbox"
-          checked={consented}
-          onChange={(event) => void updateConsent(event.target.checked)}
-          disabled={!capabilities || busy || recording || processing}
-          className="mt-1.5 h-5 w-5 shrink-0"
-        />
-        <span>{t.consentLabel}</span>
-      </label>
-
-      <div className="mt-6 flex flex-col items-center gap-3 text-center">
-        <div className="relative flex h-24 w-24 items-center justify-center">
+      <div className="flex items-center gap-4 lg:mt-6 lg:flex-col lg:gap-4 lg:text-center">
+        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center lg:h-44 lg:w-44">
+          <span className={`fg-orb-halo absolute inset-0 rounded-full ${haloTone}`} aria-hidden="true" />
           {recording && (
-            <>
-              <span className="absolute inset-0 animate-ping rounded-full bg-danger/30 motion-reduce:animate-none" aria-hidden="true" />
-              <span className="absolute inset-2 rounded-full bg-danger/20" aria-hidden="true" />
-            </>
+            <span className="absolute inset-1 animate-ping rounded-full bg-red-400/30 motion-reduce:animate-none" aria-hidden="true" />
           )}
           {speaking && !thinking ? (
-            <button
-              type="button"
-              onClick={onStopSpeaking}
-              aria-label={t.stop}
-              className="relative flex h-20 w-20 items-center justify-center rounded-full bg-brand text-white shadow-lg"
-            >
-              <StopIcon />
+            <button type="button" onClick={onStopSpeaking} aria-label={t.stop} className={orbClass}>
+              <StopIcon className="h-6 w-6 lg:h-10 lg:w-10" />
             </button>
           ) : (
             <button
@@ -562,39 +553,59 @@ export function FarmerAssistant({
               onClick={recording ? stopRecording : () => void beginRecording()}
               disabled={recording ? false : micDisabled || thinking}
               aria-label={recording ? t.stopRecording : t.startRecording}
-              className={`relative flex h-20 w-20 items-center justify-center rounded-full text-white shadow-lg transition disabled:opacity-40 ${
-                recording ? "bg-danger" : "bg-brand"
-              }`}
+              className={orbClass}
             >
-              {recording ? <StopIcon /> : processing || state.phase === "requesting" || thinking ? <Spinner /> : <MicIcon />}
+              {recording ? (
+                <StopIcon className="h-6 w-6 lg:h-10 lg:w-10" />
+              ) : orbBusy ? (
+                <Spinner />
+              ) : (
+                <MicIcon className="h-7 w-7 lg:h-12 lg:w-12" />
+              )}
             </button>
           )}
         </div>
 
-        {recording && (
-          <div className="w-full max-w-sm">
-            <Waveform levels={levels} label={t.levelMeter} />
-            <p className="mt-1 font-mono text-sm font-bold text-danger" dir="ltr">
-              {t.elapsed(elapsed, maxSeconds)}
-            </p>
-          </div>
-        )}
-        {speaking && !thinking && <SpeakingBars />}
-
-        <p
-          role="status"
-          aria-live="polite"
-          className={`min-h-6 text-base font-bold ${display === "error" ? "text-danger" : "text-brand-dark"}`}
-        >
-          {display === "idle" && setupMessage ? setupMessage : statusText[display]}
-        </p>
-        {display === "idle" && !setupMessage && (
-          <p className="text-xs text-muted">{t.maxTime(maxSeconds)}</p>
-        )}
+        <div className="min-w-0 flex-1 lg:w-full lg:flex-none">
+          <p
+            role="status"
+            aria-live="polite"
+            className={`min-h-6 text-base font-bold lg:text-lg ${display === "error" ? "text-red-200" : "text-white"}`}
+          >
+            {display === "idle" && setupMessage ? setupMessage : statusText[display]}
+          </p>
+          {recording && (
+            <div className="mt-1">
+              <Waveform levels={levels} label={t.levelMeter} />
+              <p className="font-mono text-sm font-bold text-red-100" dir="ltr">
+                {t.elapsed(elapsed, maxSeconds)}
+              </p>
+            </div>
+          )}
+          {speaking && !thinking && (
+            <div className="mt-1 flex lg:justify-center">
+              <SpeakingBars />
+            </div>
+          )}
+          {display === "idle" && !setupMessage && (
+            <p className="text-xs text-white/70">{t.maxTime(maxSeconds)}</p>
+          )}
+        </div>
       </div>
 
+      <label className="mt-3 flex min-h-10 items-start gap-3 rounded-2xl bg-white/10 p-2.5 text-xs leading-5 text-white/90 lg:mt-5 lg:text-sm">
+        <input
+          type="checkbox"
+          checked={consented}
+          onChange={(event) => void updateConsent(event.target.checked)}
+          disabled={!capabilities || busy || recording || processing}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-400"
+        />
+        <span>{t.consentLabel}</span>
+      </label>
+
       {state.phase === "error" && state.error && (
-        <div className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-danger" role="alert">
+        <div className="mt-3 rounded-2xl bg-white p-3 text-sm font-semibold text-danger" role="alert">
           <p>{errorText[state.error]}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {canRetry && (
@@ -612,7 +623,7 @@ export function FarmerAssistant({
       )}
 
       {state.phase === "review" && (
-        <div className="mt-4 rounded-2xl border border-brand/30 bg-brand-soft p-4">
+        <div className="mt-3 rounded-2xl bg-white p-4 text-foreground">
           <label htmlFor="voice-transcript" className="text-sm font-extrabold text-brand-dark">
             {t.transcriptLabel}
           </label>
@@ -624,7 +635,7 @@ export function FarmerAssistant({
             rows={3}
             dir="auto"
             placeholder={t.transcriptPlaceholder}
-            className="mt-2 w-full rounded-xl border border-border bg-white p-3 text-base leading-7 focus:border-brand"
+            className="mt-2 w-full rounded-xl border border-border bg-surface-soft p-3 text-base leading-7 focus:border-brand"
           />
           {autoSend ? (
             <>
@@ -675,7 +686,7 @@ export function FarmerAssistant({
           {note}
         </p>
       )}
-      <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900">
+      <p className="mt-3 hidden rounded-xl bg-black/15 px-4 py-3 text-xs leading-5 text-white/80 lg:block">
         {t.transcriptWarning}
       </p>
     </section>

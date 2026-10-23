@@ -166,3 +166,14 @@ button, a, input, select, textarea { font: inherit; outline-offset: 3px; }
   .dc-seg-ind, .dc-collapse, .dc-chevron, .dc-press, .dc-lift { transition: none !important; }
   .dc-press:active:not(:disabled), .dc-lift:active { transform: none; }
 }
+
+/* Assistant voice orb */
+@keyframes fg-orb-breathe { 0%, 100% { transform: scale(1); opacity: .55; } 50% { transform: scale(1.18); opacity: .9; } }
+@keyframes fg-orb-spin { to { transform: rotate(360deg); } }
+@keyframes fg-orb-wave { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+.fg-orb-halo { animation: fg-orb-breathe 3.2s ease-in-out infinite; }
+.fg-orb-spin { animation: fg-orb-spin 1.6s linear infinite; }
+.fg-orb-wave { animation: fg-orb-wave 1s ease-in-out infinite; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) {
+  .fg-orb-halo, .fg-orb-spin, .fg-orb-wave { animation: none; }
+}

@@ -272,24 +272,34 @@ export function AssistantChat({
   }
 
   const locked = conversationId !== null && messages.length > 0;
+  const blocked = history.status === "unauthorized";
   return (
     <section
-      className="rounded-3xl border border-border bg-surface p-5 shadow-sm"
+      className="flex flex-col overflow-hidden rounded-3xl border border-brand/10 bg-white shadow-[0_14px_40px_rgba(15,45,32,.08)]"
       aria-labelledby="chat-heading"
     >
-      <h2 id="chat-heading" className="text-xl font-extrabold text-brand-dark">
-        {t.title}
-      </h2>
-      <p className="mt-1 text-sm leading-6 text-muted">{t.intro}</p>
-
-      <div className="mt-4">
-        <label className="text-sm font-bold">
-          {t.farm}
+      <header className="flex items-center gap-3 border-b border-brand/10 bg-gradient-to-r from-brand-soft/40 to-white px-4 py-3 lg:px-6 lg:py-4">
+        <span
+          aria-hidden="true"
+          className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-700 text-white shadow"
+        >
+          <svg viewBox="0 0 24 24" className="size-5" fill="currentColor">
+            <path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2zm7 11l.9 2.6L22.5 16.5l-2.6.9L19 20l-.9-2.6-2.6-.9 2.6-.9L19 13z" />
+          </svg>
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 id="chat-heading" className="truncate text-lg font-extrabold text-brand-dark">
+            {t.title}
+          </h2>
+          <p className="hidden truncate text-sm text-muted sm:block">{t.intro}</p>
+        </div>
+        <label className="flex shrink-0 items-center gap-2 text-xs font-bold text-muted">
+          <span className="sr-only sm:not-sr-only">{t.farm}</span>
           <select
             value={farmId}
             onChange={(event) => setFarmId(event.target.value)}
             disabled={locked || sending}
-            className="mt-1 min-h-11 w-full rounded-xl border border-border bg-white px-3 font-normal"
+            className="min-h-10 max-w-40 rounded-full border border-brand/20 bg-white px-3 text-sm font-semibold text-brand-dark"
           >
             <option value="">{t.noFarm}</option>
             {farms.map((farm) => (
@@ -299,11 +309,11 @@ export function AssistantChat({
             ))}
           </select>
         </label>
-      </div>
+      </header>
 
       {briefing && !briefingDismissed && (
         <aside
-          className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4"
+          className="mx-4 mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 lg:mx-6"
           aria-labelledby="briefing-heading"
           data-testid="warnings-card"
         >
@@ -315,7 +325,7 @@ export function AssistantChat({
               type="button"
               onClick={() => setBriefingDismissed(true)}
               aria-label={t.dismissAria}
-              className="min-h-11 min-w-11 rounded-xl border border-amber-400 px-3 text-sm font-bold text-amber-950"
+              className="min-h-10 min-w-10 rounded-xl border border-amber-400 px-3 text-sm font-bold text-amber-950"
             >
               {t.dismiss}
             </button>
@@ -343,104 +353,129 @@ export function AssistantChat({
             type="button"
             onClick={() => speak("briefing", briefingSpeech(briefing, language), language)}
             aria-pressed={speaking === "briefing"}
-            className="mt-3 min-h-11 rounded-xl border border-amber-700 px-4 text-sm font-bold text-amber-950"
+            className="mt-3 min-h-10 rounded-full border border-amber-700 px-4 text-sm font-bold text-amber-950"
           >
             {speaking === "briefing" ? t.stop : t.readWarnings}
           </button>
         </aside>
       )}
 
-      <div className="mt-4 min-h-40 space-y-3" aria-live="polite" aria-busy={history.status === "loading"}>
+      <div
+        className="min-h-56 space-y-4 overflow-y-auto px-4 py-5 lg:max-h-[calc(100vh-17rem)] lg:min-h-[28rem] lg:px-6"
+        aria-live="polite"
+        aria-busy={history.status === "loading"}
+      >
         {history.status === "loading" && (
-          <p className="rounded-xl bg-surface-soft p-4 text-sm text-muted">{t.loadingConversation}</p>
+          <p className="rounded-2xl bg-surface-soft p-4 text-sm text-muted">{t.loadingConversation}</p>
         )}
         {history.status === "error" && (
-          <p className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-danger" role="alert">
+          <p className="rounded-2xl bg-red-50 p-4 text-sm font-semibold text-danger" role="alert">
             {t.historyUnavailable(history.message || t.assistantUnavailable)}
           </p>
         )}
         {history.status === "unauthorized" && (
-          <p className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-danger" role="alert">
+          <p className="rounded-2xl bg-red-50 p-4 text-sm font-semibold text-danger" role="alert">
             {t.sessionEnded}
           </p>
         )}
         {history.status === "ready" && messages.length === 0 && (
-          <p className="rounded-xl bg-surface-soft p-4 text-sm text-muted">{t.noQuestions}</p>
+          <p className="rounded-2xl bg-surface-soft p-4 text-sm leading-6 text-muted">{t.noQuestions}</p>
         )}
-        {messages.map((message) => (
-          <article
-            key={message.id}
-            className={`rounded-2xl border p-4 ${message.role === "USER" ? "border-border bg-white" : "border-brand bg-brand-soft"}`}
-          >
-            <p className="text-xs font-bold uppercase tracking-wide text-muted">
-              {message.role === "USER" ? t.you : t.assistant}
-            </p>
-            <p className="mt-1 whitespace-pre-wrap text-base leading-7" dir="auto">
-              {message.content}
-            </p>
-            {message.role === "ASSISTANT" && message.grounding === "ACCOUNT_DATA" && (
-              <p className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span
-                  className="rounded-full bg-brand-dark px-3 py-1 font-bold text-white"
-                  data-testid="account-chip"
-                >
-                  {t.fromAccount}
-                </span>
-                {message.sources.map((source) => (
-                  <span key={source.label} className="text-muted">
-                    {source.label}
-                  </span>
-                ))}
+        {messages.map((message) => {
+          const mine = message.role === "USER";
+          return (
+            <article
+              key={message.id}
+              className={`max-w-[88%] rounded-3xl px-4 py-3 shadow-sm lg:max-w-[78%] ${
+                mine
+                  ? "ms-auto rounded-ee-md bg-gradient-to-br from-brand to-emerald-700 text-white"
+                  : "me-auto rounded-es-md border border-brand/10 bg-surface-soft text-foreground"
+              }`}
+            >
+              <p className={`text-[11px] font-bold uppercase tracking-wide ${mine ? "text-white/70" : "text-muted"}`}>
+                {mine ? t.you : t.assistant}
               </p>
-            )}
-            {message.role === "ASSISTANT" && message.grounding === "GROUNDED" && (
-              <div className="mt-3 text-xs">
-                <p className="font-bold text-brand-dark">{t.sources}</p>
-                <ul className="mt-1 list-disc space-y-1 ps-5">
-                  {message.citations.map((citation) => (
-                    <li key={citation.id} dir="auto">
-                      {citation.title} · {t.revision} {citation.revision}{" "}
-                      <span className="font-mono text-[10px] text-muted" dir="ltr">
-                        {citation.id}
-                      </span>
-                    </li>
+              <p className="mt-1 whitespace-pre-wrap text-base leading-7" dir="auto">
+                {message.content}
+              </p>
+              {message.role === "ASSISTANT" && message.grounding === "ACCOUNT_DATA" && (
+                <p className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span
+                    className="rounded-full bg-brand-dark px-3 py-1 font-bold text-white"
+                    data-testid="account-chip"
+                  >
+                    {t.fromAccount}
+                  </span>
+                  {message.sources.map((source) => (
+                    <span key={source.label} className="text-muted">
+                      {source.label}
+                    </span>
                   ))}
-                </ul>
-              </div>
-            )}
-            {message.role === "ASSISTANT" && (
-              <button
-                type="button"
-                onClick={() => listen(message)}
-                aria-pressed={speaking === message.id}
-                className="mt-3 min-h-11 rounded-xl border border-brand px-4 text-sm font-bold text-brand-dark"
-              >
-                {speaking === message.id ? t.stop : t.listen}
-              </button>
-            )}
-            {message.role === "ASSISTANT" && message.grounding === "ABSTAINED" && (
-              <p className="mt-3 text-xs font-bold text-amber-900">{t.abstained}</p>
-            )}
-          </article>
-        ))}
+                </p>
+              )}
+              {message.role === "ASSISTANT" && message.grounding === "GROUNDED" && (
+                <div className="mt-3 rounded-2xl bg-white/80 p-3 text-xs">
+                  <p className="font-bold text-brand-dark">{t.sources}</p>
+                  <ul className="mt-1 list-disc space-y-1 ps-5">
+                    {message.citations.map((citation) => (
+                      <li key={citation.id} dir="auto">
+                        {citation.title} · {t.revision} {citation.revision}{" "}
+                        <span className="font-mono text-[10px] text-muted" dir="ltr">
+                          {citation.id}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {message.role === "ASSISTANT" && (
+                <button
+                  type="button"
+                  onClick={() => listen(message)}
+                  aria-pressed={speaking === message.id}
+                  className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-brand/30 bg-white px-4 text-sm font-bold text-brand-dark transition hover:bg-brand-soft/50"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden="true">
+                    <path d="M4 10v4h4l5 4V6L8 10H4z" />
+                  </svg>
+                  {speaking === message.id ? t.stop : t.listen}
+                </button>
+              )}
+              {message.role === "ASSISTANT" && message.grounding === "ABSTAINED" && (
+                <p className="mt-3 text-xs font-bold text-amber-900">{t.abstained}</p>
+              )}
+            </article>
+          );
+        })}
+        {sending && (
+          <div className="me-auto flex w-fit items-center gap-1.5 rounded-3xl rounded-es-md border border-brand/10 bg-surface-soft px-5 py-4" aria-hidden="true">
+            {[0, 150, 300].map((delay) => (
+              <span
+                key={delay}
+                className="size-2 rounded-full bg-brand"
+                style={{ animation: "fg-dot 1.2s infinite", animationDelay: `${delay}ms` }}
+              />
+            ))}
+          </div>
+        )}
         <div ref={endRef} />
       </div>
 
       {voiceNote && (
-        <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-950" role="status">
+        <p className="mx-4 mb-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-950 lg:mx-6" role="status">
           {voiceNote}
         </p>
       )}
 
       {sendError && (
-        <div className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-danger" role="alert">
+        <div className="mx-4 mb-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-danger lg:mx-6" role="alert">
           {sendError}
           {pending && (
             <button
               type="button"
               onClick={() => void deliver(pending)}
               disabled={sending}
-              className="ms-3 min-h-11 rounded-xl border border-danger px-4 font-bold"
+              className="ms-3 min-h-10 rounded-xl border border-danger px-4 font-bold"
             >
               {t.retry}
             </button>
@@ -448,16 +483,16 @@ export function AssistantChat({
         </div>
       )}
 
-      <div className="mt-4" data-testid="starter-chips">
+      <div className="border-t border-brand/10 px-4 pt-3 lg:px-6" data-testid="starter-chips">
         <p className="text-xs font-bold text-muted">{t.starterTitle}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-2 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0">
           {t.starters.map((starter) => (
             <button
               key={starter}
               type="button"
-              disabled={sending || history.status === "unauthorized"}
+              disabled={sending || blocked}
               onClick={() => void deliver({ text: starter, key: newRequestId(), language })}
-              className="min-h-11 rounded-full border border-brand bg-white px-4 py-2 text-start text-sm font-semibold text-brand-dark disabled:opacity-50"
+              className="min-h-10 shrink-0 rounded-full border border-brand/25 bg-brand-soft/30 px-4 py-2 text-start text-sm font-semibold text-brand-dark transition hover:bg-brand-soft disabled:opacity-50"
             >
               {starter}
             </button>
@@ -465,38 +500,46 @@ export function AssistantChat({
         </div>
       </div>
 
-      <form onSubmit={onSubmit} className="mt-4">
-        <label className="text-sm font-bold" htmlFor="assistant-question">
+      <form onSubmit={onSubmit} className="flex items-end gap-2 px-4 pb-4 pt-2 lg:px-6 lg:pb-5">
+        <label className="sr-only" htmlFor="assistant-question">
           {t.yourQuestion}
         </label>
         <textarea
           id="assistant-question"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
           maxLength={4000}
-          rows={3}
+          rows={1}
           dir="auto"
-          className="mt-1 w-full rounded-xl border border-border bg-white p-3 text-base"
+          placeholder={t.yourQuestion}
+          className="max-h-32 min-h-12 flex-1 resize-none rounded-3xl border border-brand/20 bg-surface-soft px-4 py-3 text-base outline-none focus:border-brand"
         />
-        <div className="mt-3 flex flex-wrap gap-3">
+        <button
+          type="submit"
+          disabled={sending || !draft.trim() || blocked}
+          aria-label={sending ? t.asking : t.ask}
+          className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand to-emerald-600 text-white shadow transition active:scale-95 disabled:opacity-50"
+        >
+          <svg viewBox="0 0 24 24" className="size-5 rtl:-scale-x-100" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </button>
+        {messages.length > 0 && (
           <button
-            type="submit"
-            disabled={sending || !draft.trim() || history.status === "unauthorized"}
-            className="min-h-12 rounded-xl bg-brand px-6 font-extrabold text-white disabled:opacity-50"
+            type="button"
+            onClick={newConversation}
+            disabled={sending}
+            className="min-h-12 shrink-0 rounded-full border border-brand/30 px-4 text-sm font-bold text-brand-dark"
           >
-            {sending ? t.asking : t.ask}
+            {t.newConversation}
           </button>
-          {messages.length > 0 && (
-            <button
-              type="button"
-              onClick={newConversation}
-              disabled={sending}
-              className="min-h-12 rounded-xl border border-brand px-5 font-bold text-brand-dark"
-            >
-              {t.newConversation}
-            </button>
-          )}
-        </div>
+        )}
       </form>
     </section>
   );
