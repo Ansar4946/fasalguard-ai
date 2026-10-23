@@ -8,7 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends libexpat1 && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
-RUN sed -i 's/^rasterio==1\.4\.3$/rasterio==1.4.4/' requirements.txt \
+# requirements.txt can have Windows (CRLF) line endings when it comes from a Windows checkout.
+RUN sed -i 's/\r$//' requirements.txt \
+ && sed -i 's/^rasterio==1\.4\.3$/rasterio==1.4.4/' requirements.txt \
  && grep -q '^rasterio==1\.4\.4$' requirements.txt \
  && pip install --no-cache-dir -r requirements.txt
 COPY app ./app

@@ -6,3 +6,4 @@ Dockerfile* text eol=lf
 Caddyfile text eol=lf
 docker-compose*.yml text eol=lf
 compose*.yml text eol=lf
+requirements*.txt text eol=lf
