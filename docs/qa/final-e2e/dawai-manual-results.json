@@ -1,0 +1,52 @@
+[
+ {
+  "id": "h/m360/en/suggest-abam",
+  "status": "FAIL",
+  "detail": "options=[] (API /pesticide-products?search=abam returns [])"
+ },
+ {
+  "id": "h/m360/en/manual-result-typed-abamectin",
+  "status": "PASS",
+  "detail": "title=\"Something does not look right\" forbiddenUnnegated=[]"
+ },
+ {
+  "id": "h/m360/en/edit-chip-recheck",
+  "status": "PASS",
+  "detail": "before=\"Something does not look right\" after=\"Listed in the DPP banned pesticides list\" has1329=true"
+ },
+ {
+  "id": "h/m360/en/suggest-imid",
+  "status": "PASS",
+  "detail": "[\"DEMO Imidacloprid 20% SL Imidacloprid\"]"
+ },
+ {
+  "id": "h/m360/en/manual-result-imid",
+  "status": "PASS",
+  "detail": "title=\"Something does not look right\" forbiddenUnnegated=[]"
+ },
+ {
+  "id": "h/m360/ur/suggest-abam",
+  "status": "FAIL",
+  "detail": "options=[] (API /pesticide-products?search=abam returns [])"
+ },
+ {
+  "id": "h/m360/ur/manual-result-typed-abamectin",
+  "status": "PASS",
+  "detail": "title=\"کچھ ٹھیک نہیں لگ رہا\" forbiddenUnnegated=[]"
+ },
+ {
+  "id": "h/m360/ur/edit-chip-recheck",
+  "status": "PASS",
+  "detail": "before=\"کچھ ٹھیک نہیں لگ رہا\" after=\"ڈی پی پی کی ممنوعہ زرعی ادویات کی فہرست میں شامل\" has1329=true"
+ },
+ {
+  "id": "h/m360/ur/suggest-imid",
+  "status": "PASS",
+  "detail": "[\"DEMO Imidacloprid 20% SL Imidacloprid\"]"
+ },
+ {
+  "id": "h/m360/ur/manual-result-imid",
+  "status": "PASS",
+  "detail": "title=\"کچھ ٹھیک نہیں لگ رہا\" forbiddenUnnegated=[]"
+ }
+]

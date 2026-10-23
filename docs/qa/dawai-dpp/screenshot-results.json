@@ -1,0 +1,74 @@
+[
+ {
+  "screenshot": "dpp-m360-dpp-notified-en.png",
+  "title": "Consistent with the DPP notified list",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-premix-banned-en.png",
+  "title": "Listed as a banned pre-mixture by the DPP",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-not-on-list-en.png",
+  "title": "Could not confirm on the list we hold",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-dpp-notified-ur.png",
+  "title": "ڈی پی پی کی مطلع شدہ فہرست سے مطابقت",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-premix-banned-ur.png",
+  "title": "ڈی پی پی کے ممنوعہ پری مکسچر کے طور پر درج",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-m360-not-on-list-ur.png",
+  "title": "ہمارے پاس موجود فہرست میں تصدیق نہیں ہو سکی",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-dpp-notified-en.png",
+  "title": "Consistent with the DPP notified list",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-premix-banned-en.png",
+  "title": "Listed as a banned pre-mixture by the DPP",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-not-on-list-en.png",
+  "title": "Could not confirm on the list we hold",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-dpp-notified-ur.png",
+  "title": "ڈی پی پی کی مطلع شدہ فہرست سے مطابقت",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-premix-banned-ur.png",
+  "title": "ڈی پی پی کے ممنوعہ پری مکسچر کے طور پر درج",
+  "hscroll": 0,
+  "pass": true
+ },
+ {
+  "screenshot": "dpp-d1440-not-on-list-ur.png",
+  "title": "ہمارے پاس موجود فہرست میں تصدیق نہیں ہو سکی",
+  "hscroll": 0,
+  "pass": true
+ }
+]

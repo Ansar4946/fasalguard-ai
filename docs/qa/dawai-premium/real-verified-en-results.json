@@ -1,0 +1,12 @@
+[
+ {
+  "id": "real/en/verified",
+  "status": "PASS",
+  "detail": "title=\"Consistent with the demo list\" ring=1 hscroll=0"
+ },
+ {
+  "id": "real/en/pageerrors",
+  "status": "PASS",
+  "detail": ""
+ }
+]

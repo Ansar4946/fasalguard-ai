@@ -1,0 +1,212 @@
+[
+ {
+  "id": "a/m360/en/dpp",
+  "status": "PASS",
+  "detail": "title=\"Consistent with the DPP notified list\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=m360-dpp-en.png"
+ },
+ {
+  "id": "j/m360/en/listen",
+  "status": "PASS",
+  "detail": "button present; aria-pressed after click1=true after click2=false (headless has no voice: toggle handling only)"
+ },
+ {
+  "id": "k/m360/en/copy",
+  "status": "PASS",
+  "detail": "clip(451)=\"Dawai Check - FasalGuard AI Agrimectin 1.8 EC Consistent with the DPP notified list Risk score: 0 / 100 DPP LIST (PARTIAL, 2005): Compared with the DPP banned list and the partial 2005 notified list. This is not a regist\" toast=[\"Result ready\",\"Summary copied\"]"
+ },
+ {
+  "id": "l/m360/en/clipboard-forbidden",
+  "status": "PASS",
+  "detail": "[]"
+ },
+ {
+  "id": "b/m360/en/premix",
+  "status": "FAIL",
+  "detail": "title=\"Listed as a banned pre-mixture by the DPP\" hscroll=0 missing=[\"/High risk/i\"] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=m360-premix-en.png"
+ },
+ {
+  "id": "c/m360/en/endo",
+  "status": "FAIL",
+  "detail": "title=\"Listed in the DPP banned pesticides list\" hscroll=0 missing=[\"/High risk/i\"] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=m360-endo-en.png"
+ },
+ {
+  "id": "d/m360/en/notlist",
+  "status": "PASS",
+  "detail": "title=\"Could not confirm on the list we hold\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=3 extra= shot=m360-notlist-en.png"
+ },
+ {
+  "id": "e/m360/en/expired",
+  "status": "PASS",
+  "detail": "title=\"Something does not look right\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=m360-expired-en.png"
+ },
+ {
+  "id": "f/m360/en/blank",
+  "status": "PASS",
+  "detail": "title=\"We could not read this label\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=1 extra= shot=m360-blank-en.png"
+ },
+ {
+  "id": "pageerrors/m360/en",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "a/m360/ur/dpp",
+  "status": "PASS",
+  "detail": "title=\"ڈی پی پی کی مطلع شدہ فہرست سے مطابقت\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=m360-dpp-ur.png"
+ },
+ {
+  "id": "j/m360/ur/listen",
+  "status": "PASS",
+  "detail": "button present; aria-pressed after click1=true after click2=false (headless has no voice: toggle handling only)"
+ },
+ {
+  "id": "k/m360/ur/copy",
+  "status": "PASS",
+  "detail": "clip(464)=\"دوائی چیک - FasalGuard AI Agrimectin 1.8 EC ڈی پی پی کی مطلع شدہ فہرست سے مطابقت خطرے کا اسکور: 0 / 100 ڈی پی پی فہرست (جزوی، 2005): ڈی پی پی کی ممنوعہ فہرست اور 2005 کی جزوی مطلع شدہ فہرست سے موازنہ۔ یہ رجسٹریشن کی جانچ\" toast=[\"نتیجہ تیار ہے\",\"خلاصہ کاپی ہو گیا\"]"
+ },
+ {
+  "id": "l/m360/ur/clipboard-forbidden",
+  "status": "PASS",
+  "detail": "[]"
+ },
+ {
+  "id": "b/m360/ur/premix",
+  "status": "FAIL",
+  "detail": "title=\"ڈی پی پی کے ممنوعہ پری مکسچر کے طور پر درج\" hscroll=0 missing=[\"/زیادہ خطرہ/\"] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=m360-premix-ur.png"
+ },
+ {
+  "id": "f/m360/ur/blank",
+  "status": "PASS",
+  "detail": "title=\"ہم یہ لیبل پڑھ نہیں سکے\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=1 extra= shot=m360-blank-ur.png"
+ },
+ {
+  "id": "pageerrors/m360/ur",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "a/d1440/en/dpp",
+  "status": "PASS",
+  "detail": "title=\"Consistent with the DPP notified list\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=d1440-dpp-en.png"
+ },
+ {
+  "id": "j/d1440/en/listen",
+  "status": "PASS",
+  "detail": "button present; aria-pressed after click1=true after click2=false (headless has no voice: toggle handling only)"
+ },
+ {
+  "id": "k/d1440/en/copy",
+  "status": "PASS",
+  "detail": "clip(451)=\"Dawai Check - FasalGuard AI Agrimectin 1.8 EC Consistent with the DPP notified list Risk score: 0 / 100 DPP LIST (PARTIAL, 2005): Compared with the DPP banned list and the partial 2005 notified list. This is not a regist\" toast=[\"Result ready\",\"Summary copied\"]"
+ },
+ {
+  "id": "l/d1440/en/clipboard-forbidden",
+  "status": "PASS",
+  "detail": "[]"
+ },
+ {
+  "id": "c/d1440/en/endo",
+  "status": "FAIL",
+  "detail": "title=\"Listed in the DPP banned pesticides list\" hscroll=0 missing=[\"/High risk/i\"] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=d1440-endo-en.png"
+ },
+ {
+  "id": "pageerrors/d1440/en",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "a/d1440/ur/dpp",
+  "status": "PASS",
+  "detail": "title=\"ڈی پی پی کی مطلع شدہ فہرست سے مطابقت\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=d1440-dpp-ur.png"
+ },
+ {
+  "id": "j/d1440/ur/listen",
+  "status": "PASS",
+  "detail": "button present; aria-pressed after click1=true after click2=false (headless has no voice: toggle handling only)"
+ },
+ {
+  "id": "k/d1440/ur/copy",
+  "status": "PASS",
+  "detail": "clip(464)=\"دوائی چیک - FasalGuard AI Agrimectin 1.8 EC ڈی پی پی کی مطلع شدہ فہرست سے مطابقت خطرے کا اسکور: 0 / 100 ڈی پی پی فہرست (جزوی، 2005): ڈی پی پی کی ممنوعہ فہرست اور 2005 کی جزوی مطلع شدہ فہرست سے موازنہ۔ یہ رجسٹریشن کی جانچ\" toast=[\"نتیجہ تیار ہے\",\"خلاصہ کاپی ہو گیا\"]"
+ },
+ {
+  "id": "l/d1440/ur/clipboard-forbidden",
+  "status": "PASS",
+  "detail": "[]"
+ },
+ {
+  "id": "d/d1440/ur/notlist",
+  "status": "PASS",
+  "detail": "title=\"ہمارے پاس موجود فہرست میں تصدیق نہیں ہو سکی\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=4 extra= shot=d1440-notlist-ur.png"
+ },
+ {
+  "id": "e/d1440/ur/expired",
+  "status": "PASS",
+  "detail": "title=\"کچھ ٹھیک نہیں لگ رہا\" hscroll=0 missing=[] forbiddenUnnegated=[] forbiddenNegatedCount=0 extra= shot=d1440-expired-ur.png"
+ },
+ {
+  "id": "pageerrors/d1440/ur",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "g/m360/en/pdf",
+  "status": "PASS",
+  "detail": " Take a photo Choose from gallery Keep the whole label inside the frame Good light Hold it flat No glare Add price or pack size (optional) Choose a photo in JPEG, PNG or WebP format."
+ },
+ {
+  "id": "g/m360/en/oversize",
+  "status": "PASS",
+  "detail": " Take a photo Choose from gallery Keep the whole label inside the frame Good light Hold it flat No glare Add price or pack size (optional) This photo is too large"
+ },
+ {
+  "id": "h/m360/en/suggest-abam",
+  "status": "FAIL",
+  "detail": "[]"
+ },
+ {
+  "id": "h/m360/en",
+  "status": "FAIL",
+  "detail": "locator.click: Timeout 30000ms exceeded."
+ },
+ {
+  "id": "i/m360/en/history-list",
+  "status": "PASS",
+  "detail": "rows=20 hscroll=0"
+ },
+ {
+  "id": "i/m360/en/history-open",
+  "status": "PASS",
+  "detail": "Something does not look right"
+ },
+ {
+  "id": "g/m360/ur/pdf",
+  "status": "PASS",
+  "detail": "FASALGUARD AI\n\nدوائی چیک\n\nخریدنے یا سپرے کرنے سے پہلے کیڑے مار دوا کا لیبل جانچیں\n\nڈی پی پی فہرست (جزوی، 2005)\nاردو\nEnglish\nنئی جانچ\nپچھلی جانچ\nلیبل کی تصویر\nنام لکھیں\nدوا کے لیبل کی تصویر لیں\n\nپیک کے"
+ },
+ {
+  "id": "g/m360/ur/oversize",
+  "status": "PASS",
+  "detail": "FASALGUARD AI دوائی چیک خریدنے یا سپرے کرنے سے پہلے کیڑے مار دوا کا لیبل جانچیں ڈی پی پی فہرست (جزوی، 2005) اردو English نئی جانچ پچھلی جانچ لیبل کی تصویر نام لکھیں دوا کے لیبل کی تصویر لیں پیک کے اگلے حصے کو فریم میں بھر لیں جہاں برانڈ کا نام چھپا ہو۔ تصویر لیں گیلری سے چنیں پورا لیبل فریم کے اندر رکھیں اچھی روشنی لیبل سیدھا رکھیں چمک سے بچیں قیمت یا پیک سائز شامل کریں (اختیاری) یہ تصویر بہت بڑی ہے۔ 40 MB سے چھوٹی تصویر چنیں۔ تصویر کام نہیں کر رہی؟ نام لکھیں اس لیبل کو جانچیں یہ خطرے کی ابتدائی جانچ ہے، لیبارٹری ٹیسٹ نہیں۔ اس سے پیک کے اندر کا مواد ثابت نہیں ہوتا۔ شک ہو تو کسی زرعی ماہر سے پوچھیں۔"
+ },
+ {
+  "id": "h/m360/ur/suggest-abam",
+  "status": "FAIL",
+  "detail": "[]"
+ },
+ {
+  "id": "h/m360/ur",
+  "status": "FAIL",
+  "detail": "locator.click: Timeout 30000ms exceeded."
+ },
+ {
+  "id": "i/m360/ur/history-list",
+  "status": "PASS",
+  "detail": "rows=20 hscroll=0"
+ },
+ {
+  "id": "i/m360/ur/history-open",
+  "status": "PASS",
+  "detail": "کچھ ٹھیک نہیں لگ رہا"
+ }
+]

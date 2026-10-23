@@ -107,11 +107,21 @@ export const environmentSchema = Joi.object({
   PUSH_PROVIDER: Joi.string().valid('development', 'firebase').default('development'),
   FIREBASE_SERVICE_ACCOUNT_BASE64: Joi.string().allow('').default(''),
   PUSH_TOKEN_STALE_DAYS: Joi.number().integer().min(7).max(365).default(90),
-  ASSISTANT_PROVIDER: Joi.string().valid('fake', 'qwen', 'gemini').default('fake'),
+  ASSISTANT_PROVIDER: Joi.string().valid('fake', 'qwen', 'gemini', 'extractive').default('fake'),
   RATE_LIMIT_PER_MINUTE: Joi.number().integer().min(30).max(10_000).default(120),
   ASSISTANT_TIMEOUT_MS: Joi.number().integer().min(2_000).max(60_000).default(20_000),
   ASSISTANT_MAX_CONTEXT_MESSAGES: Joi.number().integer().min(0).max(20).default(10),
   ASSISTANT_RETRIEVAL_LIMIT: Joi.number().integer().min(1).max(8).default(4),
+  DAWAI_CHECK_ENABLED: Joi.boolean().truthy('true').falsy('false').default(false),
+  LABEL_READER_PROVIDER: Joi.string()
+    .valid('tesseract', 'openai-compatible', 'fake')
+    .default('tesseract'),
+  LABEL_OCR_LANGS: Joi.string()
+    .pattern(/^[a-z]{3}(\+[a-z]{3})*$/)
+    .default('eng'),
+  LABEL_VISION_BASE_URL: Joi.string().uri().allow('').default(''),
+  LABEL_VISION_API_KEY: Joi.string().allow('').default(''),
+  LABEL_VISION_MODEL: Joi.string().allow('').default(''),
   SPEECH_PROVIDER: Joi.string().valid('fake', 'qwen', 'azure').default('fake'),
   SPEECH_STT_PROVIDER: Joi.string().valid('', 'assemblyai').default(''),
   ASSEMBLYAI_API_KEY: Joi.string().allow('').default(''),
@@ -254,6 +264,21 @@ export const environmentSchema = Joi.object({
   if (value.SPEECH_STT_PROVIDER === 'assemblyai' && !required('ASSEMBLYAI_API_KEY'))
     return helpers.error('any.invalid', {
       message: 'Selected AssemblyAI credentials are missing.',
+    });
+  if (
+    value.DAWAI_CHECK_ENABLED === true &&
+    value.LABEL_READER_PROVIDER === 'openai-compatible' &&
+    (!required('LABEL_VISION_BASE_URL') ||
+      !required('LABEL_VISION_API_KEY') ||
+      !required('LABEL_VISION_MODEL'))
+  )
+    return helpers.error('any.invalid', {
+      message:
+        'Dawai Check with the openai-compatible label reader requires the vision URL, key and model.',
+    });
+  if (value.DAWAI_CHECK_ENABLED === true && value.LABEL_READER_PROVIDER === 'fake')
+    return helpers.error('any.invalid', {
+      message: 'The fake label reader is forbidden in production.',
     });
   if (value.ASSISTANT_PROVIDER === 'fake')
     return helpers.error('any.invalid', {

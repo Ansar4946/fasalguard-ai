@@ -1,0 +1,212 @@
+[
+ {
+  "id": "o/m360/urdu-default-rtl",
+  "status": "PASS",
+  "detail": "dir=rtl lang=ur hscroll=0"
+ },
+ {
+  "id": "o/m360/toggle-en",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "o/m360/toggle-back-ur",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "s/m360/warnings-card",
+  "status": "PASS",
+  "detail": "آپ کے لیے وارننگز | بند کریں | آپ کی کوئی نہ پڑھی ہوئی وارننگ نہیں ہے۔ | میری وارننگز سنائیں"
+ },
+ {
+  "id": "p/m360/en-wheat-yellow",
+  "status": "PASS",
+  "detail": "ASSISTANT | From approved knowledge (DEMO - not expert-reviewed: Wheat field scouting and yellow leaves): | Walk through your wheat field regularly and look at plants in several places, not only near the edge. If wheat leaves are turning yellow, note where it starts: in whole patches, on the older lower leaves, or only at the tips. Yellow leaves can come from many causes such as too much or too little water, poor nutrition, disease or insects, so do not guess the cause. Please consult an agriculture expert before making decisions about your own field. | Sources | DEMO - not expert-reviewed: Wh"
+ },
+ {
+  "id": "v/m360/listen-toggle",
+  "status": "PASS",
+  "detail": "aria-pressed after click=true; label now \"Stop\""
+ },
+ {
+  "id": "p/m360/ur-wheat",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: گندم کے کھیت کی نگرانی اور پتوں کا پیلا پن): | اپنے گندم کے کھیت کا باقاعدگی سے چکر لگائیں اور صرف کنارے پر نہیں بلکہ کئی جگہوں پر پودے دیکھیں۔ اگر گندم کے پتے پیلے ہو رہے ہوں تو دیکھیں کہ پیلاہٹ کہاں سے شروع ہوئی: پورے ٹکڑے میں، نیچے کے پرانے پتوں میں یا صرف پتوں کے سروں پر۔ پتے پیلے ہونے کی کئی وجوہات ہو سکتی ہیں، جیسے پانی کی زیادتی یا کمی، غذائیت کی کمی، بیماری یا کیڑے، اس لیے اندازے سے وجہ طے نہ کریں۔ دن کی روشنی میں صاف تصویریں لیں اور جو دیکھیں اسے تاریخ کے ساتھ لکھ لیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے بر"
+ },
+ {
+  "id": "p/m360/ur-cotton",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: کپاس کی آبپاشی اور پانی کی کمی، عمومی رہنمائی): | کپاس پانی کی کمی اور پانی کے جمع ہو جانے، دونوں سے متاثر ہوتی ہے۔ پودوں کو دیکھتے رہیں: دوپہر کی گرمی میں پتوں کا مرجھانا جو صبح تک ٹھیک ہو جائے عام بات ہے، لیکن اگر مرجھاہٹ برقرار رہے تو زمین میں نمی کم ہو سکتی ہے یا جڑوں کا مسئلہ ہو سکتا ہے۔ پانی صرف عادت کی بنیاد پر نہیں بلکہ زمین کی نمی اور فصل کے مرحلے کو دیکھ کر لگائیں، اور پھول اور ڈوڈے بننے کے وقت خاص خیال رکھیں کیونکہ اس وقت پانی کی تکلیف سے پھول اور ڈوڈے گر سکتے ہیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہ"
+ },
+ {
+  "id": "p/m360/ur-rice",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: کپاس کی آبپاشی اور پانی کی کمی، عمومی رہنمائی): | کپاس پانی کی کمی اور پانی کے جمع ہو جانے، دونوں سے متاثر ہوتی ہے۔ پودوں کو دیکھتے رہیں: دوپہر کی گرمی میں پتوں کا مرجھانا جو صبح تک ٹھیک ہو جائے عام بات ہے، لیکن اگر مرجھاہٹ برقرار رہے تو زمین میں نمی کم ہو سکتی ہے یا جڑوں کا مسئلہ ہو سکتا ہے۔ پانی صرف عادت کی بنیاد پر نہیں بلکہ زمین کی نمی اور فصل کے مرحلے کو دیکھ کر لگائیں، اور پھول اور ڈوڈے بننے کے وقت خاص خیال رکھیں کیونکہ اس وقت پانی کی تکلیف سے پھول اور ڈوڈے گر سکتے ہیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہ"
+ },
+ {
+  "id": "q/m360/offtopic-en-abstains",
+  "status": "PASS",
+  "detail": "ASSISTANT | I do not have approved guidance that answers this question. Please ask an agriculture expert or try rephrasing. | Listen | No approved guidance found — this is not an answer. Ask an expert."
+ },
+ {
+  "id": "q/m360/offtopic-ur-abstains",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | میرے پاس اس سوال کا منظور شدہ رہنمائی پر مبنی جواب موجود نہیں ہے۔ براہِ کرم زرعی ماہر سے رجوع کریں یا سوال دوبارہ لکھیں۔ | سنیں | کوئی منظور شدہ رہنمائی نہیں ملی، یہ جواب نہیں ہے۔ کسی ماہر سے پوچھیں۔"
+ },
+ {
+  "id": "r/m360/account-farms",
+  "status": "PASS",
+  "detail": "chip=1 :: ASSISTANT | You have 1 farm: Golden rice (1 field). | From your account | Your farms | Listen"
+ },
+ {
+  "id": "r/m360/account-spend",
+  "status": "PASS",
+  "detail": "chip=1 :: ASSISTANT | Your confirmed expenses this month: PKR 8,472.00 in 5 entries. | From your account | Your confirmed expenses | Listen"
+ },
+ {
+  "id": "o/m360/no-hscroll-after",
+  "status": "PASS",
+  "detail": "hscroll=0"
+ },
+ {
+  "id": "pageerrors/m360/assistant",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "o/d1440/urdu-default-rtl",
+  "status": "PASS",
+  "detail": "dir=rtl lang=ur hscroll=0"
+ },
+ {
+  "id": "o/d1440/toggle-en",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "o/d1440/toggle-back-ur",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "s/d1440/warnings-card",
+  "status": "PASS",
+  "detail": "آپ کے لیے وارننگز | بند کریں | آپ کی کوئی نہ پڑھی ہوئی وارننگ نہیں ہے۔ | میری وارننگز سنائیں"
+ },
+ {
+  "id": "p/d1440/en-wheat-yellow",
+  "status": "PASS",
+  "detail": "ASSISTANT | From approved knowledge (DEMO - not expert-reviewed: Wheat field scouting and yellow leaves): | Walk through your wheat field regularly and look at plants in several places, not only near the edge. If wheat leaves are turning yellow, note where it starts: in whole patches, on the older lower leaves, or only at the tips. Yellow leaves can come from many causes such as too much or too little water, poor nutrition, disease or insects, so do not guess the cause. Please consult an agriculture expert before making decisions about your own field. | Sources | DEMO - not expert-reviewed: Wh"
+ },
+ {
+  "id": "v/d1440/listen-toggle",
+  "status": "PASS",
+  "detail": "aria-pressed after click=true; label now \"Stop\""
+ },
+ {
+  "id": "p/d1440/ur-wheat",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: گندم کے کھیت کی نگرانی اور پتوں کا پیلا پن): | اپنے گندم کے کھیت کا باقاعدگی سے چکر لگائیں اور صرف کنارے پر نہیں بلکہ کئی جگہوں پر پودے دیکھیں۔ اگر گندم کے پتے پیلے ہو رہے ہوں تو دیکھیں کہ پیلاہٹ کہاں سے شروع ہوئی: پورے ٹکڑے میں، نیچے کے پرانے پتوں میں یا صرف پتوں کے سروں پر۔ پتے پیلے ہونے کی کئی وجوہات ہو سکتی ہیں، جیسے پانی کی زیادتی یا کمی، غذائیت کی کمی، بیماری یا کیڑے، اس لیے اندازے سے وجہ طے نہ کریں۔ دن کی روشنی میں صاف تصویریں لیں اور جو دیکھیں اسے تاریخ کے ساتھ لکھ لیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے بر"
+ },
+ {
+  "id": "p/d1440/ur-cotton",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: کپاس کی آبپاشی اور پانی کی کمی، عمومی رہنمائی): | کپاس پانی کی کمی اور پانی کے جمع ہو جانے، دونوں سے متاثر ہوتی ہے۔ پودوں کو دیکھتے رہیں: دوپہر کی گرمی میں پتوں کا مرجھانا جو صبح تک ٹھیک ہو جائے عام بات ہے، لیکن اگر مرجھاہٹ برقرار رہے تو زمین میں نمی کم ہو سکتی ہے یا جڑوں کا مسئلہ ہو سکتا ہے۔ پانی صرف عادت کی بنیاد پر نہیں بلکہ زمین کی نمی اور فصل کے مرحلے کو دیکھ کر لگائیں، اور پھول اور ڈوڈے بننے کے وقت خاص خیال رکھیں کیونکہ اس وقت پانی کی تکلیف سے پھول اور ڈوڈے گر سکتے ہیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہ"
+ },
+ {
+  "id": "p/d1440/ur-rice",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: کپاس کی آبپاشی اور پانی کی کمی، عمومی رہنمائی): | کپاس پانی کی کمی اور پانی کے جمع ہو جانے، دونوں سے متاثر ہوتی ہے۔ پودوں کو دیکھتے رہیں: دوپہر کی گرمی میں پتوں کا مرجھانا جو صبح تک ٹھیک ہو جائے عام بات ہے، لیکن اگر مرجھاہٹ برقرار رہے تو زمین میں نمی کم ہو سکتی ہے یا جڑوں کا مسئلہ ہو سکتا ہے۔ پانی صرف عادت کی بنیاد پر نہیں بلکہ زمین کی نمی اور فصل کے مرحلے کو دیکھ کر لگائیں، اور پھول اور ڈوڈے بننے کے وقت خاص خیال رکھیں کیونکہ اس وقت پانی کی تکلیف سے پھول اور ڈوڈے گر سکتے ہیں۔ اپنے کھیت کے بارے میں کوئی بھی فیصلہ کرنے سے پہلے براہ"
+ },
+ {
+  "id": "q/d1440/offtopic-en-abstains",
+  "status": "PASS",
+  "detail": "ASSISTANT | I do not have approved guidance that answers this question. Please ask an agriculture expert or try rephrasing. | Listen | No approved guidance found — this is not an answer. Ask an expert."
+ },
+ {
+  "id": "q/d1440/offtopic-ur-abstains",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | میرے پاس اس سوال کا منظور شدہ رہنمائی پر مبنی جواب موجود نہیں ہے۔ براہِ کرم زرعی ماہر سے رجوع کریں یا سوال دوبارہ لکھیں۔ | سنیں | کوئی منظور شدہ رہنمائی نہیں ملی، یہ جواب نہیں ہے۔ کسی ماہر سے پوچھیں۔"
+ },
+ {
+  "id": "r/d1440/account-farms",
+  "status": "PASS",
+  "detail": "chip=1 :: ASSISTANT | You have 1 farm: Golden rice (1 field). | From your account | Your farms | Listen"
+ },
+ {
+  "id": "r/d1440/account-spend",
+  "status": "PASS",
+  "detail": "chip=1 :: ASSISTANT | Your confirmed expenses this month: PKR 8,472.00 in 5 entries. | From your account | Your confirmed expenses | Listen"
+ },
+ {
+  "id": "o/d1440/no-hscroll-after",
+  "status": "PASS",
+  "detail": "hscroll=0"
+ },
+ {
+  "id": "pageerrors/d1440/assistant",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "w/m360/dashboard",
+  "status": "PASS",
+  "detail": "http=200 url=/dashboard textLen=1560 hscroll=0 pageerrors=0 :: Skip to main content EN / اردو AA FasalGuard AI FARMER WORKSPACE Dashboard My Farms Fields Scan Crop Satellite Monitorin"
+ },
+ {
+  "id": "w/m360/scan",
+  "status": "PASS",
+  "detail": "http=200 url=/scan textLen=809 hscroll=0 pageerrors=0 :: Skip to main content EN / اردو AA FasalGuard AI FARMER WORKSPACE Dashboard My Farms Fields Scan Crop Satellite Monitorin"
+ },
+ {
+  "id": "w/m360/satellite",
+  "status": "PASS",
+  "detail": "http=200 url=/satellite textLen=1778 hscroll=0 pageerrors=0 :: Skip to main content EN / اردو AA FasalGuard AI FARMER WORKSPACE Dashboard My Farms Fields Scan Crop Satellite Monitorin"
+ },
+ {
+  "id": "w/m360/ussd-demo",
+  "status": "PASS",
+  "detail": "http=200 url=/ussd-demo textLen=2078 hscroll=0 pageerrors=0 :: Skip to main content EN / اردو AA FasalGuard AI FARMER WORKSPACE Dashboard My Farms Fields Scan Crop Satellite Monitorin"
+ },
+ {
+  "id": "w/m360/alerts",
+  "status": "PASS",
+  "detail": "http=200 url=/alerts textLen=1056 hscroll=0 pageerrors=0 :: Skip to main content EN / اردو AA FasalGuard AI FARMER WORKSPACE Dashboard My Farms Fields Scan Crop Satellite Monitorin"
+ },
+ {
+  "id": "w/m360/farms",
+  "status": "PASS",
+  "detail": "http=200 url=/farms textLen=561 hscroll=0 pageerrors=0 :: Skip to main content EN / اردو AA FasalGuard AI FARMER WORKSPACE Dashboard My Farms Fields Scan Crop Satellite Monitorin"
+ },
+ {
+  "id": "w/d1440/dashboard",
+  "status": "PASS",
+  "detail": "http=200 url=/dashboard textLen=1605 hscroll=0 pageerrors=0 :: Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Satellite Monitoring Weather Intelligence Irrigat"
+ },
+ {
+  "id": "w/d1440/scan",
+  "status": "PASS",
+  "detail": "http=200 url=/scan textLen=808 hscroll=0 pageerrors=0 :: Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Analytics Settings UPGRADE TO PRO You've reached "
+ },
+ {
+  "id": "w/d1440/satellite",
+  "status": "PASS",
+  "detail": "http=200 url=/satellite textLen=1749 hscroll=0 pageerrors=0 :: Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Satellite Monitoring Weather Intelligence Irrigat"
+ },
+ {
+  "id": "w/d1440/ussd-demo",
+  "status": "PASS",
+  "detail": "http=200 url=/ussd-demo textLen=2049 hscroll=0 pageerrors=0 :: Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Satellite Monitoring Weather Intelligence Irrigat"
+ },
+ {
+  "id": "w/d1440/alerts",
+  "status": "PASS",
+  "detail": "http=200 url=/alerts textLen=1043 hscroll=0 pageerrors=0 :: Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Satellite Monitoring Weather Intelligence Irrigat"
+ },
+ {
+  "id": "w/d1440/farms",
+  "status": "PASS",
+  "detail": "http=200 url=/farms textLen=507 hscroll=0 pageerrors=0 :: Skip to main content FasalGuard AI Dashboard My Farms Fields Scan Crop Analytics Settings UPGRADE TO PRO You've reached "
+ }
+]

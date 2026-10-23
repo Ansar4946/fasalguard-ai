@@ -1,0 +1,72 @@
+[
+ {
+  "id": "real/en/verified",
+  "status": "FAIL",
+  "detail": "page.screenshot: Protocol error (Page.captureScreenshot): Unable to capture screenshot"
+ },
+ {
+  "id": "real/en/expired",
+  "status": "PASS",
+  "detail": "title=\"Something does not look right\" ring=1 hscroll=0"
+ },
+ {
+  "id": "real/en/banned",
+  "status": "PASS",
+  "detail": "title=\"High risk: do not use yet\" ring=1 hscroll=0"
+ },
+ {
+  "id": "real/en/blank",
+  "status": "PASS",
+  "detail": "title=\"We could not read this label\" ring=0 hscroll=0"
+ },
+ {
+  "id": "real/history",
+  "status": "PASS",
+  "detail": "rows=20"
+ },
+ {
+  "id": "real/history-open",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "real/manual-suggest",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "real/manual-check",
+  "status": "PASS",
+  "detail": "Something does not look right"
+ },
+ {
+  "id": "real/en/pageerrors",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "real/ur/verified",
+  "status": "PASS",
+  "detail": "title=\"ڈیمو فہرست کے مطابق\" ring=1 hscroll=0"
+ },
+ {
+  "id": "real/ur/expired",
+  "status": "PASS",
+  "detail": "title=\"کچھ ٹھیک نہیں لگ رہا\" ring=1 hscroll=0"
+ },
+ {
+  "id": "real/ur/banned",
+  "status": "PASS",
+  "detail": "title=\"زیادہ خطرہ: ابھی استعمال نہ کریں\" ring=1 hscroll=0"
+ },
+ {
+  "id": "real/ur/blank",
+  "status": "PASS",
+  "detail": "title=\"ہم یہ لیبل پڑھ نہیں سکے\" ring=0 hscroll=0"
+ },
+ {
+  "id": "real/ur/pageerrors",
+  "status": "PASS",
+  "detail": ""
+ }
+]

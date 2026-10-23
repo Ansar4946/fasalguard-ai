@@ -13,6 +13,10 @@
     "test": "jest --runInBand",
     "test:integration": "jest --runInBand --testRegex=\\.integration-spec\\.ts$",
     "test:cov": "jest --coverage",
+    "seed:pesticide": "ts-node src/domain/pesticide-check/pesticide-seed.cli.ts",
+    "seed:demo-knowledge": "ts-node src/domain/assistant/demo-knowledge-seed.cli.ts",
+    "seed:demo-knowledge:prod": "node dist/domain/assistant/demo-knowledge-seed.cli.js",
+    "seed:pesticide:prod": "node dist/domain/pesticide-check/pesticide-seed.cli.js",
     "yield:import": "ts-node src/domain/yield/yield-import.cli.ts",
     "migration:run": "typeorm-ts-node-commonjs -d src/infrastructure/database/data-source.ts migration:run",
     "migration:run:prod": "typeorm -d dist/infrastructure/database/data-source.js migration:run",
@@ -48,6 +52,7 @@
     "rxjs": "^7.8.2",
     "sharp": "^0.35.3",
     "stripe": "^18.5.0",
+    "tesseract.js": "^5.1.1",
     "typeorm": "^0.3.28"
   },
   "devDependencies": {

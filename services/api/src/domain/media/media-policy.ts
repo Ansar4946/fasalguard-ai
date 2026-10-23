@@ -7,6 +7,7 @@ const sharp = require('sharp') as typeof sharpFactory;
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const RULES: Record<MediaPurpose, { mimeTypes: Set<string>; maxBytes: number }> = {
   [MediaPurpose.CropScan]: { mimeTypes: IMAGE_TYPES, maxBytes: 15 * 1024 * 1024 },
+  [MediaPurpose.PesticideLabel]: { mimeTypes: IMAGE_TYPES, maxBytes: 15 * 1024 * 1024 },
   [MediaPurpose.FieldInspection]: { mimeTypes: IMAGE_TYPES, maxBytes: 20 * 1024 * 1024 },
   [MediaPurpose.ExpertReview]: { mimeTypes: IMAGE_TYPES, maxBytes: 20 * 1024 * 1024 },
   [MediaPurpose.VoiceNote]: {

@@ -5,6 +5,7 @@ export enum MediaPurpose {
   VoiceNote = 'voice-note',
   Satellite = 'satellite',
   Report = 'report',
+  PesticideLabel = 'pesticide-label',
 }
 
 export enum MediaStatus {

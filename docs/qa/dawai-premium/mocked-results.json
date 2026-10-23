@@ -1,0 +1,612 @@
+[
+ {
+  "id": "m/en/capture-idle/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "m/en/photo-chosen/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "m/en/quality-hint",
+  "status": "INFO",
+  "detail": "good label hint=\"Photo looks clear\""
+ },
+ {
+  "id": "m/en/quality-hint-dark",
+  "status": "PASS",
+  "detail": "This photo looks dark. Move to better light for a clearer read."
+ },
+ {
+  "id": "m/en/bad-file-error",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/result-verified/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "m/en/result-verified/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/result-verified/hero",
+  "status": "INFO",
+  "detail": "title=\"Consistent with the demo list\" ring=1 earlyCount=\"\""
+ },
+ {
+  "id": "m/en/verified-wording",
+  "status": "PASS",
+  "detail": "Consistent with the demo list"
+ },
+ {
+  "id": "m/en/result-expired/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "m/en/result-expired/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/result-expired/hero",
+  "status": "INFO",
+  "detail": "title=\"Something does not look right\" ring=1 earlyCount=\"0\""
+ },
+ {
+  "id": "m/en/checks-expand-defaults",
+  "status": "PASS",
+  "detail": "true,false,false"
+ },
+ {
+  "id": "m/en/checks-toggle",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/edit-enables-recheck",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/copy-summary",
+  "status": "PASS",
+  "detail": "Dawai Check - FasalGuard AI\r | DEMO Imidacloprid 20% SL\r | Something does not look right\r | Risk score: 55 / 100\r | DEMO DATASET"
+ },
+ {
+  "id": "m/en/result-banned/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "m/en/result-banned/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/result-banned/hero",
+  "status": "INFO",
+  "detail": "title=\"High risk: do not use yet\" ring=1 earlyCount=\"\""
+ },
+ {
+  "id": "m/en/result-blank/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "m/en/result-blank/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/result-blank/hero",
+  "status": "INFO",
+  "detail": "title=\"We could not read this label\" ring=0 earlyCount=\"\""
+ },
+ {
+  "id": "m/en/blank-no-ring",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/manual-suggestions",
+  "status": "PASS",
+  "detail": "highlighted marks=2"
+ },
+ {
+  "id": "m/en/manual-pick",
+  "status": "PASS",
+  "detail": "DEMO Imidacloprid 20% SL"
+ },
+ {
+  "id": "m/en/manual-example-chip",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/manual/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "m/en/history/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "m/en/history/rows",
+  "status": "PASS",
+  "detail": "rows=4"
+ },
+ {
+  "id": "m/en/history/open-item",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/en/pageerrors",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/capture-idle/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "m/ur/photo-chosen/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "m/ur/quality-hint",
+  "status": "INFO",
+  "detail": "good label hint=\"تصویر واضح لگ رہی ہے\""
+ },
+ {
+  "id": "m/ur/result-verified/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "m/ur/result-verified/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/result-verified/hero",
+  "status": "INFO",
+  "detail": "title=\"ڈیمو فہرست کے مطابق\" ring=1 earlyCount=\"\""
+ },
+ {
+  "id": "m/ur/result-expired/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "m/ur/result-expired/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/result-expired/hero",
+  "status": "INFO",
+  "detail": "title=\"کچھ ٹھیک نہیں لگ رہا\" ring=1 earlyCount=\"0\""
+ },
+ {
+  "id": "m/ur/checks-expand-defaults",
+  "status": "PASS",
+  "detail": "true,false,false"
+ },
+ {
+  "id": "m/ur/checks-toggle",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/edit-enables-recheck",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/copy-summary",
+  "status": "PASS",
+  "detail": "دوائی چیک - FasalGuard AI\r | DEMO Imidacloprid 20% SL\r | کچھ ٹھیک نہیں لگ رہا\r | خطرے کا اسکور: 55 / 100\r | ڈیمو ڈیٹا: نتائج نمو"
+ },
+ {
+  "id": "m/ur/result-banned/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "m/ur/result-banned/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/result-banned/hero",
+  "status": "INFO",
+  "detail": "title=\"زیادہ خطرہ: ابھی استعمال نہ کریں\" ring=1 earlyCount=\"\""
+ },
+ {
+  "id": "m/ur/result-blank/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "m/ur/result-blank/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/result-blank/hero",
+  "status": "INFO",
+  "detail": "title=\"ہم یہ لیبل پڑھ نہیں سکے\" ring=0 earlyCount=\"\""
+ },
+ {
+  "id": "m/ur/blank-no-ring",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/manual-suggestions",
+  "status": "PASS",
+  "detail": "highlighted marks=2"
+ },
+ {
+  "id": "m/ur/manual-pick",
+  "status": "PASS",
+  "detail": "DEMO Imidacloprid 20% SL"
+ },
+ {
+  "id": "m/ur/manual-example-chip",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/manual/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "m/ur/history/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "m/ur/history/rows",
+  "status": "PASS",
+  "detail": "rows=4"
+ },
+ {
+  "id": "m/ur/history/open-item",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "m/ur/pageerrors",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/capture-idle/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "d/en/photo-chosen/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "d/en/quality-hint",
+  "status": "INFO",
+  "detail": "good label hint=\"Photo looks clear\""
+ },
+ {
+  "id": "d/en/quality-hint-dark",
+  "status": "PASS",
+  "detail": "This photo looks dark. Move to better light for a clearer read."
+ },
+ {
+  "id": "d/en/bad-file-error",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/result-verified/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "d/en/result-verified/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/result-verified/hero",
+  "status": "INFO",
+  "detail": "title=\"Consistent with the demo list\" ring=1 earlyCount=\"\""
+ },
+ {
+  "id": "d/en/verified-wording",
+  "status": "PASS",
+  "detail": "Consistent with the demo list"
+ },
+ {
+  "id": "d/en/result-expired/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "d/en/result-expired/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/result-expired/hero",
+  "status": "INFO",
+  "detail": "title=\"Something does not look right\" ring=1 earlyCount=\"33\""
+ },
+ {
+  "id": "d/en/checks-expand-defaults",
+  "status": "PASS",
+  "detail": "true,false,false"
+ },
+ {
+  "id": "d/en/checks-toggle",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/edit-enables-recheck",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/copy-summary",
+  "status": "PASS",
+  "detail": "Dawai Check - FasalGuard AI\r | DEMO Imidacloprid 20% SL\r | Something does not look right\r | Risk score: 55 / 100\r | DEMO DATASET"
+ },
+ {
+  "id": "d/en/result-banned/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "d/en/result-banned/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/result-banned/hero",
+  "status": "INFO",
+  "detail": "title=\"High risk: do not use yet\" ring=1 earlyCount=\"\""
+ },
+ {
+  "id": "d/en/result-blank/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "d/en/result-blank/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/result-blank/hero",
+  "status": "INFO",
+  "detail": "title=\"We could not read this label\" ring=0 earlyCount=\"\""
+ },
+ {
+  "id": "d/en/blank-no-ring",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/manual-suggestions",
+  "status": "PASS",
+  "detail": "highlighted marks=2"
+ },
+ {
+  "id": "d/en/manual-pick",
+  "status": "PASS",
+  "detail": "DEMO Imidacloprid 20% SL"
+ },
+ {
+  "id": "d/en/manual-example-chip",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/manual/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "d/en/history/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"ltr\"}"
+ },
+ {
+  "id": "d/en/history/rows",
+  "status": "PASS",
+  "detail": "rows=4"
+ },
+ {
+  "id": "d/en/history/open-item",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/en/pageerrors",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/capture-idle/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "d/ur/photo-chosen/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "d/ur/quality-hint",
+  "status": "INFO",
+  "detail": "good label hint=\"تصویر واضح لگ رہی ہے\""
+ },
+ {
+  "id": "d/ur/result-verified/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "d/ur/result-verified/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/result-verified/hero",
+  "status": "INFO",
+  "detail": "title=\"ڈیمو فہرست کے مطابق\" ring=1 earlyCount=\"\""
+ },
+ {
+  "id": "d/ur/result-expired/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "d/ur/result-expired/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/result-expired/hero",
+  "status": "INFO",
+  "detail": "title=\"کچھ ٹھیک نہیں لگ رہا\" ring=1 earlyCount=\"0\""
+ },
+ {
+  "id": "d/ur/checks-expand-defaults",
+  "status": "PASS",
+  "detail": "true,false,false"
+ },
+ {
+  "id": "d/ur/checks-toggle",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/edit-enables-recheck",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/copy-summary",
+  "status": "PASS",
+  "detail": "دوائی چیک - FasalGuard AI\r | DEMO Imidacloprid 20% SL\r | کچھ ٹھیک نہیں لگ رہا\r | خطرے کا اسکور: 55 / 100\r | ڈیمو ڈیٹا: نتائج نمو"
+ },
+ {
+  "id": "d/ur/result-banned/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "d/ur/result-banned/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/result-banned/hero",
+  "status": "INFO",
+  "detail": "title=\"زیادہ خطرہ: ابھی استعمال نہ کریں\" ring=1 earlyCount=\"\""
+ },
+ {
+  "id": "d/ur/result-blank/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "d/ur/result-blank/wording",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/result-blank/hero",
+  "status": "INFO",
+  "detail": "title=\"ہم یہ لیبل پڑھ نہیں سکے\" ring=0 earlyCount=\"\""
+ },
+ {
+  "id": "d/ur/blank-no-ring",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/manual-suggestions",
+  "status": "PASS",
+  "detail": "highlighted marks=2"
+ },
+ {
+  "id": "d/ur/manual-pick",
+  "status": "PASS",
+  "detail": "DEMO Imidacloprid 20% SL"
+ },
+ {
+  "id": "d/ur/manual-example-chip",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/manual/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "d/ur/history/layout",
+  "status": "PASS",
+  "detail": "{\"hscroll\":0,\"small\":[],\"dir\":\"rtl\"}"
+ },
+ {
+  "id": "d/ur/history/rows",
+  "status": "PASS",
+  "detail": "rows=4"
+ },
+ {
+  "id": "d/ur/history/open-item",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "d/ur/pageerrors",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "reduced-motion/idle",
+  "status": "PASS",
+  "detail": "{\"beam\":\"none\",\"bracketAnim\":\"none\"}"
+ },
+ {
+  "id": "reduced-motion/result-final-state-immediately",
+  "status": "PASS",
+  "detail": "{\"num\":\"55\",\"arcAnim\":\"none\",\"offset\":\"118.752px\",\"rise\":\"1\"}"
+ },
+ {
+  "id": "keyboard/focus-order",
+  "status": "INFO",
+  "detail": "DEMO DATASET > اردو > English > New check > History > Scan label > Type the name > Take a photo > Choose from gallery > Add price or pack size (op > Photo not working? Type th > Skip to main content Fasal [NO OUTLINE] > Skip to main content > FasalGuard AI"
+ },
+ {
+  "id": "keyboard/focus-visible-outline",
+  "status": "PASS",
+  "detail": "in-page items only (shell skip link excluded)"
+ }
+]
