@@ -218,18 +218,41 @@ export class PesticideCheckService {
     return this.present(row);
   }
 
-  /** Autocomplete over the reference list (max 10). */
+  /**
+   * Autocomplete (max 10): catalogue products first, then entries of the DPP notified list (matched on the
+   * listed product text or an ingredient). All values are bound parameters; the needle is alphanumeric only.
+   */
   async searchProducts(search: string | undefined): Promise<unknown[]> {
     const q = normalizeName(search);
     if (q.length < 2) return [];
-    return this.db.query(
-      `SELECT id,brand_name "brandName",active_ingredient "activeIngredient",concentration,formulation,company,is_demo "isDemo"
+    const catalogue = await this.db.query<Array<Record<string, unknown>>>(
+      `SELECT id,brand_name "brandName",active_ingredient "activeIngredient",concentration,formulation,company,is_demo "isDemo",
+              'catalogue' AS kind, brand_name AS label
        FROM pesticide_products
        WHERE brand_normalized LIKE '%' || $1 || '%' OR brand_normalized % $1
        ORDER BY (brand_normalized LIKE $1 || '%') DESC,similarity(brand_normalized,$1) DESC,brand_name
        LIMIT 10`,
       [q],
     );
+    const room = 10 - catalogue.length;
+    if (room <= 0) return catalogue;
+    const notified = await this.db.query<Array<Record<string, unknown>>>(
+      `SELECT id,
+              btrim(regexp_replace(product_text,'[.,;[:space:]]+$','')) "brandName",
+              array_to_string(ingredients,' + ') "activeIngredient",
+              concentration_text AS concentration,
+              array_to_string(formulations,', ') AS formulation,
+              NULL::text AS company, false AS "isDemo",
+              'dpp_notified' AS kind,
+              btrim(regexp_replace(product_text,'[.,;[:space:]]+$','')) AS label
+       FROM dpp_notified_products
+       WHERE regexp_replace(lower(product_text),'[^[:alnum:]]+','','g') LIKE '%' || $1 || '%'
+          OR EXISTS (SELECT 1 FROM unnest(ingredients_normalized) i WHERE i LIKE '%' || $1 || '%')
+       ORDER BY (regexp_replace(lower(product_text),'[^[:alnum:]]+','','g') LIKE $1 || '%') DESC, serial
+       LIMIT $2`,
+      [q, room],
+    );
+    return [...catalogue, ...notified];
   }
 
   private async assess(input: {

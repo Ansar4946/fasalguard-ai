@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { searchProducts } from "@/features/dawai-check/client";
-import type { EditableFields } from "@/features/dawai-check/manual";
+import { fieldsFromSuggestion, type EditableFields } from "@/features/dawai-check/manual";
 import type { ProductSuggestion } from "@/features/dawai-check/types";
 import { highlightMatch } from "@/features/dawai-check/ui";
 import { ErrorBanner, GlyphIcon, inputClass, primaryButton, Spinner, type T } from "./parts";
@@ -61,7 +61,7 @@ export function ManualPanel({
   const expanded = open && searchable;
 
   function pick(item: ProductSuggestion): void {
-    onFields({ ...fields, brandName: item.brandName, activeIngredient: item.activeIngredient || fields.activeIngredient });
+    onFields(fieldsFromSuggestion(fields, item));
     setOpen(false);
     setActive(-1);
   }
@@ -168,6 +168,11 @@ export function ManualPanel({
                 <span className="block text-xs text-muted">
                   {[item.activeIngredient, item.company].filter(Boolean).join(" · ")}
                 </span>
+                {item.kind === "dpp_notified" && (
+                  <span className="mt-1 inline-block rounded-full border border-brand/30 bg-brand-soft/60 px-2 py-0.5 text-[11px] font-bold text-brand-dark">
+                    {t("dppNotifiedTag")}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

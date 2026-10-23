@@ -18,6 +18,7 @@ import {
   normalizeLevel,
   pushLevel,
   shouldAutoSend,
+  transcriptionErrorKind,
   voiceReducer,
   type VoiceErrorKind,
 } from "@/features/conversations/voice-state";
@@ -30,6 +31,13 @@ type UploadAuthorization = {
 
 const BAR_COUNT = 28;
 const FRAME_MS = 40;
+
+function errorCode(value: unknown): string | undefined {
+  const error = value && typeof value === "object" ? (value as { error?: unknown }).error : undefined;
+  return error && typeof error === "object" && typeof (error as { code?: unknown }).code === "string"
+    ? (error as { code: string }).code
+    : undefined;
+}
 
 function errorMessage(value: unknown, fallback: string): string {
   if (!value || typeof value !== "object") return fallback;
@@ -305,9 +313,12 @@ export function FarmerAssistant({
           consentVersion: caps?.consentVersion,
         }),
       });
-      const body = (await response.json()) as { transcript?: string };
-      if (!response.ok) throw new VoiceFailure("generic", errorMessage(body, ""));
-      dispatch({ type: "TRANSCRIBED", text: body.transcript ?? "" });
+      const body = (await response.json().catch(() => null)) as { transcript?: string } | null;
+      if (!response.ok)
+        throw new VoiceFailure(
+          transcriptionErrorKind(response.status, errorCode(body), errorMessage(body, "") || undefined),
+        );
+      dispatch({ type: "TRANSCRIBED", text: body?.transcript ?? "" });
     } catch (error) {
       dispatch({
         type: "FAIL",
@@ -481,9 +492,21 @@ export function FarmerAssistant({
     unsupported: t.errUnsupported,
     format: t.errFormat,
     empty: t.errEmpty,
+    "no-speech": t.errNoSpeech,
+    "too-short": t.errTooShort,
+    "too-long": t.errTooLong,
+    provider: t.errProvider,
+    "rate-limited": t.errRateLimited,
     generic: t.errGeneric,
   };
-  const canRetry = state.error === "denied" || state.error === "empty" || state.error === "generic";
+  const canRetry =
+    state.error === "denied" ||
+    state.error === "empty" ||
+    state.error === "no-speech" ||
+    state.error === "too-short" ||
+    state.error === "too-long" ||
+    state.error === "provider" ||
+    state.error === "generic";
 
   let setupMessage: string | null = null;
   if (capsStatus === "loading") setupMessage = t.checkingVoice;
@@ -573,9 +596,6 @@ export function FarmerAssistant({
       {state.phase === "error" && state.error && (
         <div className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-danger" role="alert">
           <p>{errorText[state.error]}</p>
-          {state.error === "generic" && state.detail && (
-            <p className="mt-1 text-xs font-normal">{state.detail}</p>
-          )}
           <div className="mt-2 flex flex-wrap gap-2">
             {canRetry && (
               <button

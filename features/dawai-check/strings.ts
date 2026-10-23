@@ -39,6 +39,7 @@ export const en = {
   suggestionsLabel: "Matching products",
   noSuggestions: "No matching product in the list. You can still check the name you typed.",
   searching: "Searching…",
+  dppNotifiedTag: "DPP notified list",
   checkName: "Check this name",
   backToPhoto: "Use a photo instead",
 
@@ -264,6 +265,7 @@ export const ur: Record<StringKey, string> = {
   suggestionsLabel: "ملتی جلتی دوائیں",
   noSuggestions: "فہرست میں کوئی ملتی دوا نہیں۔ آپ پھر بھی اپنا لکھا ہوا نام جانچ سکتے ہیں۔",
   searching: "تلاش ہو رہی ہے…",
+  dppNotifiedTag: "ڈی پی پی کی مطلع شدہ فہرست",
   checkName: "یہ نام جانچیں",
   backToPhoto: "تصویر سے جانچیں",
 

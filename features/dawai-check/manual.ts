@@ -24,6 +24,14 @@ export function fieldsFromExtracted(extracted: ExtractedLabel | null | undefined
   };
 }
 
+/** Form values after picking an autocomplete suggestion (notified-list entries carry strength and formulation in their text). */
+export function fieldsFromSuggestion(
+  fields: EditableFields,
+  item: { brandName: string; activeIngredient?: string | null },
+): EditableFields {
+  return { ...fields, brandName: item.brandName, activeIngredient: item.activeIngredient || fields.activeIngredient };
+}
+
 export function fieldsChanged(a: EditableFields, b: EditableFields): boolean {
   return (Object.keys(a) as Array<keyof EditableFields>).some((key) => a[key].trim() !== b[key].trim());
 }

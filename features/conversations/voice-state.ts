@@ -15,7 +15,35 @@ export type VoiceErrorKind =
   | "unsupported"
   | "format"
   | "empty"
+  | "no-speech"
+  | "too-short"
+  | "too-long"
+  | "provider"
+  | "rate-limited"
   | "generic";
+
+/**
+ * Maps a failed transcription response to a localisable error kind. The raw server sentence is never
+ * shown to the farmer (it is English only); only the kind is used.
+ */
+export function transcriptionErrorKind(
+  status: number,
+  code: string | undefined,
+  message: string | undefined,
+): VoiceErrorKind {
+  const c = (code ?? "").toUpperCase();
+  const m = (message ?? "").toLowerCase();
+  if (status === 429 || c.includes("THROTTLE") || c.includes("RATE_LIMIT") || c.includes("TOO_MANY"))
+    return "rate-limited";
+  if (c === "SPEECH_NO_SPEECH" || c === "SPEECH_NO_TRANSCRIPT" || m.includes("no speech")) return "no-speech";
+  if (c === "SPEECH_NO_AUDIO") return "empty";
+  if (m.includes("too short")) return "too-short";
+  if (m.includes("too long") || m.includes("too large") || c === "SPEECH_RESPONSE_TOO_LARGE") return "too-long";
+  if (c === "SPEECH_MEDIA_INVALID" || m.includes("unsupported")) return "format";
+  if (c === "SPEECH_UNAVAILABLE" || c.startsWith("SPEECH_PROVIDER") || c === "SPEECH_MEDIA_UNAVAILABLE" || status === 503)
+    return "provider";
+  return "generic";
+}
 
 export interface VoiceState {
   phase: VoicePhase;

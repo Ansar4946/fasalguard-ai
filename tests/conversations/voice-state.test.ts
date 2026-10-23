@@ -74,3 +74,15 @@ test("level history keeps a fixed length and clamps", () => {
   assert.equal(vs.barHeightPercent(1), 100);
   assert.equal(vs.barHeightPercent(9), 100);
 });
+
+test("transcription errors map to localisable kinds, never raw server text", () => {
+  const k = vs.transcriptionErrorKind;
+  assert.equal(k(503, "SPEECH_NO_SPEECH", "No speech was detected. Please record again."), "no-speech");
+  assert.equal(k(503, undefined, "No speech was detected."), "no-speech");
+  assert.equal(k(400, "BAD_REQUEST", "Recording is too short."), "too-short");
+  assert.equal(k(400, "SPEECH_MEDIA_INVALID", "Voice recording is too large."), "too-long");
+  assert.equal(k(503, "SPEECH_MEDIA_INVALID", "Voice recording format is unsupported."), "format");
+  assert.equal(k(503, "SPEECH_PROVIDER_FAILED", "Transcription failed."), "provider");
+  assert.equal(k(429, "TOO_MANY_REQUESTS", "ThrottlerException"), "rate-limited");
+  assert.equal(k(500, undefined, undefined), "generic");
+});

@@ -93,7 +93,12 @@ export interface ProductSuggestion {
   id: string;
   brandName: string;
   activeIngredient: string;
-  company: string;
+  company: string | null;
+  /** Additive fields: absent on responses from older servers (treated as catalogue). */
+  kind?: "catalogue" | "dpp_notified";
+  label?: string;
+  concentration?: string | null;
+  formulation?: string | null;
 }
 
 export interface CreateCheckInput {

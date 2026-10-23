@@ -1,0 +1,122 @@
+[
+ {
+  "id": "m360-h/en/suggest-abam",
+  "status": "PASS",
+  "detail": "[\"Abamectin 1.8% EC\\nAbamectin\\nDPP notified list\"]"
+ },
+ {
+  "id": "m360-h/en/pick-abam-result",
+  "status": "PASS",
+  "detail": "filled=\"Abamectin 1.8% EC\" title=\"Something does not look right\" dppBadge/consistent=true whoIII=true hscroll=0 forbidden=[]"
+ },
+ {
+  "id": "m360-h/en/suggest-imid",
+  "status": "PASS",
+  "detail": "[\"DEMO Imidacloprid 20% SL / Imidacloprid\",\"Imidacloprid + Cyfluthrin 50 (w/v) EC (25% w/v + 25% w/v) / Imidacloprid + Cyfluthrin / DPP notified list\",\"Imidacloprid 25 EC, 25 WP, 70 WS, 200 SL / Imidacloprid / DPP notified list\"]"
+ },
+ {
+  "id": "m360-h/en/suggest-cyper",
+  "status": "PASS",
+  "detail": "[\"DEMO Cypermethrin 10% EC / Cypermethrin\",\"Cypermethrin + Chlorpyrifos 505 EC (4.54% + 45.37%) / Cypermethrin + Chlorpyrifos / DPP notified list\",\"Cypermethrin + Profenofos 440 EC (4% + 40%), 220 ULV / Cypermethrin + Profenofos / DPP notified list\",\"Cypermethrin 10 EC / Cypermethrin / DPP notified list\",\"Alpha-Cypermethrin 5 EC / Alpha-Cypermethrin / DPP notified list\",\"Beta-Cypermethrin 5 EC / Beta-Cypermethrin / DPP notified list\",\"Zeta-cypermethrin 18.1 EC / Zeta-cypermethrin / DPP notified list\"]"
+ },
+ {
+  "id": "m360-h/ur/suggest-abam",
+  "status": "PASS",
+  "detail": "[\"Abamectin 1.8% EC\\nAbamectin\\nڈی پی پی کی مطلع شدہ فہرست\"]"
+ },
+ {
+  "id": "m360-h/ur/pick-abam-result",
+  "status": "PASS",
+  "detail": "filled=\"Abamectin 1.8% EC\" title=\"کچھ ٹھیک نہیں لگ رہا\" dppBadge/consistent=true whoIII=true hscroll=0 forbidden=[]"
+ },
+ {
+  "id": "m360-h/ur/suggest-imid",
+  "status": "PASS",
+  "detail": "[\"DEMO Imidacloprid 20% SL / Imidacloprid\",\"Imidacloprid + Cyfluthrin 50 (w/v) EC (25% w/v + 25% w/v) / Imidacloprid + Cyfluthrin / ڈی پی پی کی مطلع شدہ فہرست\",\"Imidacloprid 25 EC, 25 WP, 70 WS, 200 SL / Imidacloprid / ڈی پی پی کی مطلع شدہ فہرست\"]"
+ },
+ {
+  "id": "m360-h/ur/suggest-cyper",
+  "status": "PASS",
+  "detail": "[\"DEMO Cypermethrin 10% EC / Cypermethrin\",\"Cypermethrin + Chlorpyrifos 505 EC (4.54% + 45.37%) / Cypermethrin + Chlorpyrifos / ڈی پی پی کی مطلع شدہ فہرست\",\"Cypermethrin + Profenofos 440 EC (4% + 40%), 220 ULV / Cypermethrin + Profenofos / ڈی پی پی کی مطلع شدہ فہرست\",\"Cypermethrin 10 EC / Cypermethrin / ڈی پی پی کی مطلع شدہ فہرست\",\"Alpha-Cypermethrin 5 EC / Alpha-Cypermethrin / ڈی پی پی کی مطلع شدہ فہرست\",\"Beta-Cypermethrin 5 EC / Beta-Cypermethrin / ڈی پی پی کی مطلع شدہ فہرست\",\"Zeta-cypermethrin 18.1 EC / Zeta-cypermethrin / ڈی پی پی کی مطلع شدہ فہرست\"]"
+ },
+ {
+  "id": "m360-p/ur-rice",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: دھان میں پانی کا انتظام، عمومی رہنمائی): | دھان پانی میں اگایا جاتا ہے، پھر بھی پانی کا انتظام بہت اہم ہے۔ کھیت کو ہموار رکھیں تاکہ پانی کی گہرائی ہر جگہ برابر رہے، اور بندوں میں رساؤ دیکھتے رہیں"
+ },
+ {
+  "id": "m360-p/ur-rice-dhaan",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: دھان میں پانی کا انتظام، عمومی رہنمائی): | دھان پانی میں اگایا جاتا ہے، پھر بھی پانی کا انتظام بہت اہم ہے۔ کھیت کو ہموار رکھیں تاکہ پانی کی گہرائی ہر جگہ برابر رہے، اور بندوں میں رساؤ دیکھتے رہیں"
+ },
+ {
+  "id": "m360-p/ur-rice-chawal-mgmt",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: دھان میں پانی کا انتظام، عمومی رہنمائی): | دھان پانی میں اگایا جاتا ہے، پھر بھی پانی کا انتظام بہت اہم ہے۔ کھیت کو ہموار رکھیں تاکہ پانی کی گہرائی ہر جگہ برابر رہے، اور بندوں میں رساؤ دیکھتے رہیں"
+ },
+ {
+  "id": "m360-p/ur-cotton",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: کپاس کی آبپاشی اور پانی کی کمی، عمومی رہنمائی): | کپاس پانی کی کمی اور پانی کے جمع ہو جانے، دونوں سے متاثر ہوتی ہے۔ پودوں کو دیکھتے رہیں: دوپہر کی گرمی میں پتوں کا مرجھانا جو صبح تک ٹھیک ہو جائے "
+ },
+ {
+  "id": "m360-p/ur-wheat",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: گندم کے کھیت کی نگرانی اور پتوں کا پیلا پن): | اپنے گندم کے کھیت کا باقاعدگی سے چکر لگائیں اور صرف کنارے پر نہیں بلکہ کئی جگہوں پر پودے دیکھیں۔ اگر گندم کے پتے پیلے ہو رہے ہوں تو دیکھیں کہ پیلاہٹ"
+ },
+ {
+  "id": "m360-p/ur-offtopic",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | میرے پاس اس سوال کا منظور شدہ رہنمائی پر مبنی جواب موجود نہیں ہے۔ براہِ کرم زرعی ماہر سے رجوع کریں یا سوال دوبارہ لکھیں۔ | سنیں | کوئی منظور شدہ رہنمائی نہیں ملی، یہ جواب نہیں ہے۔ کسی ماہر سے پوچھیں۔"
+ },
+ {
+  "id": "d1440-p/ur-rice",
+  "status": "PASS",
+  "detail": "اسسٹنٹ | منظور شدہ معلومات کے مطابق (DEMO - not expert-reviewed: دھان میں پانی کا انتظام، عمومی رہنمائی): | دھان پانی میں اگایا جاتا ہے، پھر بھی پانی کا انتظام بہت اہم ہے۔ کھیت کو ہموار رکھیں تاکہ پانی کی گہرائی ہر جگہ برابر رہے، اور بندوں میں رساؤ دیکھتے رہیں"
+ },
+ {
+  "id": "m360-p/en-wheat",
+  "status": "PASS",
+  "detail": "ASSISTANT | From approved knowledge (DEMO - not expert-reviewed: Wheat field scouting and yellow leaves): | Walk through your wheat field regularly and look at plants in several places, not only near the edge. If wheat leaves are turning yellow, note where it "
+ },
+ {
+  "id": "m360-p/en-cotton",
+  "status": "PASS",
+  "detail": "ASSISTANT | From approved knowledge (DEMO - not expert-reviewed: Cotton irrigation and water stress in general terms): | Cotton is sensitive to both water stress and waterlogging. Watch the plants: wilting in the afternoon heat that recovers by morning is comm"
+ },
+ {
+  "id": "m360-p/en-offtopic",
+  "status": "PASS",
+  "detail": "ASSISTANT | I do not have approved guidance that answers this question. Please ask an agriculture expert or try rephrasing. | Listen | No approved guidance found — this is not an answer. Ask an expert."
+ },
+ {
+  "id": "d1440/ur/voice-real",
+  "status": "PASS",
+  "detail": "alert=\"کوئی آواز سنائی نہیں دی۔ براہِ کرم دوبارہ ریکارڈ کریں۔ | دوبارہ کوشش کریں\""
+ },
+ {
+  "id": "m360/ur/voice-nospeech",
+  "status": "PASS",
+  "detail": "alert=\"کوئی آواز سنائی نہیں دی۔ براہِ کرم دوبارہ ریکارڈ کریں۔ | دوبارہ کوشش کریں\""
+ },
+ {
+  "id": "m360/ur/voice-provider",
+  "status": "PASS",
+  "detail": "alert=\"آواز سے متن بنانے کی سہولت ابھی دستیاب نہیں۔ بعد میں کوشش کریں یا اپنا سوال لکھیں۔ | دوبارہ کوشش کریں\""
+ },
+ {
+  "id": "m360/ur/voice-ratelimit",
+  "status": "PASS",
+  "detail": "alert=\"آواز کی بہت زیادہ درخواستیں ہو گئیں۔ ایک منٹ رکیں اور دوبارہ کوشش کریں۔\""
+ },
+ {
+  "id": "m360/ur/voice-format",
+  "status": "PASS",
+  "detail": "alert=\"یہ براؤزر قابلِ قبول ریکارڈنگ فارمیٹ استعمال نہیں کرتا۔\""
+ },
+ {
+  "id": "m360/en/voice-nospeech",
+  "status": "PASS",
+  "detail": "alert=\"No speech was detected. Please record again. | Retry\""
+ }
+]

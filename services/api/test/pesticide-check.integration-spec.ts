@@ -573,6 +573,34 @@ integration('Dawai Check on PostgreSQL', () => {
     expect((await get('/pesticide-products').expect(200)).body).toEqual([]);
   });
 
+  it('product autocomplete also returns DPP notified entries after the catalogue (additive fields)', async () => {
+    const abam = (await get('/pesticide-products?search=abam').expect(200)).body;
+    expect((abam as unknown[]).length).toBeGreaterThan(0);
+    expect((abam as unknown[]).length).toBeLessThanOrEqual(10);
+    const row = abam.find((r: { brandName: string }) => r.brandName === 'Abamectin 1.8% EC');
+    expect(row).toMatchObject({
+      kind: 'dpp_notified',
+      label: 'Abamectin 1.8% EC',
+      activeIngredient: 'Abamectin',
+      company: null,
+      isDemo: false,
+    });
+    expect(row.id).toBeTruthy();
+    const imid = (await get('/pesticide-products?search=imid').expect(200)).body;
+    const kinds: string[] = (imid as Array<{ kind: string }>).map((r) => r.kind);
+    expect(kinds[0]).toBe('catalogue');
+    expect(kinds).toContain('dpp_notified');
+    expect(kinds.indexOf('dpp_notified')).toBeGreaterThan(kinds.lastIndexOf('catalogue'));
+    expect((imid as unknown[]).length).toBeLessThanOrEqual(10);
+    const odd = (
+      await get(
+        `/pesticide-products?search=${encodeURIComponent("x'; DROP TABLE users;--")}`,
+      ).expect(200)
+    ).body;
+    expect(Array.isArray(odd)).toBe(true);
+    await db.query('SELECT 1 FROM users LIMIT 1');
+  });
+
   it('requires authentication', async () => {
     await request(app.getHttpServer()).get('/pesticide-checks').expect(401);
   });

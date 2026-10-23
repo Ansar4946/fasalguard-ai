@@ -68,6 +68,11 @@ export interface UiStrings {
   errGeneric: string;
   errEmpty: string;
   errFormat: string;
+  errNoSpeech: string;
+  errTooShort: string;
+  errTooLong: string;
+  errProvider: string;
+  errRateLimited: string;
   transcriptLabel: string;
   transcriptPlaceholder: string;
   autoSending: string;
@@ -159,6 +164,11 @@ const en: UiStrings = {
   errGeneric: "That did not work. Please try again or type your question.",
   errEmpty: "No audio was recorded. Please try again.",
   errFormat: "This browser does not support an accepted recording format.",
+  errNoSpeech: "No speech was detected. Please record again.",
+  errTooShort: "The recording was too short. Please speak a little longer and try again.",
+  errTooLong: "The recording was too long. Please keep your question shorter and try again.",
+  errProvider: "Voice transcription is not available right now. Please try again later or type your question.",
+  errRateLimited: "Too many voice requests. Please wait a minute and try again.",
   transcriptLabel: "Your question (edit if needed)",
   transcriptPlaceholder: "Your transcript will appear here. You can edit it.",
   autoSending: "Sending automatically… edit to cancel",
@@ -250,6 +260,11 @@ const ur: UiStrings = {
   errGeneric: "بات نہیں بنی۔ دوبارہ کوشش کریں یا اپنا سوال لکھیں۔",
   errEmpty: "کوئی آواز ریکارڈ نہیں ہوئی۔ دوبارہ کوشش کریں۔",
   errFormat: "یہ براؤزر قابلِ قبول ریکارڈنگ فارمیٹ استعمال نہیں کرتا۔",
+  errNoSpeech: "کوئی آواز سنائی نہیں دی۔ براہِ کرم دوبارہ ریکارڈ کریں۔",
+  errTooShort: "ریکارڈنگ بہت چھوٹی تھی۔ ذرا لمبا بولیں اور دوبارہ کوشش کریں۔",
+  errTooLong: "ریکارڈنگ بہت لمبی تھی۔ سوال مختصر رکھیں اور دوبارہ کوشش کریں۔",
+  errProvider: "آواز سے متن بنانے کی سہولت ابھی دستیاب نہیں۔ بعد میں کوشش کریں یا اپنا سوال لکھیں۔",
+  errRateLimited: "آواز کی بہت زیادہ درخواستیں ہو گئیں۔ ایک منٹ رکیں اور دوبارہ کوشش کریں۔",
   transcriptLabel: "آپ کا سوال (ضرورت ہو تو درست کریں)",
   transcriptPlaceholder: "آپ کی بات کی تحریر یہاں آئے گی۔ آپ اسے درست کر سکتے ہیں۔",
   autoSending: "خود بخود بھیجا جا رہا ہے… روکنے کے لیے تحریر درست کریں",

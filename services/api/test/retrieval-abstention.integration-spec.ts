@@ -71,6 +71,47 @@ integration('retrieval abstention on the demo knowledge', () => {
     expect(await retrieval.retrieve(q, lang, 3)).toEqual([]);
   });
 
+  describe('crop affinity', () => {
+    it('returns the RICE water article first for the Urdu chawal question and no cotton article', async () => {
+      const s = await retrieval.retrieve('چاول کی فصل کو پانی کب اور کتنا دینا چاہیے؟', 'ur', 3);
+      expect(s.length).toBeGreaterThan(0);
+      expect(s[0]!.title).toBe(title('rice-water', 'ur'));
+      expect(s.some((x) => x.title.includes('کپاس') || x.title.includes('گندم'))).toBe(false);
+    });
+
+    it('keeps the other Urdu rice spellings and the Urdu cotton and wheat questions on their own crop', async () => {
+      const dhaan = await retrieval.retrieve('دھان کی فصل میں پانی کا انتظام کیسے کریں؟', 'ur', 3);
+      expect(dhaan[0]!.title).toBe(title('rice-water', 'ur'));
+      const cotton = await retrieval.retrieve('کپاس کی فصل کو پانی کب دینا چاہیے؟', 'ur', 3);
+      expect(cotton[0]!.title).toContain('کپاس');
+      expect(cotton.every((x) => !x.title.includes('دھان'))).toBe(true);
+      const wheat = await retrieval.retrieve('میری گندم کے پتے پیلے کیوں ہو رہے ہیں؟', 'ur', 3);
+      expect(wheat[0]!.title).toContain('گندم');
+    });
+
+    it('returns cotton, not rice, for an English cotton irrigation question', async () => {
+      const s = await retrieval.retrieve('When should I irrigate cotton?', 'en', 3);
+      expect(s.length).toBeGreaterThan(0);
+      expect(s[0]!.title).toContain('Cotton');
+      expect(s.every((x) => !/rice|wheat/i.test(x.title))).toBe(true);
+    });
+
+    it('behaves as before when no crop is named', async () => {
+      const s = await retrieval.retrieve(
+        'How do I record my farm expenses and irrigation?',
+        'en',
+        3,
+      );
+      expect(Array.isArray(s)).toBe(true);
+      const generic = await retrieval.retrieve('water management in general terms', 'en', 5);
+      expect(generic.length).toBeGreaterThan(1);
+    });
+
+    it('still abstains on an off-topic question that names a crop in passing without any agronomy match', async () => {
+      expect(await retrieval.retrieve('what is the capital of France', 'en', 3)).toEqual([]);
+    });
+  });
+
   it('abstains with the fake provider: it never produces a grounded citation', async () => {
     const fake = await new FakeAssistantProvider().respond({} as never);
     expect(citationsAreGrounded(fake.citations, [])).toBe(false);
