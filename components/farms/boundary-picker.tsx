@@ -145,7 +145,11 @@ function LocationSearch({
     const timer = window.setTimeout(() => {
       setStatus("loading");
       fetch(`/api/geocode?q=${encodeURIComponent(trimmed)}`)
-        .then((response) => response.json())
+        .then(async (response) => {
+          // A 503 ("not configured" or provider outage) must not be mistaken for "no matches".
+          if (!response.ok) throw new Error(`geocode ${response.status}`);
+          return (await response.json()) as { results?: GeocodeResult[] };
+        })
         .then((body: { results?: GeocodeResult[] }) => {
           if (requestId.current !== id) return;
           setResults(body.results ?? []);
@@ -187,7 +191,9 @@ function LocationSearch({
           autoComplete="off"
         />
         {status === "error" && (
-          <p className="mt-1 text-[9px] font-semibold text-danger">Location search is temporarily unavailable.</p>
+          <p className="mt-1 text-[9px] font-semibold text-danger">
+            Location search is temporarily unavailable. You can still tap the map to place your boundary corners.
+          </p>
         )}
         {locateError && (
           <p className="mt-1 text-[9px] font-semibold text-danger">{locateError}</p>
